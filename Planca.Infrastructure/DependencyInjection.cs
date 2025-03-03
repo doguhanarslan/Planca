@@ -71,22 +71,38 @@ namespace Planca.Infrastructure
                 };
             });
 
-            // Add infrastructure services
-            services.AddScoped<AuditableEntitySaveChangesInterceptor>();
-            services.AddScoped<ICurrentUserService, CurrentUserService>();
-            services.AddScoped<ICurren, CurrentTenantService>();
-            services.AddTransient<IDateTime, DateTimeService>();
+            // Infrastructure servisleri ekleme
 
-            // Add repositories
+            // Interceptor'lar
+            services.AddScoped<AuditableEntitySaveChangesInterceptor>();
+
+            // Core servisler
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ICurrentTenantService, CurrentTenantService>();
+            services.AddTransient<IDateTime, DateTimeService>();
+            services.AddScoped<ITokenService, TokenService>();
+
+            // Repository'ler
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
-            // Diğer repository'leri eklemeye devam edin...
+            // Bu repository'leri ihtiyaç oldukça ayrıca oluşturabiliriz
             // services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             // services.AddScoped<ICustomerRepository, CustomerRepository>();
             // services.AddScoped<IServiceRepository, ServiceRepository>();
-            // services.AddScoped<ITenantRepository, TenantRepository>();
+
+            // İsteğe bağlı servisler - ihtiyaç duyarsanız etkinleştirin
+            // Email servisi
+            // services.AddTransient<IEmailService, EmailService>();
+
+            // Dosya yükleme/saklama servisi
+            // services.AddTransient<IFileStorageService, LocalFileStorageService>();
+
+            // Arka plan iş servisi (örneğin Hangfire) - hatırlatmalar için
+            // services.AddSingleton<IBackgroundJobService, HangfireBackgroundJobService>();
+            // services.AddHangfire(config => config.UseSqlServerStorage(configuration.GetConnectionString("DefaultConnection")));
+            // services.AddHangfireServer();
 
             return services;
         }

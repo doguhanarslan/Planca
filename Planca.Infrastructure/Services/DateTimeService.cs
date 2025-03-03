@@ -1,7 +1,10 @@
 ﻿using Planca.Application.Common.Interfaces;
-using System;
-public class DateTimeService : IDateTime
+
+namespace Planca.Infrastructure.Services
 {
-    public DateTime Now => DateTime.Now;
-    public DateTime UtcNow => DateTime.UtcNow;
+    public class DateTimeService : IDateTime
+    {
+        public DateTime Now => DateTime.Now;
+        public DateTime UtcNow => DateTime.UtcNow;
+    }
 }

@@ -25,10 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Planca.Application\Planca.Application.csproj" />
     <ProjectReference Include="..\Planca.Infrastructure\Planca.Infrastructure.csproj" />
   </ItemGroup>
