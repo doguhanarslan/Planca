@@ -1,0 +1,60 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35728.132 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D02D31C8-BC15-4EB1-A9B1-3E72650AC48B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{63CC3701-BD8B-4C2C-8EC7-4CBACA24B04E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7D012E86-4EA4-4428-B7AE-78D5F37BD752}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{8C24599A-E43C-49A8-8BAE-345D9131EB37}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Backend", "Backend", "{5BE7BCC1-B136-4D80-ACBE-D3CA30898764}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Frontend", "Frontend", "{E66F145F-714C-46A2-A3C5-2DC0C2908443}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planca.Domain", "Planca.Domain\Planca.Domain.csproj", "{94123565-D86A-42CA-B807-8437453BFB78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planca.Application", "Planca.Application\Planca.Application.csproj", "{1C4F9EF9-DBB3-4D1E-94FB-93519C105EB9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planca.Infrastructure", "Planca.Infrastructure\Planca.Infrastructure.csproj", "{248D2F35-1755-4AB5-9788-E116C093BD76}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planca.API", "Planca.API\Planca.API.csproj", "{C2AD72D0-202F-4655-813B-6C8B359B06FD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{94123565-D86A-42CA-B807-8437453BFB78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94123565-D86A-42CA-B807-8437453BFB78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94123565-D86A-42CA-B807-8437453BFB78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94123565-D86A-42CA-B807-8437453BFB78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C4F9EF9-DBB3-4D1E-94FB-93519C105EB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C4F9EF9-DBB3-4D1E-94FB-93519C105EB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C4F9EF9-DBB3-4D1E-94FB-93519C105EB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C4F9EF9-DBB3-4D1E-94FB-93519C105EB9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{248D2F35-1755-4AB5-9788-E116C093BD76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{248D2F35-1755-4AB5-9788-E116C093BD76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{248D2F35-1755-4AB5-9788-E116C093BD76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{248D2F35-1755-4AB5-9788-E116C093BD76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2AD72D0-202F-4655-813B-6C8B359B06FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2AD72D0-202F-4655-813B-6C8B359B06FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2AD72D0-202F-4655-813B-6C8B359B06FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2AD72D0-202F-4655-813B-6C8B359B06FD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5BE7BCC1-B136-4D80-ACBE-D3CA30898764} = {D02D31C8-BC15-4EB1-A9B1-3E72650AC48B}
+		{E66F145F-714C-46A2-A3C5-2DC0C2908443} = {D02D31C8-BC15-4EB1-A9B1-3E72650AC48B}
+		{94123565-D86A-42CA-B807-8437453BFB78} = {5BE7BCC1-B136-4D80-ACBE-D3CA30898764}
+		{1C4F9EF9-DBB3-4D1E-94FB-93519C105EB9} = {5BE7BCC1-B136-4D80-ACBE-D3CA30898764}
+		{248D2F35-1755-4AB5-9788-E116C093BD76} = {5BE7BCC1-B136-4D80-ACBE-D3CA30898764}
+		{C2AD72D0-202F-4655-813B-6C8B359B06FD} = {5BE7BCC1-B136-4D80-ACBE-D3CA30898764}
+	EndGlobalSection
+EndGlobal
