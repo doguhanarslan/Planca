@@ -81,33 +81,18 @@ namespace Planca.Infrastructure
             services.AddScoped<ICurrentTenantService, CurrentTenantService>();
             services.AddTransient<IDateTime, DateTimeService>();
             services.AddScoped<ITokenService, TokenService>();
-            services.AddScoped<IIdentityService, IdentityService>();
             services.AddScoped<IAppSettings, AppSettings>();
+            services.AddScoped<IIdentityService, IdentityService>();
             services.AddScoped<IUserService, UserService>();
 
             // Repository'ler
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
-            services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-            // Bu repository'leri ihtiyaç oldukça ayrıca oluşturabiliriz
-            // services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-            // services.AddScoped<ICustomerRepository, CustomerRepository>();
-            // services.AddScoped<IServiceRepository, ServiceRepository>();
-
-            // İsteğe bağlı servisler - ihtiyaç duyarsanız etkinleştirin
-            // Email servisi
-            // services.AddTransient<IEmailService, EmailService>();
-
-            // Dosya yükleme/saklama servisi
-            // services.AddTransient<IFileStorageService, LocalFileStorageService>();
-
-            // Arka plan iş servisi (örneğin Hangfire) - hatırlatmalar için
-            // services.AddSingleton<IBackgroundJobService, HangfireBackgroundJobService>();
-            // services.AddHangfire(config => config.UseSqlServerStorage(configuration.GetConnectionString("DefaultConnection")));
-            // services.AddHangfireServer();
+            services.AddScoped<ITenantRepository, TenantRepository>();
 
             return services;
         }
