@@ -1,34 +1,11 @@
-﻿using Planca.Domain.Entities;
-using Planca.Domain.Specifications;
-using System;
-using System.Linq.Expressions;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Planca.Domain.Specifications
 {
-    // Temel filtreleme için spesifikasyon
-    public class CustomersFilterSpecification : BaseSpecification<Customer>
-    {
-        public CustomersFilterSpecification(string searchString = null)
-        {
-            // Arama filtresi (opsiyonel)
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                searchString = searchString.ToLower();
-
-                // BaseSpecification'daki constructor'ı kullanarak Criteria'yı ayarla
-                Expression<Func<Customer, bool>> searchCriteria = c =>
-                    c.FirstName.ToLower().Contains(searchString) ||
-                    c.LastName.ToLower().Contains(searchString) ||
-                    c.Email.ToLower().Contains(searchString) ||
-                    (c.PhoneNumber != null && c.PhoneNumber.ToLower().Contains(searchString));
-
-                // AndCriteria metodunu kullanarak mevcut kriterlere arama kriterlerini ekle
-                AndCriteria(searchCriteria);
-            }
-        }
-    }
-
-    // Filtreleme, sıralama ve sayfalama için spesifikasyon
     public class CustomersFilterPagingSpecification : CustomersFilterSpecification
     {
         public CustomersFilterPagingSpecification(

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planca.Application.Features.Customers.Queries.GetCustomersList
 {
-    public class GetCustomersListQueryHandler : IRequestHandler<GetCustomerListQuery, PaginatedList<CustomerDto>>
+    public class GetCustomersListQueryHandler : IRequestHandler<GetCustomersListQuery, PaginatedList<CustomerDto>>
     {
         private readonly IRepository<Customer> _customerRepository;
         private readonly IMapper _mapper;
@@ -24,7 +24,7 @@ namespace Planca.Application.Features.Customers.Queries.GetCustomersList
             _mapper = mapper;
         }
 
-        public async Task<PaginatedList<CustomerDto>> Handle(GetCustomerListQuery request, CancellationToken cancellationToken)
+        public async Task<PaginatedList<CustomerDto>> Handle(GetCustomersListQuery request, CancellationToken cancellationToken)
         {
             // Müşteri listesi için bir spesifikasyon oluştur
             var specification = new CustomersFilterPagingSpecification(

@@ -5,7 +5,7 @@ using Planca.Application.DTOs;
 
 namespace Planca.Application.Features.Customers.Queries.GetCustomersList
 {
-    public class GetCustomerListQuery : IRequest<PaginatedList<CustomerDto>>, ITenantRequest
+    public class GetCustomersListQuery : IRequest<PaginatedList<CustomerDto>>, ITenantRequest
     {
         // Sayfalama parametreleri
         public int PageNumber { get; set; } = 1;
