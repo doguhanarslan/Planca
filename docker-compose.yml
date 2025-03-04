@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Planca.API/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      - db
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Database=planca;Username=postgres;Password=postgres
+    networks:
+      - planca-network
+
+  db:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=planca
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - planca-network
+
+networks:
+  planca-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
