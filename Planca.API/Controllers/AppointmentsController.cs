@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Planca.Application.DTOs;
 using Planca.Application.Features.Appointments.Commands.CreateAppointment;
 using Planca.Application.Features.Appointments.Commands.UpdateAppointment;
 using Planca.Application.Features.Appointments.Commands.DeleteAppointment;
@@ -21,11 +22,11 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> GetAppointments([FromQuery] GetAppointmentsListQuery query)
         {
             var result = await Mediator.Send(query);
-            return HandlePagedResult(result);
+            return HandlePagedResult(result).Result; // .Result ile ActionResult<T>'yi ActionResult'a dönüştürüyoruz
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult> GetAppointment(Guid id)
+        public async Task<ActionResult<AppointmentDto>> GetAppointment(Guid id)
         {
             var result = await Mediator.Send(new GetAppointmentDetailQuery { Id = id });
             return HandleResult(result);
@@ -40,7 +41,7 @@ namespace Planca.API.Controllers
                 StartDate = startDate,
                 EndDate = endDate
             });
-            return HandleResult(result);
+            return HandleResult(result).Result; // .Result ile ActionResult<T>'yi ActionResult'a dönüştürüyoruz
         }
 
         [HttpGet("customer/{customerId}")]
@@ -50,18 +51,18 @@ namespace Planca.API.Controllers
             {
                 CustomerId = customerId
             });
-            return HandleResult(result);
+            return HandleResult(result).Result; // .Result ile ActionResult<T>'yi ActionResult'a dönüştürüyoruz
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateAppointment(CreateAppointmentCommand command)
+        public async Task<ActionResult<AppointmentDto>> CreateAppointment(CreateAppointmentCommand command)
         {
             var result = await Mediator.Send(command);
             return HandleResult(result);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateAppointment(Guid id, UpdateAppointmentCommand command)
+        public async Task<ActionResult<AppointmentDto>> UpdateAppointment(Guid id, UpdateAppointmentCommand command)
         {
             if (id != command.Id)
                 return BadRequest("ID in URL does not match ID in request body");
@@ -74,11 +75,11 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> DeleteAppointment(Guid id)
         {
             var result = await Mediator.Send(new DeleteAppointmentCommand { Id = id });
-            return HandleResult(result);
+            return HandleResult(result); // Bu metodun Result'ını döndürmüyoruz çünkü DeleteAppointmentCommand muhtemelen Result dönüyor, Result<T> değil
         }
 
         [HttpPost("{id}/cancel")]
-        public async Task<ActionResult> CancelAppointment(Guid id, [FromBody] CancelAppointmentCommand command)
+        public async Task<ActionResult<AppointmentDto>> CancelAppointment(Guid id, [FromBody] CancelAppointmentCommand command)
         {
             if (id != command.Id)
                 return BadRequest("ID in URL does not match ID in request body");
@@ -88,7 +89,7 @@ namespace Planca.API.Controllers
         }
 
         [HttpPost("{id}/confirm")]
-        public async Task<ActionResult> ConfirmAppointment(Guid id)
+        public async Task<ActionResult<AppointmentDto>> ConfirmAppointment(Guid id)
         {
             var result = await Mediator.Send(new ConfirmAppointmentCommand { Id = id });
             return HandleResult(result);

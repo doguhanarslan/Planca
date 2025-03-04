@@ -29,7 +29,7 @@ namespace Planca.Application.Common.Interfaces
         Task<Result> UpdateUserRefreshTokenAsync(string userId, string refreshToken, DateTime refreshTokenExpiryTime);
         Task<Result<(string RefreshToken, DateTime ExpiryTime)>> GetUserRefreshTokenAsync(string userId);
 
-        // User data
+        // User data - Eksik olan metodlar
         Task<Result<UserBasicData>> GetUserBasicDataAsync(string userId);
         Task<Result> UpdateUserBasicDataAsync(string userId, UserBasicData userData);
     }

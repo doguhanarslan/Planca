@@ -2,8 +2,6 @@
 using Planca.Domain.Common;
 using Planca.Domain.Common.Enums;
 using Planca.Domain.Events;
-using Planca.Domain.Common.Enums;
-using Planca.Domain.Common;
 
 namespace Planca.Domain.Entities
 {

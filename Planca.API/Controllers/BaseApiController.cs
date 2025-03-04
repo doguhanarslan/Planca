@@ -39,6 +39,13 @@ namespace Planca.API.Controllers
             return BadRequest(new { Errors = result.Errors });
         }
 
+        // Yeni eklenen helper metot - ActionResult<T> sonucu ActionResult'a dönüştürmek için
+        protected ActionResult HandleActionResult<T>(Result<T> result)
+        {
+            var actionResult = HandleResult(result);
+            return actionResult.Result; // ActionResult<T>'nin Result özelliği ActionResult döndürür
+        }
+
         protected ActionResult<T> HandlePagedResult<T>(PaginatedList<T> result)
         {
             if (result == null)

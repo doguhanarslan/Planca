@@ -81,12 +81,17 @@ namespace Planca.Infrastructure
             services.AddScoped<ICurrentTenantService, CurrentTenantService>();
             services.AddTransient<IDateTime, DateTimeService>();
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IIdentityService, IdentityService>();
+            services.AddScoped<IAppSettings, AppSettings>();
+            services.AddScoped<IUserService, UserService>();
 
             // Repository'ler
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
-
+            services.AddScoped<ICustomerRepository, CustomerRepository>();
+            services.AddScoped<IServiceRepository, ServiceRepository>();
+            services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             // Bu repository'leri ihtiyaç oldukça ayrıca oluşturabiliriz
             // services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             // services.AddScoped<ICustomerRepository, CustomerRepository>();
