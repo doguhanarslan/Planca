@@ -1,12 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MediatR;
+using Planca.Application.Common.Behaviors;
+using Planca.Application.Common.Models;
 
 namespace Planca.Application.Features.Customers.Commands.DeleteCustomer
 {
-    internal class DeleteCustomerCommand
+    public class DeleteCustomerCommand : IRequest<Result>, ITenantRequest
     {
+        // Silinecek müşteri kimliği
+        public Guid Id { get; set; }
+
+        // Tenant ID, TenantBehavior tarafından doldurulacak
+        public Guid TenantId { get; set; }
     }
 }
