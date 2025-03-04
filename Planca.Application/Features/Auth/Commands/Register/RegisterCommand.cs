@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Planca.Application.Common.Behaviors;
 using Planca.Application.Common.Models;
-using Planca.Application.Features.Auth.Commands.Login;
+using System;
 
 namespace Planca.Application.Features.Auth.Commands.Register
 {
@@ -9,6 +9,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
     {
         public string Email { get; set; }
         public string Password { get; set; }
+        public string ConfirmPassword { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string PhoneNumber { get; set; }

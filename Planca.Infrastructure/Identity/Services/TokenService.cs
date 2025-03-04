@@ -79,5 +79,38 @@ namespace Planca.Infrastructure.Identity.Services
                 return false;
             }
         }
+
+        // Yeni eklenen metot: Token içerisinden User ID çıkarma
+        public string GetUserIdFromToken(string token)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+
+                // Token formatı geçerli mi kontrol et
+                if (!tokenHandler.CanReadToken(token))
+                {
+                    return string.Empty;
+                }
+
+                var jwtToken = tokenHandler.ReadJwtToken(token);
+                var subject = jwtToken.Subject;
+
+                // Subject (User ID) boş mu kontrol et
+                if (string.IsNullOrEmpty(subject))
+                {
+                    // Alternatif olarak sub claim'i kontrol et
+                    var subClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
+                    return subClaim?.Value ?? string.Empty;
+                }
+
+                return subject;
+            }
+            catch
+            {
+                // Hata durumunda boş string döndür
+                return string.Empty;
+            }
+        }
     }
 }
