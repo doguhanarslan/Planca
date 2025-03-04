@@ -15,7 +15,7 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> Login(LoginCommand command)
         {
             var result = await Mediator.Send(command);
-            return HandleResult(result);
+            return HandleActionResult(result);
         }
 
         [HttpPost("register")]
@@ -23,7 +23,7 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> Register(RegisterCommand command)
         {
             var result = await Mediator.Send(command);
-            return HandleResult(result);
+            return HandleActionResult(result);
         }
 
         [HttpPost("refresh-token")]
@@ -31,7 +31,7 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> RefreshToken(RefreshTokenCommand command)
         {
             var result = await Mediator.Send(command);
-            return HandleResult(result);
+            return HandleActionResult(result);
         }
 
         [HttpGet("current-user")]
@@ -39,7 +39,7 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> GetCurrentUser()
         {
             var result = await Mediator.Send(new GetCurrentUserQuery());
-            return HandleResult(result);
+            return HandleActionResult(result);
         }
     }
 }

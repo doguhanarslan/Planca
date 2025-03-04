@@ -25,14 +25,14 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> GetEmployee(Guid id)
         {
             var result = await Mediator.Send(new GetEmployeeDetailQuery { Id = id });
-            return HandleResult(result);
+            return HandleActionResult(result);
         }
 
         [HttpGet("service/{serviceId}")]
         public async Task<ActionResult> GetEmployeesByService(Guid serviceId)
         {
             var result = await Mediator.Send(new GetEmployeesByServiceQuery { ServiceId = serviceId });
-            return HandleResult(result);
+            return HandleActionResult(result);
         }
 
         [HttpPost]
@@ -40,7 +40,7 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> CreateEmployee(CreateEmployeeCommand command)
         {
             var result = await Mediator.Send(command);
-            return HandleResult(result);
+            return HandleActionResult(result);
         }
 
         [HttpPut("{id}")]
@@ -51,7 +51,7 @@ namespace Planca.API.Controllers
                 return BadRequest("ID in URL does not match ID in request body");
 
             var result = await Mediator.Send(command);
-            return HandleResult(result);
+            return HandleActionResult(result);
         }
 
         [HttpDelete("{id}")]

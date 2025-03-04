@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Planca.Application.Common.Interfaces;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;

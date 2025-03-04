@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Planca.Application.Common.Exceptions;
+using UnauthorizedAccessException = Planca.Application.Common.Exceptions.UnauthorizedAccessException;
 
 namespace Planca.API.Middleware
 {

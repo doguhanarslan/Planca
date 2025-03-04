@@ -3,6 +3,7 @@ using Planca.Application.Common.Exceptions;
 using Planca.Application.Common.Models;
 using Planca.Domain.Common.Interfaces;
 using Planca.Domain.Entities;
+using Planca.Domain.Specifications;
 using System;
 using System.Linq;
 using System.Threading;
@@ -48,19 +49,19 @@ namespace Planca.Application.Features.Tenants.Commands.DeleteTenant
             // Not: Bu kısım veri tutarlılığı için önemli. Gerçek uygulamada bu kontrolü daha kapsamlı yapabilirsiniz.
 
             // Çalışan kontrolü
-            var employeeSpecification = new Domain.Specifications.BaseSpecification<Employee>(e => e.TenantId == request.Id);
+            var employeeSpecification = new TenantEntitySpecification<Employee>(request.Id);
             var employeeCount = await _employeeRepository.CountAsync(employeeSpecification);
 
             // Müşteri kontrolü
-            var customerSpecification = new Domain.Specifications.BaseSpecification<Customer>(c => c.TenantId == request.Id);
+            var customerSpecification = new TenantEntitySpecification<Customer>(request.Id);
             var customerCount = await _customerRepository.CountAsync(customerSpecification);
 
             // Servis kontrolü
-            var serviceSpecification = new Domain.Specifications.BaseSpecification<Service>(s => s.TenantId == request.Id);
+            var serviceSpecification = new TenantEntitySpecification<Service>(request.Id);
             var serviceCount = await _serviceRepository.CountAsync(serviceSpecification);
 
             // Randevu kontrolü
-            var appointmentSpecification = new Domain.Specifications.BaseSpecification<Appointment>(a => a.TenantId == request.Id);
+            var appointmentSpecification = new TenantEntitySpecification<Appointment>(request.Id);
             var appointmentCount = await _appointmentRepository.CountAsync(appointmentSpecification);
 
             // Tenant'a ait veriler varsa silmeyi engelle
