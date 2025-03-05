@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Planca.Domain.Entities;
+using Planca.Domain.Common.Enums;
 
 namespace Planca.Infrastructure.Persistence.Configurations
 {
@@ -13,6 +14,15 @@ namespace Planca.Infrastructure.Persistence.Configurations
             builder.Property(a => a.TenantId)
                 .IsRequired();
 
+            builder.Property(a => a.CustomerId)
+                .IsRequired();
+
+            builder.Property(a => a.EmployeeId)
+                .IsRequired();
+
+            builder.Property(a => a.ServiceId)
+                .IsRequired();
+
             builder.Property(a => a.StartTime)
                 .IsRequired();
 
@@ -20,18 +30,21 @@ namespace Planca.Infrastructure.Persistence.Configurations
                 .IsRequired();
 
             builder.Property(a => a.Status)
-                .IsRequired();
+                .IsRequired()
+                .HasConversion<int>(); // Store enum as integer
 
             builder.Property(a => a.Notes)
                 .HasMaxLength(500);
 
-            // PostgreSQL'de JSON veri tipini kullanmak istersek (örnek)
-            // builder.Property(a => a.SomeJsonData)
-            //    .HasColumnType("jsonb");
+            // Create indexes for efficient querying
+            builder.HasIndex(a => a.StartTime);
+            builder.HasIndex(a => a.EmployeeId);
+            builder.HasIndex(a => a.CustomerId);
+            builder.HasIndex(a => a.Status);
 
-            // İlişkiler
-            // Global Query Filter bunları otomatik filtreleyeceği için
-            // tenantId koşulu eklememize gerek yok
+            // Combined indexes for common query patterns
+            builder.HasIndex(a => new { a.EmployeeId, a.StartTime });
+            builder.HasIndex(a => new { a.CustomerId, a.StartTime });
         }
     }
 }

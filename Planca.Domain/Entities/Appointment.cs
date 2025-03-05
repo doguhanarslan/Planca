@@ -22,7 +22,7 @@ namespace Planca.Domain.Entities
         {
             return StartTime < EndTime &&
                    EndTime.Subtract(StartTime).TotalMinutes >= 15 &&
-                   StartTime > DateTime.Now;
+                   StartTime > DateTime.UtcNow;
         }
 
         public bool CanBeCanceled()

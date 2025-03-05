@@ -63,7 +63,7 @@ namespace Planca.Application.Features.Appointments.Queries.GetCustomerAppointmen
                 appointments = appointments.Where(a => a.Status == status).ToList();
             }
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             if (request.FutureOnly)
             {
                 appointments = appointments.Where(a => a.StartTime >= now).ToList();

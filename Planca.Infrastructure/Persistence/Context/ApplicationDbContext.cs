@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Planca.Application.Common.Interfaces;
@@ -69,6 +70,9 @@ namespace Planca.Infrastructure.Persistence.Context
                 }
             }
 
+            // Configure Identity tables with PostgreSQL requirements
+            ConfigureIdentityTables(builder);
+
             // Apply entity configurations
             builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
@@ -90,6 +94,26 @@ namespace Planca.Infrastructure.Persistence.Context
             ApplyTenantId();
 
             return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void ConfigureIdentityTables(ModelBuilder builder)
+        {
+            // Set specific names for identity tables (optional)
+            builder.Entity<ApplicationUser>().ToTable("users");
+            builder.Entity<IdentityRole>().ToTable("roles");
+            builder.Entity<IdentityUserRole<string>>().ToTable("user_roles");
+            builder.Entity<IdentityUserClaim<string>>().ToTable("user_claims");
+            builder.Entity<IdentityUserLogin<string>>().ToTable("user_logins");
+            builder.Entity<IdentityRoleClaim<string>>().ToTable("role_claims");
+            builder.Entity<IdentityUserToken<string>>().ToTable("user_tokens");
+
+            // Configure ApplicationUser specific properties
+            builder.Entity<ApplicationUser>(entity =>
+            {
+                entity.Property(e => e.FirstName).HasMaxLength(100);
+                entity.Property(e => e.LastName).HasMaxLength(100);
+                entity.Property(e => e.RefreshToken).HasMaxLength(256);
+            });
         }
 
         private void ApplyGlobalFilters(ModelBuilder modelBuilder)

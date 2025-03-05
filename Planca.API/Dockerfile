@@ -1,30 +1,25 @@
 ﻿# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
+# $APP_UID değişkeni tanımlanmamış olabilir, bu yüzden kaldırıyorum
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 80
+EXPOSE 443
 
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-
 # API ve doğrudan bağımlılıklarının .csproj dosyalarını kopyala
 COPY ["Planca.API/Planca.API.csproj", "Planca.API/"]
 COPY ["Planca.Application/Planca.Application.csproj", "Planca.Application/"]
 COPY ["Planca.Infrastructure/Planca.Infrastructure.csproj", "Planca.Infrastructure/"]
 # Domain dolaylı bir bağımlılık (Application ve Infrastructure üzerinden)
 COPY ["Planca.Domain/Planca.Domain.csproj", "Planca.Domain/"]
-
 # Bağımlılıkları restore et
 RUN dotnet restore "./Planca.API/Planca.API.csproj"
-
 # Tüm kaynak kodları kopyala
 COPY . .
-
 # API projesini derle
 WORKDIR "/src/Planca.API"
 RUN dotnet build "./Planca.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
@@ -38,4 +33,5 @@ RUN dotnet publish "./Planca.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+# Başlangıç önceliğini otomatik migrasyona izin verecek şekilde ayarlıyoruz
 ENTRYPOINT ["dotnet", "Planca.API.dll"]

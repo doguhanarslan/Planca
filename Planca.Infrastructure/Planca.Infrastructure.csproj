@@ -7,12 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planca.Application\Planca.Application.csproj" />
-    <ProjectReference Include="..\Planca.Domain\Planca.Domain.csproj" />
+    <Compile Remove="Persistence\Migrations\**" />
+    <EmbeddedResource Remove="Persistence\Migrations\**" />
+    <None Remove="Persistence\Migrations\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Persistence\Migrations\" />
+    <ProjectReference Include="..\Planca.Application\Planca.Application.csproj" />
+    <ProjectReference Include="..\Planca.Domain\Planca.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

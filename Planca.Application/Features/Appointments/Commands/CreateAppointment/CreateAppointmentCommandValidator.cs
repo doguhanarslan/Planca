@@ -18,7 +18,7 @@ namespace Planca.Application.Features.Appointments.Commands.CreateAppointment
 
             RuleFor(v => v.StartTime)
                 .NotEmpty().WithMessage("Start time is required")
-                .GreaterThan(DateTime.Now).WithMessage("Appointment must be in the future");
+                .GreaterThan(DateTime.UtcNow).WithMessage("Appointment must be in the future");
         }
     }
 }

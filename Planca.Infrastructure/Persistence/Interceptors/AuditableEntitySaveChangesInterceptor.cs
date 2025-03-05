@@ -45,13 +45,13 @@ namespace Planca.Infrastructure.Persistence.Interceptors
             {
                 if (entry.State == EntityState.Added)
                 {
-                    entry.Entity.CreatedAt = _dateTime.Now;
+                    entry.Entity.CreatedAt = _dateTime.UtcNow;
                     entry.Entity.CreatedBy = _currentUserService.UserId;
                 }
 
                 if (entry.State == EntityState.Modified)
                 {
-                    entry.Entity.LastModifiedAt = _dateTime.Now;
+                    entry.Entity.LastModifiedAt = _dateTime.UtcNow;
                     entry.Entity.LastModifiedBy = _currentUserService.UserId;
                 }
             }
