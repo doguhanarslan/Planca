@@ -102,20 +102,23 @@ try
             logger.LogInformation("Database connection string (masked): {ConnectionString}",
                 connectionString?.Replace("Password=", "Password=***"));
 
-            // 2. Migrasyon yerine doğrudan veritabanı oluşturma yaklaşımı kullan
+            // 2. Veritabanı var mı kontrol et
+            logger.LogInformation("Ensuring database exists...");
+            var dbExists = await context.Database.EnsureCreatedAsync();
+            logger.LogInformation("Database ensured created: {Created}", dbExists ? "Created new database" : "Database already exists");
+
+            // 3. Tablo listesini loglama (varsa)
             try
             {
-                logger.LogInformation("Ensuring database exists...");
-                // Uyarıları görmezden gel ve veritabanını oluştur
-                context.Database.EnsureCreated();
-                logger.LogInformation("Database created or already exists");
+                var tables = await context.Database.SqlQuery<string>($"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").ToListAsync();
+                logger.LogInformation("Current tables in database: {Tables}", string.Join(", ", tables));
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error ensuring database exists");
+                logger.LogWarning(ex, "Could not query table names");
             }
 
-            // 3. Seed data uygulama
+            // 4. Seed data uygulama
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
@@ -125,11 +128,26 @@ try
             logger.LogInformation("Seeding default data...");
             await ApplicationDbContextSeed.SeedDefaultDataAsync(context, userManager, roleManager, dbContextLogger);
             logger.LogInformation("Seed data applied successfully");
+
+            // 5. Seed sonrası temel verileri kontrol et
+            try
+            {
+                var tenantsCount = await context.Tenants.CountAsync();
+                var usersCount = await userManager.Users.CountAsync();
+                var rolesCount = await roleManager.Roles.CountAsync();
+                var servicesCount = await context.Services.CountAsync();
+
+                logger.LogInformation("Database seed check: Tenants: {TenantsCount}, Users: {UsersCount}, Roles: {RolesCount}, Services: {ServicesCount}",
+                    tenantsCount, usersCount, rolesCount, servicesCount);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Could not verify seed data counts");
+            }
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An error occurred while migrating or seeding the database.");
-            // Hatayı yakalamanın ardından, devam edelim - uygulamanın çalışmasını engellemiyoruz
         }
     }
     app.Run();

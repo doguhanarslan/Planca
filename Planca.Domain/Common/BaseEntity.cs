@@ -10,10 +10,10 @@ namespace Planca.Domain.Common
     public abstract class BaseEntity : ITenantEntity
     {
         public Guid Id { get; set; }
-        public Guid TenantId { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; }
-        public string LastModifiedBy { get; set; }
-        public DateTime? LastModifiedAt { get; set; }
+        public Guid TenantId { get; set; } = Guid.NewGuid();
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string CreatedBy { get; set; } = "System";
+        public string LastModifiedBy { get; set; } = "System";
+        public DateTime? LastModifiedAt { get; set; } = DateTime.UtcNow;
     }
 }

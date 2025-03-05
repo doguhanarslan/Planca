@@ -46,13 +46,21 @@ namespace Planca.Infrastructure.Persistence.Interceptors
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedAt = _dateTime.UtcNow;
-                    entry.Entity.CreatedBy = _currentUserService.UserId;
+
+                    // Only override CreatedBy if it wasn't already set
+                    if (string.IsNullOrEmpty(entry.Entity.CreatedBy))
+                    {
+                        // Use "System" as fallback when UserId is null
+                        entry.Entity.CreatedBy = _currentUserService.UserId ?? "System";
+                    }
                 }
 
                 if (entry.State == EntityState.Modified)
                 {
                     entry.Entity.LastModifiedAt = _dateTime.UtcNow;
-                    entry.Entity.LastModifiedBy = _currentUserService.UserId;
+
+                    // Use "System" as fallback when UserId is null
+                    entry.Entity.LastModifiedBy = _currentUserService.UserId ?? "System";
                 }
             }
         }
