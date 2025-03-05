@@ -1,5 +1,9 @@
 ﻿using Planca.Application.Common.Interfaces;
 using MediatR;
+using Planca.Application.Features.Auth.Commands.Login;
+using Planca.Application.Features.Auth.Commands.RefreshToken;
+using Planca.Application.Features.Auth.Commands.Register;
+using Planca.Application.Features.Tenants.Commands.CreateBusiness;
 
 namespace Planca.Application.Common.Behaviors
 {
@@ -15,8 +19,14 @@ namespace Planca.Application.Common.Behaviors
 
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
-            // Check if request is tenant-aware
-            if (request is ITenantRequest tenantRequest)
+            // Tenant doğrulamasından muaf tutulacak işlemler
+            bool isExempt = request is RegisterCommand ||
+                            request is LoginCommand ||
+                            request is RefreshTokenCommand ||
+                            request is CreateBusinessCommand; // Ekledik
+
+            // Tenant doğrulaması gerekli mi kontrol et
+            if (request is ITenantRequest tenantRequest && !isExempt)
             {
                 var tenantId = _tenantService.GetTenantId();
 

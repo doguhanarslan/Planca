@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { login, clearError } from '../../store/slices/authSlice';
-import { LoginCredentials } from '../../types/auth';
+import { LoginCredentials } from '../../types';
 
 const LoginForm: React.FC = () => {
   const dispatch = useAppDispatch();

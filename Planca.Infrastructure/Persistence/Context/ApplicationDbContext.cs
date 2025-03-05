@@ -36,7 +36,7 @@ namespace Planca.Infrastructure.Persistence.Context
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Service> Services => Set<Service>();
         public DbSet<Appointment> Appointments => Set<Appointment>();
-
+        public DbSet<TenantWorkingHours> TenantWorkingHours => Set<TenantWorkingHours>();
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

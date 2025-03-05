@@ -37,6 +37,21 @@ namespace Planca.Infrastructure.Identity.Services
             return (result.ToApplicationResult(), user.Id);
         }
 
+        public async Task<Result> UpdateUserTenantAsync(string userId, Guid tenantId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return Result.Failure(new[] { "User not found" });
+            }
+
+            user.TenantId = tenantId;
+            var result = await _userManager.UpdateAsync(user);
+
+            return result.ToApplicationResult();
+        }
+
         public async Task<Result> DeleteUserAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);

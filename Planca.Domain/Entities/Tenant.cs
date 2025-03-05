@@ -16,6 +16,15 @@ namespace Planca.Domain.Entities
         public string PrimaryColor { get; set; }
         public bool IsActive { get; set; }
 
+        // Adres bilgileri
+        public string Address { get; set; }
+        public string City { get; set; }
+        public string State { get; set; }
+        public string ZipCode { get; set; }
+
+        // Çalışma saatleri koleksiyonu
+        public List<TenantWorkingHours> WorkingHours { get; set; } = new List<TenantWorkingHours>();
+
         // For Tenant entity, the TenantId is the same as its Id
         public new Guid TenantId
         {

@@ -34,6 +34,7 @@ namespace Planca.Application.Mappings
 
             // Tenant mappings
             CreateMap<Tenant, TenantDto>();
+            CreateMap<TenantWorkingHours, TenantWorkingHoursDto>();
         }
     }
 }

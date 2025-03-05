@@ -124,7 +124,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
                         userId,
                         request.Email,
                         roles,
-                        request.TenantId.ToString());
+                        null);
 
                     // Generate refresh token
                     var refreshToken = Guid.NewGuid().ToString();

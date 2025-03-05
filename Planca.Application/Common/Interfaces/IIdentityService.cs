@@ -32,5 +32,8 @@ namespace Planca.Application.Common.Interfaces
         // User data - Eksik olan metodlar
         Task<Result<UserBasicData>> GetUserBasicDataAsync(string userId);
         Task<Result> UpdateUserBasicDataAsync(string userId, UserBasicData userData);
+
+        // Tenant management
+        Task<Result> UpdateUserTenantAsync(string userId, Guid tenantId);
     }
 }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { register as registerUser, clearError } from '../../store/slices/authSlice';
-import { RegisterCredentials } from '../../types/auth';
+import { RegisterCredentials } from '../../types';
 
 const RegisterForm: React.FC = () => {
   const dispatch = useAppDispatch();
