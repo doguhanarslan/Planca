@@ -7,7 +7,7 @@ const instance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for handling cookies
+  withCredentials: true, // HTTP-only cookies için önemli
 });
 
 // Store for Redux dispatch function
@@ -17,25 +17,37 @@ let storeDispatch = null;
 export const initializeAxios = (store) => {
   storeDispatch = store.dispatch;
 
-  // Add a response interceptor to handle token refresh
+  // Tenant ID'sini header'a ekleyen interceptor
+  instance.interceptors.request.use(
+    (config) => {
+      const state = store.getState();
+      if (state.auth.tenant?.id) {
+        config.headers['X-TenantId'] = state.auth.tenant.id;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Token yenileme için response interceptor
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
       const originalRequest = error.config;
 
-      // If the error is 401 Unauthorized and we haven't retried yet
+      // Error 401 ise ve henüz retry yapmamışsak
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
 
         try {
-          // Try to refresh the token
+          // Token'ı yenile
           await storeDispatch(refreshUserToken());
           
-          // Retry the original request with the new token
-          // Since we're using HttpOnly cookies, the token should be automatically included
+          // Orjinal isteği tekrarla (token HttpOnly cookie içinde otomatik olarak eklenir)
           return instance(originalRequest);
         } catch (refreshError) {
-          // If token refresh fails, pass the error to the application
+          // Token yenileme başarısız olduysa
+          console.error('Token yenileme başarısız:', refreshError);
           return Promise.reject(refreshError);
         }
       }

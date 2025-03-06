@@ -48,7 +48,17 @@ const Register = () => {
     }
   }, [isAuthenticated, isBusinessRegistered, navigate]);
 
-  const handleRegister = async (values) => {
+  const handleRegister = async (values, { setSubmitting, setTouched }) => {
+    // Mark all fields as touched when form is submitted
+    setTouched({
+      firstName: true,
+      lastName: true,
+      email: true,
+      phoneNumber: true,
+      password: true,
+      confirmPassword: true
+    });
+    
     const userData = {
       email: values.email,
       password: values.password,
@@ -59,16 +69,18 @@ const Register = () => {
     };
 
     await dispatch(registerUser(userData));
+    setSubmitting(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-lg w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planca</h1>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Create your account</h2>
+          <p className="text-sm text-gray-600">
             Or{' '}
-            <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500">
+            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
               sign in to your existing account
             </Link>
           </p>
@@ -79,25 +91,28 @@ const Register = () => {
             type="error" 
             message={Array.isArray(error) ? error.join(', ') : error}
             onClose={() => dispatch(clearError())}
+            className="mb-6"
           />
         )}
 
-        <Formik
-          initialValues={{
-            firstName: '',
-            lastName: '',
-            email: '',
-            phoneNumber: '',
-            password: '',
-            confirmPassword: ''
-          }}
-          validationSchema={registerValidationSchema}
-          onSubmit={handleRegister}
-        >
-          {({ values, handleChange, handleBlur, errors, touched }) => (
-            <Form className="mt-8 space-y-6">
-              <div className="rounded-md shadow-sm -space-y-px">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <Formik
+            initialValues={{
+              firstName: '',
+              lastName: '',
+              email: '',
+              phoneNumber: '',
+              password: '',
+              confirmPassword: ''
+            }}
+            validationSchema={registerValidationSchema}
+            onSubmit={handleRegister}
+            validateOnBlur={false}
+            validateOnChange={false}
+          >
+            {({ values, handleChange, handleBlur, errors, touched, isSubmitting }) => (
+              <Form className="space-y-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <Input
                     name="firstName"
                     type="text"
@@ -175,21 +190,26 @@ const Register = () => {
                   placeholder="Confirm password"
                   required
                 />
-              </div>
 
-              <div>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="w-full"
-                  isLoading={loading}
-                >
-                  Create Account
-                </Button>
-              </div>
-            </Form>
-          )}
-        </Formik>
+                <div className="pt-4">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    className="w-full py-2.5"
+                    size="lg"
+                    isLoading={loading || isSubmitting}
+                  >
+                    Create Account
+                  </Button>
+                </div>
+                
+                <p className="text-xs text-center text-gray-500 mt-4">
+                  By registering, you agree to our Terms of Service and Privacy Policy.
+                </p>
+              </Form>
+            )}
+          </Formik>
+        </div>
       </div>
     </div>
   );

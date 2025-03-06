@@ -12,8 +12,8 @@ using Planca.Infrastructure.Persistence.Context;
 namespace Planca.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250305002503_ConfigurationsAdded")]
-    partial class ConfigurationsAdded
+    [Migration("20250305230436_FixMissingTablesAndColumns")]
+    partial class FixMissingTablesAndColumns
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -506,6 +506,18 @@ namespace Planca.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("ıd");
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("address");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("city");
+
                     b.Property<string>("ConnectionString")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -552,6 +564,12 @@ namespace Planca.Infrastructure.Migrations
                         .HasColumnType("character varying(10)")
                         .HasColumnName("primarycolor");
 
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("state");
+
                     b.Property<string>("Subdomain")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -562,6 +580,12 @@ namespace Planca.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("tenantıd");
 
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("zipcode");
+
                     b.HasKey("Id")
                         .HasName("pk_tenants");
 
@@ -571,6 +595,60 @@ namespace Planca.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("tenants");
+                });
+
+            modelBuilder.Entity("Planca.Domain.Entities.TenantWorkingHours", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("ıd");
+
+                    b.Property<TimeSpan>("CloseTime")
+                        .HasColumnType("interval")
+                        .HasColumnName("closetime");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("createdat");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("createdby");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer")
+                        .HasColumnName("dayofweek");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ısactive");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lastmodifiedat");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("lastmodifiedby");
+
+                    b.Property<TimeSpan>("OpenTime")
+                        .HasColumnType("interval")
+                        .HasColumnName("opentime");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenantıd");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tenantworkinghours");
+
+                    b.HasIndex("TenantId", "DayOfWeek")
+                        .IsUnique();
+
+                    b.ToTable("tenantworkinghours");
                 });
 
             modelBuilder.Entity("Planca.Infrastructure.Identity.Models.ApplicationUser", b =>
@@ -742,6 +820,23 @@ namespace Planca.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_aspnetusertokens_aspnetusers_userıd");
+                });
+
+            modelBuilder.Entity("Planca.Domain.Entities.TenantWorkingHours", b =>
+                {
+                    b.HasOne("Planca.Domain.Entities.Tenant", "Tenant")
+                        .WithMany("WorkingHours")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tenantworkinghours_tenants_tenantıd");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Planca.Domain.Entities.Tenant", b =>
+                {
+                    b.Navigation("WorkingHours");
                 });
 #pragma warning restore 612, 618
         }

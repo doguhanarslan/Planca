@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { login, register, createBusiness, refreshToken, getCurrentUser, logout } from './authAPI';
 
-// Async thunks for authentication actions
+// Authentication async thunks
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
@@ -9,7 +9,7 @@ export const loginUser = createAsyncThunk(
       const response = await login(credentials);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.errors || ['Login failed']);
+      return rejectWithValue(error.response?.data?.errors || ['Giriş başarısız']);
     }
   }
 );
@@ -21,7 +21,7 @@ export const registerUser = createAsyncThunk(
       const response = await register(userData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.errors || ['Registration failed']);
+      return rejectWithValue(error.response?.data?.errors || ['Kayıt başarısız']);
     }
   }
 );
@@ -33,20 +33,20 @@ export const createBusinessForUser = createAsyncThunk(
       const response = await createBusiness(businessData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.errors || ['Business creation failed']);
+      return rejectWithValue(error.response?.data?.errors || ['İşletme oluşturma başarısız']);
     }
   }
 );
 
 export const refreshUserToken = createAsyncThunk(
   'auth/refreshToken',
-  async (_, { rejectWithValue, getState }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      // We don't pass the tokens here as they should be in HttpOnly cookies
+      // HttpOnly cookie içinde refresh token'ı kullanacak
       const response = await refreshToken();
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.errors || ['Token refresh failed']);
+      return rejectWithValue(error.response?.data?.errors || ['Token yenileme başarısız']);
     }
   }
 );
@@ -58,7 +58,7 @@ export const fetchCurrentUser = createAsyncThunk(
       const response = await getCurrentUser();
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.errors || ['Failed to get user data']);
+      return rejectWithValue(error.response?.data?.errors || ['Kullanıcı bilgileri alınamadı']);
     }
   }
 );
@@ -70,7 +70,7 @@ export const logoutUser = createAsyncThunk(
       await logout();
       return null;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.errors || ['Logout failed']);
+      return rejectWithValue(error.response?.data?.errors || ['Çıkış başarısız']);
     }
   }
 );
@@ -104,12 +104,17 @@ const authSlice = createSlice({
         state.user = {
           id: action.payload.data.userId,
           email: action.payload.data.email,
-          name: action.payload.data.userName,
-          roles: action.payload.data.roles,
+          name: action.payload.data.userName || `${action.payload.data.firstName} ${action.payload.data.lastName}`,
+          firstName: action.payload.data.firstName,
+          lastName: action.payload.data.lastName,
+          roles: action.payload.data.roles || [],
         };
+        state.tenant = action.payload.data.tenantId ? {
+          id: action.payload.data.tenantId,
+          name: action.payload.data.tenantName
+        } : null;
         state.isAuthenticated = true;
-        // If user has the Admin role and belongs to a tenant, we assume they have a business
-        state.isBusinessRegistered = action.payload.data.roles.includes('Admin') && action.payload.data.tenantId;
+        state.isBusinessRegistered = !!action.payload.data.tenantId;
         state.loading = false;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -126,8 +131,10 @@ const authSlice = createSlice({
         state.user = {
           id: action.payload.data.userId,
           email: action.payload.data.email,
-          name: action.payload.data.userName,
-          roles: action.payload.data.roles,
+          name: action.payload.data.userName || `${action.payload.data.firstName} ${action.payload.data.lastName}`,
+          firstName: action.payload.data.firstName,
+          lastName: action.payload.data.lastName,
+          roles: action.payload.data.roles || [],
         };
         state.isAuthenticated = true;
         state.loading = false;
@@ -143,7 +150,12 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(createBusinessForUser.fulfilled, (state, action) => {
-        state.tenant = action.payload.data;
+        state.tenant = {
+          id: action.payload.data.id,
+          name: action.payload.data.name,
+          subdomain: action.payload.data.subdomain,
+          ...action.payload.data
+        };
         state.isBusinessRegistered = true;
         state.loading = false;
       })
@@ -158,20 +170,24 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(refreshUserToken.fulfilled, (state, action) => {
-        // Update user details if needed
         if (action.payload.data) {
           state.user = {
             id: action.payload.data.userId,
             email: action.payload.data.email,
-            name: action.payload.data.userName,
-            roles: action.payload.data.roles,
+            name: action.payload.data.userName || `${action.payload.data.firstName} ${action.payload.data.lastName}`,
+            roles: action.payload.data.roles || [],
           };
+          state.tenant = action.payload.data.tenantId ? {
+            id: action.payload.data.tenantId,
+            name: action.payload.data.tenantName
+          } : null;
           state.isAuthenticated = true;
+          state.isBusinessRegistered = !!action.payload.data.tenantId;
         }
         state.loading = false;
       })
       .addCase(refreshUserToken.rejected, (state, action) => {
-        // On token refresh failure, we should log the user out
+        // Token yenileme başarısız olduğunda kullanıcıyı logout yap
         state.user = null;
         state.tenant = null;
         state.isAuthenticated = false;
@@ -187,10 +203,17 @@ const authSlice = createSlice({
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         if (action.payload.data) {
-          state.user = action.payload.data;
+          state.user = {
+            ...action.payload.data,
+            name: action.payload.data.userName || `${action.payload.data.firstName} ${action.payload.data.lastName}`,
+          };
+          state.tenant = action.payload.data.tenantId ? {
+            id: action.payload.data.tenantId,
+            name: action.payload.data.tenantName,
+            ...action.payload.data.tenant
+          } : null;
           state.isAuthenticated = true;
-          // Check if user has admin role and a tenant
-          state.isBusinessRegistered = state.user.roles?.includes('Admin') && state.user.tenantId;
+          state.isBusinessRegistered = !!action.payload.data.tenantId;
         }
         state.loading = false;
       })

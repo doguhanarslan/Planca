@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Planca.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class ConfigurationsAdded : Migration
+    public partial class FixMissingTablesAndColumns : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -130,6 +130,10 @@ namespace Planca.Infrastructure.Migrations
                     logourl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     primarycolor = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     ısactive = table.Column<bool>(type: "boolean", nullable: false),
+                    address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    city = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    state = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    zipcode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     tenantıd = table.Column<Guid>(type: "uuid", nullable: false),
                     createdat = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     createdby = table.Column<string>(type: "text", nullable: false),
@@ -190,6 +194,32 @@ namespace Planca.Infrastructure.Migrations
                         name: "fk_aspnetroleclaims_aspnetroles_roleıd",
                         column: x => x.roleıd,
                         principalTable: "roles",
+                        principalColumn: "ıd",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "tenantworkinghours",
+                columns: table => new
+                {
+                    ıd = table.Column<Guid>(type: "uuid", nullable: false),
+                    tenantıd = table.Column<Guid>(type: "uuid", nullable: false),
+                    dayofweek = table.Column<int>(type: "integer", nullable: false),
+                    opentime = table.Column<TimeSpan>(type: "interval", nullable: false),
+                    closetime = table.Column<TimeSpan>(type: "interval", nullable: false),
+                    ısactive = table.Column<bool>(type: "boolean", nullable: false),
+                    createdat = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    createdby = table.Column<string>(type: "text", nullable: false),
+                    lastmodifiedby = table.Column<string>(type: "text", nullable: false),
+                    lastmodifiedat = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_tenantworkinghours", x => x.ıd);
+                    table.ForeignKey(
+                        name: "fk_tenantworkinghours_tenants_tenantıd",
+                        column: x => x.tenantıd,
+                        principalTable: "tenants",
                         principalColumn: "ıd",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -352,6 +382,12 @@ namespace Planca.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_tenantworkinghours_tenantıd_dayofweek",
+                table: "tenantworkinghours",
+                columns: new[] { "tenantıd", "dayofweek" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ıx_aspnetuserclaims_userıd",
                 table: "user_claims",
                 column: "userıd");
@@ -397,7 +433,7 @@ namespace Planca.Infrastructure.Migrations
                 name: "services");
 
             migrationBuilder.DropTable(
-                name: "tenants");
+                name: "tenantworkinghours");
 
             migrationBuilder.DropTable(
                 name: "user_claims");
@@ -410,6 +446,9 @@ namespace Planca.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "user_tokens");
+
+            migrationBuilder.DropTable(
+                name: "tenants");
 
             migrationBuilder.DropTable(
                 name: "roles");

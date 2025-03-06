@@ -93,9 +93,10 @@ const BusinessRegistration = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto space-y-8">
-        <div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">Create Your Business</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planca</h1>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Your Business</h2>
+          <p className="mt-2 text-sm text-gray-600">
             Set up your business profile to get started with Planca
           </p>
         </div>
@@ -124,139 +125,143 @@ const BusinessRegistration = () => {
           onSubmit={handleCreateBusiness}
         >
           {({ values, handleChange, handleBlur, errors, touched, setFieldValue }) => (
-            <Form className="mt-8 space-y-6 bg-white p-6 shadow rounded-lg">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Business Information</h3>
+            <Form className="mt-8 space-y-6">
+              <div className="bg-white p-8 shadow-lg rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Business Information</h3>
                 
-                <Input
-                  name="name"
-                  type="text"
-                  label="Business Name"
-                  value={values.name}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={errors.name}
-                  touched={touched.name}
-                  placeholder="Your Business Name"
-                  required
-                />
+                <div className="space-y-6">
+                  <Input
+                    name="name"
+                    type="text"
+                    label="Business Name"
+                    value={values.name}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={errors.name}
+                    touched={touched.name}
+                    placeholder="Your Business Name"
+                    required
+                  />
 
-                <div className="flex flex-col sm:flex-row sm:space-x-4">
-                  <div className="flex-1">
-                    <Input
-                      name="subdomain"
-                      type="text"
-                      label="Subdomain"
-                      value={values.subdomain}
-                      onChange={(e) => {
-                        // Convert to lowercase and replace invalid characters
-                        const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                        setFieldValue('subdomain', value);
-                      }}
-                      onBlur={handleBlur}
-                      error={errors.subdomain}
-                      touched={touched.subdomain}
-                      placeholder="your-business"
-                      required
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                      Your business URL will be: <span className="font-medium">https://your-business.planca.app</span>
-                    </p>
-                  </div>
-                  
-                  <div className="flex-1 mt-4 sm:mt-0">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Brand Color
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="color"
-                        name="primaryColor"
-                        value={values.primaryColor}
-                        onChange={handleChange}
-                        className="h-10 w-10 border-gray-300 rounded-md shadow-sm"
-                      />
+                  <div className="flex flex-col gap-6 sm:flex-row">
+                    <div className="flex-1">
                       <Input
-                        name="primaryColor"
+                        name="subdomain"
                         type="text"
-                        value={values.primaryColor}
-                        onChange={handleChange}
+                        label="Subdomain"
+                        value={values.subdomain}
+                        onChange={(e) => {
+                          // Convert to lowercase and replace invalid characters
+                          const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                          setFieldValue('subdomain', value);
+                        }}
                         onBlur={handleBlur}
-                        placeholder="#3498db"
+                        error={errors.subdomain}
+                        touched={touched.subdomain}
+                        placeholder="your-business"
+                        required
                       />
+                      <p className="mt-1 text-sm text-gray-500">
+                        Your business URL will be: <span className="font-medium">https://{values.subdomain || 'your-business'}.planca.app</span>
+                      </p>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Brand Color
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="color"
+                          name="primaryColor"
+                          value={values.primaryColor}
+                          onChange={handleChange}
+                          className="h-10 w-10 border-gray-300 rounded-md shadow-sm cursor-pointer"
+                        />
+                        <Input
+                          name="primaryColor"
+                          type="text"
+                          value={values.primaryColor}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          placeholder="#3498db"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Address Information</h3>
+              <div className="bg-white p-8 shadow-lg rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Address Information</h3>
                 
-                <Input
-                  name="address"
-                  type="text"
-                  label="Street Address"
-                  value={values.address}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={errors.address}
-                  touched={touched.address}
-                  placeholder="123 Main St"
-                  required
-                />
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="space-y-6">
                   <Input
-                    name="city"
+                    name="address"
                     type="text"
-                    label="City"
-                    value={values.city}
+                    label="Street Address"
+                    value={values.address}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={errors.city}
-                    touched={touched.city}
-                    placeholder="City"
+                    error={errors.address}
+                    touched={touched.address}
+                    placeholder="123 Main St"
                     required
                   />
 
-                  <Input
-                    name="state"
-                    type="text"
-                    label="State/Province"
-                    value={values.state}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.state}
-                    touched={touched.state}
-                    placeholder="State"
-                    required
-                  />
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                    <Input
+                      name="city"
+                      type="text"
+                      label="City"
+                      value={values.city}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={errors.city}
+                      touched={touched.city}
+                      placeholder="City"
+                      required
+                    />
 
-                  <Input
-                    name="zipCode"
-                    type="text"
-                    label="Zip/Postal Code"
-                    value={values.zipCode}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.zipCode}
-                    touched={touched.zipCode}
-                    placeholder="Zip Code"
-                    required
-                  />
+                    <Input
+                      name="state"
+                      type="text"
+                      label="State/Province"
+                      value={values.state}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={errors.state}
+                      touched={touched.state}
+                      placeholder="State"
+                      required
+                    />
+
+                    <Input
+                      name="zipCode"
+                      type="text"
+                      label="Zip/Postal Code"
+                      value={values.zipCode}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={errors.zipCode}
+                      touched={touched.zipCode}
+                      placeholder="Zip Code"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-4 space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Business Hours</h3>
-                <p className="text-sm text-gray-500">Set your regular business hours. You can update these later.</p>
+              <div className="bg-white p-8 shadow-lg rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Business Hours</h3>
+                <p className="text-sm text-gray-500 mb-6">Set your regular business hours. You can update these later.</p>
                 
                 <FieldArray name="workSchedule">
                   {({ remove, push }) => (
                     <div className="space-y-4">
                       {values.workSchedule.map((schedule, index) => (
-                        <div key={index} className="flex flex-col sm:flex-row sm:space-x-4 p-4 border rounded-md">
-                          <div className="sm:w-1/3">
+                        <div key={index} className="flex flex-col p-4 border border-gray-200 rounded-lg sm:flex-row sm:space-x-4">
+                          <div className="sm:w-1/3 mb-4 sm:mb-0">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Day
                             </label>
@@ -275,7 +280,7 @@ const BusinessRegistration = () => {
                             </select>
                           </div>
                           
-                          <div className="sm:w-1/3 mt-4 sm:mt-0">
+                          <div className="sm:w-1/3 mb-4 sm:mb-0">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Open Time
                             </label>
@@ -299,7 +304,7 @@ const BusinessRegistration = () => {
                             )}
                           </div>
                           
-                          <div className="sm:w-1/3 mt-4 sm:mt-0">
+                          <div className="sm:w-1/3 mb-4 sm:mb-0">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Close Time
                             </label>
@@ -323,11 +328,12 @@ const BusinessRegistration = () => {
                             )}
                           </div>
                           
-                          <div className="mt-4 sm:mt-0 flex items-end">
+                          <div className="flex items-end justify-center sm:justify-start">
                             <button
                               type="button"
                               onClick={() => remove(index)}
-                              className="text-red-600 hover:text-red-800"
+                              className="text-red-600 hover:text-red-800 focus:outline-none"
+                              aria-label="Remove this business hour"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -341,7 +347,11 @@ const BusinessRegistration = () => {
                         type="button"
                         variant="outline"
                         onClick={() => push({ day: 0, openTime: '09:00', closeTime: '17:00' })}
+                        className="mt-4"
                       >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
                         Add Business Hours
                       </Button>
                     </div>
@@ -353,7 +363,7 @@ const BusinessRegistration = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-full"
+                  className="w-full py-3 text-lg"
                   isLoading={loading}
                 >
                   Create Business

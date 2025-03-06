@@ -103,9 +103,9 @@ try
                 connectionString?.Replace("Password=", "Password=***"));
 
             // 2. Veritabanı var mı kontrol et
-            logger.LogInformation("Ensuring database exists...");
-            var dbExists = await context.Database.EnsureCreatedAsync();
-            logger.LogInformation("Database ensured created: {Created}", dbExists ? "Created new database" : "Database already exists");
+            logger.LogInformation("Migrating database...");
+            await context.Database.MigrateAsync(); // Bu satır migrations'ları uygular
+            logger.LogInformation("Database migrated successfully");
 
             // 3. Tablo listesini loglama (varsa)
             try

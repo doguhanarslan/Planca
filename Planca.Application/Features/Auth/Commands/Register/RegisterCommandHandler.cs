@@ -180,7 +180,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
                 LastName = request.LastName,
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
-                TenantId = request.TenantId,
+                TenantId = request.TenantId ?? Guid.Empty, // Add null check here
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "System"
             };
@@ -199,7 +199,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
                 PhoneNumber = request.PhoneNumber,
                 Title = "New Employee",
                 IsActive = true,
-                TenantId = request.TenantId,
+                TenantId = request.TenantId ?? Guid.Empty, // Add null check here
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "System"
             };
