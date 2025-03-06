@@ -37,43 +37,44 @@ const Alert = ({
 
   if (!visible) return null;
 
+  // Doğrudan hex renk kodları kullanarak kesin renkler
   const alertClasses = {
     info: 'bg-blue-50 border-blue-300',
     success: 'bg-green-50 border-green-300',
     warning: 'bg-yellow-50 border-yellow-300',
-    error: 'bg-red-200/50 border-red-300', // Güncellendi: Daha soluk kırmızı arka plan
+    error: 'bg-[#fbd5d5]/90 border-[#f08080]', // Daha kapalı kırmızı tonları
   };
 
   const iconClasses = {
     info: 'text-blue-400',
     success: 'text-green-400',
     warning: 'text-yellow-400',
-    error: 'text-red-400',
+    error: 'text-[#cc3333]', // Kapalı kırmızı
   };
 
   const textClasses = {
     info: 'text-blue-800',
     success: 'text-green-800',
     warning: 'text-yellow-800',
-    error: 'text-red-700', // Güncellendi: Metin rengi koyulaştırıldı
+    error: 'text-[#b22222]', // Koyu kırmızı
   };
 
   const ringClasses = {
     info: 'focus:ring-blue-500',
     success: 'focus:ring-green-500',
     warning: 'focus:ring-yellow-500',
-    error: 'focus:ring-red-300', // Güncellendi: Focus ring daha soluk kırmızı
+    error: 'focus:ring-[#e05252]', // Orta kırmızı
   };
 
   const hoverClasses = {
     info: 'hover:bg-blue-100',
     success: 'hover:bg-green-100',
     warning: 'hover:bg-yellow-100',
-    error: 'hover:bg-red-100',
+    error: 'hover:bg-[#fecaca]', // Açık kırmızı hover
   };
 
   return (
-    <div className={`rounded-md border-l-4 p-4 ${alertClasses[type]} ${textClasses[type]} ${className}`} role="alert">
+    <div className={`rounded-lg backdrop-blur-sm border-l-4 p-4 ${alertClasses[type]} ${textClasses[type]} ${className}`} role="alert">
       <div className="flex items-start">
         <div className="flex-shrink-0 pt-0.5">
           {type === 'info' && (

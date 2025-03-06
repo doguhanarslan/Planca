@@ -14,7 +14,8 @@ const Card = ({
   border = true,
   rounded = 'md',
   hover = false,
-  transparent = false, // Şeffaflık seçeneği eklendi
+  transparent = false, // Şeffaflık seçeneği
+  gradient = false, // Gradient effect option
   ...props 
 }) => {
   const shadowClasses = {
@@ -23,6 +24,7 @@ const Card = ({
     md: 'shadow',
     lg: 'shadow-lg',
     xl: 'shadow-xl',
+    card: 'shadow-card',
   };
 
   const paddingClasses = {
@@ -42,22 +44,29 @@ const Card = ({
     full: 'rounded-3xl',
   };
 
-  // Arka plan için şeffaflık seçeneği
-  const bgClasses = transparent ? 'bg-white/90 backdrop-blur-sm' : 'bg-white';
+  // Arka plan sınıfları - yeni seçenekler için güncellendi
+  let bgClasses = '';
+  if (transparent) {
+    bgClasses = 'bg-white/90 backdrop-blur-sm';
+  } else if (gradient) {
+    bgClasses = 'bg-gradient-to-br from-white to-gray-50';
+  } else {
+    bgClasses = 'bg-white';
+  }
 
   const baseClasses = `
     ${bgClasses}
     ${border ? 'border border-gray-200' : ''}
     ${shadowClasses[shadow]}
     ${roundedClasses[rounded]}
-    ${hover ? 'transition-shadow duration-300 hover:shadow-lg' : ''}
+    ${hover ? 'transition-all duration-300 hover:shadow-lg hover:border-softred-200' : ''}
     ${className}
   `;
 
   return (
     <div className={baseClasses} {...props}>
       {(title || actions) && (
-        <div className={`flex justify-between items-center ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pt-4'} border-b border-gray-200 pb-3`}>
+        <div className={`flex justify-between items-center ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pt-4'} ${border ? 'border-b border-gray-200' : ''} pb-3`}>
           <div>
             {title && (
               <h3 className={`text-lg font-medium text-gray-900 ${titleClassName}`}>
@@ -83,7 +92,7 @@ const Card = ({
       </div>
       
       {footer && (
-        <div className={`border-t border-gray-200 ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pb-4'} pt-3`}>
+        <div className={`${border ? 'border-t border-gray-200' : ''} ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pb-4'} pt-3`}>
           {footer}
         </div>
       )}
@@ -99,12 +108,13 @@ Card.propTypes = {
   subtitle: PropTypes.node,
   footer: PropTypes.node,
   actions: PropTypes.node,
-  shadow: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'xl']),
+  shadow: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'xl', 'card']),
   padding: PropTypes.oneOf(['none', 'sm', 'normal', 'lg', 'xl']),
   border: PropTypes.bool,
   rounded: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'xl', 'full']),
   hover: PropTypes.bool,
-  transparent: PropTypes.bool, // Yeni prop tipini ekledik
+  transparent: PropTypes.bool,
+  gradient: PropTypes.bool,
 };
 
 export default Card;

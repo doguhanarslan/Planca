@@ -52,10 +52,10 @@ const Input = forwardRef(({
   
   const inputClasses = `
     block w-full rounded-md border shadow-sm py-3
-    transition-colors duration-200
+    transition-all duration-200
     ${hasError 
       ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-300 focus:border-red-300' 
-      : 'border-gray-300 focus:ring-red-300 focus:border-red-300'
+      : 'border-gray-300 focus:ring-[#e05252] focus:border-[#e05252] focus:outline-none'
     }
     ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}
     ${readOnly ? 'bg-gray-50 cursor-default' : ''}
@@ -68,7 +68,7 @@ const Input = forwardRef(({
     <div className={`mb-4 ${containerClassName}`}>
       {label && (
         <label htmlFor={uniqueId} className={`block text-sm font-medium text-gray-700 mb-1 ${labelClassName}`}>
-          {label} {required && <span className="text-red-300">*</span>}
+          {label} {required && <span className="text-[#cc3333]">*</span>}
         </label>
       )}
       <div className="relative">

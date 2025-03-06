@@ -7,11 +7,25 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Doğrudan hex kodları ve rgb değerleri kullanarak daha güvenilir renkler
+        brand: {
+          50: '#fef5f5',
+          100: '#fde8e8',
+          200: '#fbd5d5',
+          300: '#f8b4b4',
+          400: '#f08080',
+          500: '#e05252',
+          600: '#cc3333',
+          700: '#b22222',
+          800: '#8b0000',
+          900: '#800020',
+        },
+        // Eski renkler geriye dönük uyumluluk için korundu
         primary: {
           50: '#fef2f2',
-          100: '#fee2e2', // Hafif soluk kırmızı
+          100: '#fee2e2',
           200: '#fecaca',
-          300: '#fca5a5', // Butonlar için kullanılan kırmızı
+          300: '#fca5a5',
           400: '#f87171',
           500: '#ef4444',
           600: '#dc2626',
@@ -48,11 +62,15 @@ export default {
         },
       },
       backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'subtle-pattern': "url('/subtle-pattern.png')",
+        'auth-pattern': "url('/auth-background.svg')",
       },
       boxShadow: {
         'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'input': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
       },
       borderRadius: {
         'xl': '0.75rem',
