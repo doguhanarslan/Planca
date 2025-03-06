@@ -41,7 +41,7 @@ const Alert = ({
     info: 'bg-blue-50 border-blue-300',
     success: 'bg-green-50 border-green-300',
     warning: 'bg-yellow-50 border-yellow-300',
-    error: 'bg-red-50 border-red-300',
+    error: 'bg-red-200/50 border-red-300', // Güncellendi: Daha soluk kırmızı arka plan
   };
 
   const iconClasses = {
@@ -55,14 +55,14 @@ const Alert = ({
     info: 'text-blue-800',
     success: 'text-green-800',
     warning: 'text-yellow-800',
-    error: 'text-red-800',
+    error: 'text-red-700', // Güncellendi: Metin rengi koyulaştırıldı
   };
 
   const ringClasses = {
     info: 'focus:ring-blue-500',
     success: 'focus:ring-green-500',
     warning: 'focus:ring-yellow-500',
-    error: 'focus:ring-red-500',
+    error: 'focus:ring-red-300', // Güncellendi: Focus ring daha soluk kırmızı
   };
 
   const hoverClasses = {
@@ -112,7 +112,7 @@ const Alert = ({
                   setVisible(false);
                   onClose();
                 }}
-                className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 ${hoverClasses[type]} ${ringClasses[type]}`}
+                className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${hoverClasses[type]} ${ringClasses[type]}`}
                 aria-label="Kapat"
               >
                 <span className="sr-only">Kapat</span>

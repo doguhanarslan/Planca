@@ -7,6 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: {
+          50: '#fef2f2',
+          100: '#fee2e2', // Hafif soluk kırmızı
+          200: '#fecaca',
+          300: '#fca5a5', // Butonlar için kullanılan kırmızı
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
+          700: '#b91c1c',
+          800: '#991b1b',
+          900: '#7f1d1d',
+          950: '#450a0a',
+        },
         indigo: {
           50: '#eef2ff',
           100: '#e0e7ff',
@@ -34,6 +47,9 @@ export default {
           950: '#022c22',
         },
       },
+      backgroundImage: {
+        'subtle-pattern': "url('/subtle-pattern.png')",
+      },
       boxShadow: {
         'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -49,4 +65,3 @@ export default {
     import('@tailwindcss/forms')
   ],
 }
-

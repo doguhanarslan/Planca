@@ -9,7 +9,7 @@ import React from 'react';
  * @param {string} [props.className=''] - Additional CSS classes
  * @param {boolean} [props.disabled=false] - Whether button is disabled
  * @param {React.ReactNode} props.children - Button content
- * @param {'primary'|'secondary'|'outline'|'danger'|'success'|'warning'|'ghost'} [props.variant='primary'] - Button style variant
+ * @param {'primary'|'secondary'|'outline'|'danger'|'success'|'warning'|'ghost'|'customRed'} [props.variant='primary'] - Button style variant
  * @param {'xs'|'sm'|'md'|'lg'|'xl'} [props.size='md'] - Button size
  * @param {Function} [props.onClick] - Click handler
  * @param {boolean} [props.isLoading=false] - Loading state
@@ -36,13 +36,14 @@ const Button = ({
   const baseClasses = 'inline-flex items-center justify-center font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out shadow-sm';
   
   const variantClasses = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500',
+    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
     secondary: 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500',
-    outline: 'border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-indigo-500',
+    outline: 'border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-primary-500',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
     success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
     warning: 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500',
     ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
+    customRed: 'bg-red-300 text-white hover:bg-red-400 focus:ring-red-300 shadow-md shadow-red-300/25',
   };
   
   const sizeClasses = {

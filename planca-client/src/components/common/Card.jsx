@@ -14,6 +14,7 @@ const Card = ({
   border = true,
   rounded = 'md',
   hover = false,
+  transparent = false, // Şeffaflık seçeneği eklendi
   ...props 
 }) => {
   const shadowClasses = {
@@ -41,8 +42,11 @@ const Card = ({
     full: 'rounded-3xl',
   };
 
+  // Arka plan için şeffaflık seçeneği
+  const bgClasses = transparent ? 'bg-white/90 backdrop-blur-sm' : 'bg-white';
+
   const baseClasses = `
-    bg-white
+    ${bgClasses}
     ${border ? 'border border-gray-200' : ''}
     ${shadowClasses[shadow]}
     ${roundedClasses[rounded]}
@@ -100,6 +104,7 @@ Card.propTypes = {
   border: PropTypes.bool,
   rounded: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'xl', 'full']),
   hover: PropTypes.bool,
+  transparent: PropTypes.bool, // Yeni prop tipini ekledik
 };
 
 export default Card;

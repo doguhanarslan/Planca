@@ -72,15 +72,25 @@ const Register = () => {
     setSubmitting(false);
   };
 
+  // Arka plan şeffaf efekti için CSS sınıfları
+  const backgroundStyle = "min-h-screen flex items-center justify-center bg-white/90 backdrop-blur-sm py-8 px-4 sm:px-6 lg:px-8";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className={backgroundStyle}>
       <div className="max-w-lg w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planca</h1>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Create your account</h2>
+        <div className="text-center mb-8 bg-red-100/80 py-8 rounded-t-lg">
+          <div className="flex justify-center">
+            <div className="h-20 w-20 rounded-full bg-white shadow-md flex items-center justify-center mb-4 border-2 border-red-100">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-300" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Planca</h1>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Create your account</h2>
           <p className="text-sm text-gray-600">
             Or{' '}
-            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+            <Link to="/login" className="font-medium text-red-400 hover:text-red-500 transition-colors">
               sign in to your existing account
             </Link>
           </p>
@@ -95,7 +105,7 @@ const Register = () => {
           />
         )}
 
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-b-lg shadow-lg p-8 border border-gray-100">
           <Formik
             initialValues={{
               firstName: '',
@@ -194,7 +204,7 @@ const Register = () => {
                 <div className="pt-4">
                   <Button
                     type="submit"
-                    variant="primary"
+                    variant="customRed"
                     className="w-full py-2.5"
                     size="lg"
                     isLoading={loading || isSubmitting}
