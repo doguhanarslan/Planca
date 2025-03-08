@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { 
   login, 
   register, 
@@ -11,10 +11,14 @@ import {
   AuthState, 
   LoginCredentials, 
   RegisterUserData, 
-  BusinessData 
+  BusinessData, 
+  User,
+  Tenant
 } from '@/types';
 
-// Authentication async thunks
+/**
+ * Async thunk for user login
+ */
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
@@ -27,6 +31,9 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+/**
+ * Async thunk for user registration
+ */
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: RegisterUserData, { rejectWithValue }) => {
@@ -39,6 +46,9 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+/**
+ * Async thunk for business creation
+ */
 export const createBusinessForUser = createAsyncThunk(
   'auth/createBusiness',
   async (businessData: BusinessData, { rejectWithValue }) => {
@@ -51,6 +61,9 @@ export const createBusinessForUser = createAsyncThunk(
   }
 );
 
+/**
+ * Async thunk for token refresh
+ */
 export const refreshUserToken = createAsyncThunk(
   'auth/refreshToken',
   async (_, { rejectWithValue }) => {
@@ -64,6 +77,9 @@ export const refreshUserToken = createAsyncThunk(
   }
 );
 
+/**
+ * Async thunk for fetching current user data
+ */
 export const fetchCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
   async (_, { rejectWithValue }) => {
@@ -76,6 +92,9 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 
+/**
+ * Async thunk for user logout
+ */
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
@@ -88,6 +107,9 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+/**
+ * Initial state for auth slice
+ */
 const initialState: AuthState = {
   user: null,
   tenant: null,
@@ -97,6 +119,37 @@ const initialState: AuthState = {
   error: null,
 };
 
+/**
+ * Format user data from API response
+ */
+function formatUserData(userData: any): User {
+  return {
+    id: userData.userId,
+    email: userData.email,
+    name: userData.userName || `${userData.firstName} ${userData.lastName}`,
+    firstName: userData.firstName,
+    lastName: userData.lastName,
+    roles: userData.roles || [],
+  };
+}
+
+/**
+ * Format tenant data from API response
+ */
+function formatTenantData(tenantData: any): Tenant | null {
+  if (!tenantData?.tenantId) return null;
+  
+  return {
+    id: tenantData.tenantId,
+    name: tenantData.tenantName || 'Unknown Business',
+    subdomain: tenantData.subdomain || '',
+    ...tenantData.tenant
+  };
+}
+
+/**
+ * Authentication slice with reducers and extra reducers
+ */
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -105,6 +158,16 @@ const authSlice = createSlice({
       state.error = null;
     },
     resetAuthState: () => initialState,
+    updateUserProfile: (state, action: PayloadAction<Partial<User>>) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+      }
+    },
+    updateTenantInfo: (state, action: PayloadAction<Partial<Tenant>>) => {
+      if (state.tenant) {
+        state.tenant = { ...state.tenant, ...action.payload };
+      }
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -115,19 +178,8 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         const userData = action.payload.data;
-        state.user = {
-          id: userData.userId,
-          email: userData.email,
-          name: userData.userName || `${userData.firstName} ${userData.lastName}`,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          roles: userData.roles || [],
-        };
-        state.tenant = userData.tenantId ? {
-          id: userData.tenantId,
-          name: userData.tenantName || 'Unknown Business',
-          subdomain: '',
-        } : null;
+        state.user = formatUserData(userData);
+        state.tenant = formatTenantData(userData);
         state.isAuthenticated = true;
         state.isBusinessRegistered = !!userData.tenantId;
         state.loading = false;
@@ -144,14 +196,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         const userData = action.payload.data;
-        state.user = {
-          id: userData.userId,
-          email: userData.email,
-          name: userData.userName || `${userData.firstName} ${userData.lastName}`,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          roles: userData.roles || [],
-        };
+        state.user = formatUserData(userData);
         state.isAuthenticated = true;
         state.loading = false;
       })
@@ -189,19 +234,8 @@ const authSlice = createSlice({
       .addCase(refreshUserToken.fulfilled, (state, action) => {
         const userData = action.payload.data;
         if (userData) {
-          state.user = {
-            id: userData.userId,
-            email: userData.email,
-            name: userData.userName || `${userData.firstName} ${userData.lastName}`,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            roles: userData.roles || [],
-          };
-          state.tenant = userData.tenantId ? {
-            id: userData.tenantId,
-            name: userData.tenantName || 'Unknown Business',
-            subdomain: '',
-          } : null;
+          state.user = formatUserData(userData);
+          state.tenant = formatTenantData(userData);
           state.isAuthenticated = true;
           state.isBusinessRegistered = !!userData.tenantId;
         }
@@ -225,20 +259,8 @@ const authSlice = createSlice({
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         const userData = action.payload.data;
         if (userData) {
-          state.user = {
-            id: userData.userId,
-            email: userData.email,
-            name: userData.userName || `${userData.firstName} ${userData.lastName}`,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            roles: userData.roles || [],
-          };
-          state.tenant = userData.tenantId ? {
-            id: userData.tenantId,
-            name: userData.tenantName || 'Unknown Business',
-            subdomain: '',
-            ...userData.tenant
-          } : null;
+          state.user = formatUserData(userData);
+          state.tenant = formatTenantData(userData);
           state.isAuthenticated = true;
           state.isBusinessRegistered = !!userData.tenantId;
         }
@@ -260,6 +282,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, resetAuthState } = authSlice.actions;
+export const { clearError, resetAuthState, updateUserProfile, updateTenantInfo } = authSlice.actions;
 
 export default authSlice.reducer;

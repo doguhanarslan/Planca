@@ -3,18 +3,25 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import useAuth from '@/hooks/useAuth';
 
 /**
- * Protected route that requires authentication
+ * Modern Protected route component with enhanced loading state
  * Redirects to login if not authenticated
  */
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  // Show loading state if authentication is being checked
+  // Enhanced loading state with modern spinner
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-secondary-900">
+        <div className="relative">
+          {/* Outer spinner ring */}
+          <div className="w-16 h-16 rounded-full border-t-4 border-b-4 border-primary-500 dark:border-primary-400 animate-spin"></div>
+          {/* Inner spinner ring */}
+          <div className="w-12 h-12 rounded-full border-t-4 border-b-4 border-primary-300 dark:border-primary-600 animate-spin absolute top-2 left-2"></div>
+          {/* Center dot */}
+          <div className="w-2 h-2 rounded-full bg-primary-600 dark:bg-primary-300 absolute top-7 left-7"></div>
+        </div>
       </div>
     );
   }

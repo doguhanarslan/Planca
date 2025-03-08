@@ -1,8 +1,80 @@
 @import "tailwindcss";
 
 :root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+  /* Temel değişkenler */
+  --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
     Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --animation-timing: 200ms;
+  --animation-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Renk Değişkenleri */
+  --color-primary-50: 255, 241, 241;
+  --color-primary-100: 255, 225, 225;
+  --color-primary-200: 255, 199, 199;
+  --color-primary-300: 255, 158, 158;
+  --color-primary-400: 255, 107, 107;
+  --color-primary-500: 255, 58, 58;
+  --color-primary-600: 255, 0, 0;
+  --color-primary-700: 204, 0, 0;
+  --color-primary-800: 153, 0, 0;
+  --color-primary-900: 122, 0, 0;
+  
+  --color-secondary-50: 240, 240, 240;
+  --color-secondary-100: 214, 214, 214;
+  --color-secondary-200: 189, 189, 189;
+  --color-secondary-300: 158, 158, 158;
+  --color-secondary-400: 117, 117, 117;
+  --color-secondary-500: 89, 89, 89;
+  --color-secondary-600: 61, 61, 61;
+  --color-secondary-700: 40, 40, 40;
+  --color-secondary-800: 24, 24, 24;
+  --color-secondary-900: 12, 12, 12;
+}
+
+/* Modern scroll bar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(var(--color-secondary-100), 0.1);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-secondary-300), 0.5);
+  border-radius: 8px;
+  transition: background var(--animation-timing) var(--animation-easing);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-secondary-400), 0.8);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(var(--color-secondary-800), 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-secondary-600), 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-secondary-500), 0.8);
+}
+
+/* Temel stil ayarları */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: var(--font-family-base);
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -12,8 +84,133 @@
   -webkit-text-size-adjust: 100%;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+/* Geçiş animasyonları */
+.fade-in {
+  animation: fadeIn 0.3s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from { 
+    transform: translateY(20px); 
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0); 
+    opacity: 1;
+  }
+}
+
+.slide-down {
+  animation: slideDown 0.4s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from { 
+    transform: translateY(-20px); 
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0); 
+    opacity: 1;
+  }
+}
+
+/* Yeni modern skele yükleme animasyonu */
+.skeleton-loading {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--color-secondary-100), 0.1) 25%,
+    rgba(var(--color-secondary-200), 0.2) 50%,
+    rgba(var(--color-secondary-100), 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.5s infinite;
+}
+
+.dark .skeleton-loading {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--color-secondary-700), 0.1) 25%,
+    rgba(var(--color-secondary-600), 0.2) 50%,
+    rgba(var(--color-secondary-700), 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.5s infinite;
+}
+
+@keyframes skeleton-wave {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Modern focus stilleri */
+:focus-visible {
+  outline: 2px solid rgba(var(--color-primary-600), 0.6);
+  outline-offset: 2px;
+}
+
+.dark :focus-visible {
+  outline: 2px solid rgba(var(--color-primary-500), 0.7);
+}
+
+/* Klavye kullanıcıları için erişilebilirlik iyileştirmeleri */
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(var(--color-primary-600), 0.6);
+}
+
+.dark .focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px rgba(var(--color-secondary-900), 1), 0 0 0 4px rgba(var(--color-primary-500), 0.7);
+}
+
+/* Basit grid sistemleri */
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* İyileştirilmiş tipografi stilleri */
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.2;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+
+a {
+  color: rgb(var(--color-primary-600));
+  text-decoration: none;
+  transition: color var(--animation-timing) var(--animation-easing);
+}
+
+a:hover {
+  color: rgb(var(--color-primary-700));
+}
+
+.dark a {
+  color: rgb(var(--color-primary-400));
+}
+
+.dark a:hover {
+  color: rgb(var(--color-primary-300));
 }

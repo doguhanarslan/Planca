@@ -8,6 +8,7 @@ import { BusinessData, WorkSchedule } from '@/types';
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
 import Alert from '@/components/common/Alert';
+import Card from '@/components/common/Card';
 
 interface DayOption {
   value: number;
@@ -107,12 +108,12 @@ const BusinessRegistration: React.FC = () => {
     }));
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-secondary-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planca</h1>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Your Business</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">Planca</h1>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">Create Your Business</h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 transition-colors duration-300">
             Set up your business profile to get started with Planca
           </p>
         </div>
@@ -142,8 +143,13 @@ const BusinessRegistration: React.FC = () => {
         >
           {({ values, handleChange, handleBlur, errors, touched, setFieldValue }) => (
             <Form className="mt-8 space-y-6">
-              <div className="bg-white p-8 shadow-lg rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Business Information</h3>
+              <Card 
+                shadow="lg"
+                rounded="xl"
+                hover={false}
+                className="overflow-hidden transition-all duration-300 border-t-4 border-t-primary-500"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b dark:border-gray-700 transition-colors duration-300">Business Information</h3>
                 
                 <div className="space-y-6">
                   <Input
@@ -177,13 +183,13 @@ const BusinessRegistration: React.FC = () => {
                         placeholder="your-business"
                         required
                       />
-                      <p className="mt-1 text-sm text-gray-500">
-                        Your business URL will be: <span className="font-medium">https://{values.subdomain || 'your-business'}.planca.app</span>
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">
+                        Your business URL will be: <span className="font-medium text-primary-600 dark:text-primary-400">https://{values.subdomain || 'your-business'}.planca.app</span>
                       </p>
                     </div>
                     
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300">
                         Brand Color
                       </label>
                       <div className="flex items-center space-x-2">
@@ -206,10 +212,15 @@ const BusinessRegistration: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
 
-              <div className="bg-white p-8 shadow-lg rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Address Information</h3>
+              <Card 
+                shadow="lg"
+                rounded="xl"
+                hover={false}
+                className="overflow-hidden transition-all duration-300 border-t-4 border-t-primary-500"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b dark:border-gray-700 transition-colors duration-300">Address Information</h3>
                 
                 <div className="space-y-6">
                   <Input
@@ -266,19 +277,27 @@ const BusinessRegistration: React.FC = () => {
                     />
                   </div>
                 </div>
-              </div>
+              </Card>
 
-              <div className="bg-white p-8 shadow-lg rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b">Business Hours</h3>
-                <p className="text-sm text-gray-500 mb-6">Set your regular business hours. You can update these later.</p>
+              <Card 
+                shadow="lg"
+                rounded="xl"
+                hover={false}
+                className="overflow-hidden transition-all duration-300 border-t-4 border-t-primary-500"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b dark:border-gray-700 transition-colors duration-300">Business Hours</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 transition-colors duration-300">Set your regular business hours. You can update these later.</p>
                 
                 <FieldArray name="workSchedule">
                   {({ remove, push }) => (
                     <div className="space-y-4">
                       {values.workSchedule.map((schedule, index) => (
-                        <div key={index} className="flex flex-col p-4 border border-gray-200 rounded-lg sm:flex-row sm:space-x-4">
+                        <div 
+                          key={index} 
+                          className="flex flex-col p-4 border border-gray-200 dark:border-gray-700 rounded-lg sm:flex-row sm:space-x-4 transition-all duration-200 hover:shadow-md bg-white dark:bg-secondary-800"
+                        >
                           <div className="sm:w-1/3 mb-4 sm:mb-0">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300">
                               Day
                             </label>
                             <select
@@ -286,7 +305,7 @@ const BusinessRegistration: React.FC = () => {
                               value={schedule.day}
                               onChange={handleChange}
                               onBlur={handleBlur}
-                              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                              className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-secondary-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200"
                             >
                               {daysOfWeek.map((day) => (
                                 <option key={day.value} value={day.value}>
@@ -297,7 +316,7 @@ const BusinessRegistration: React.FC = () => {
                           </div>
                           
                           <div className="sm:w-1/3 mb-4 sm:mb-0">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300">
                               Open Time
                             </label>
                             <input
@@ -306,7 +325,7 @@ const BusinessRegistration: React.FC = () => {
                               value={schedule.openTime}
                               onChange={handleChange}
                               onBlur={handleBlur}
-                              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                              className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-secondary-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200"
                             />
                             {errors.workSchedule && 
                              Array.isArray(errors.workSchedule) &&
@@ -318,7 +337,7 @@ const BusinessRegistration: React.FC = () => {
                              touched.workSchedule[index] && 
                              typeof touched.workSchedule[index] === 'object' &&
                              'openTime' in touched.workSchedule[index] && (
-                              <p className="mt-2 text-sm text-red-600">
+                              <p className="mt-2 text-sm text-red-600 dark:text-red-400 transition-colors duration-300">
                                 {errors.workSchedule[index] && 
                                  typeof errors.workSchedule[index] === 'object' && 
                                  'openTime' in errors.workSchedule[index] &&
@@ -328,7 +347,7 @@ const BusinessRegistration: React.FC = () => {
                           </div>
                           
                           <div className="sm:w-1/3 mb-4 sm:mb-0">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300">
                               Close Time
                             </label>
                             <input
@@ -337,7 +356,7 @@ const BusinessRegistration: React.FC = () => {
                               value={schedule.closeTime}
                               onChange={handleChange}
                               onBlur={handleBlur}
-                              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                              className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-secondary-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200"
                             />
                             {errors.workSchedule && 
                              Array.isArray(errors.workSchedule) &&
@@ -349,7 +368,7 @@ const BusinessRegistration: React.FC = () => {
                              touched.workSchedule[index] && 
                              typeof touched.workSchedule[index] === 'object' &&
                              'closeTime' in touched.workSchedule[index] && (
-                              <p className="mt-2 text-sm text-red-600">
+                              <p className="mt-2 text-sm text-red-600 dark:text-red-400 transition-colors duration-300">
                                 {errors.workSchedule[index] && 
                                  typeof errors.workSchedule[index] === 'object' && 
                                  'closeTime' in errors.workSchedule[index] &&
@@ -362,7 +381,7 @@ const BusinessRegistration: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => remove(index)}
-                              className="text-red-600 hover:text-red-800 focus:outline-none"
+                              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none transition-colors duration-200"
                               aria-label="Remove this business hour"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -378,22 +397,26 @@ const BusinessRegistration: React.FC = () => {
                         variant="outline"
                         onClick={() => push({ day: 0, openTime: '09:00', closeTime: '17:00' })}
                         className="mt-4"
+                        icon={
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                          </svg>
+                        }
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
                         Add Business Hours
                       </Button>
                     </div>
                   )}
                 </FieldArray>
-              </div>
+              </Card>
 
               <div className="pt-6">
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-full py-3 text-lg"
+                  size="xl"
+                  rounded="lg"
+                  className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300"
                   isLoading={loading}
                 >
                   Create Business

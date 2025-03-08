@@ -35,33 +35,40 @@ const Dashboard: React.FC = () => {
 
   const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change, color = 'primary' }) => {
     const colorClasses: Record<string, string> = {
-      primary: 'bg-primary-100 text-primary-800',
-      secondary: 'bg-secondary-100 text-secondary-800',
-      success: 'bg-green-100 text-green-800',
-      warning: 'bg-yellow-100 text-yellow-800'
+      primary: 'bg-primary-100/80 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300',
+      secondary: 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+      success: 'bg-green-100/80 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      warning: 'bg-yellow-100/80 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
     };
 
     return (
-      <Card className="overflow-hidden">
-        <div className="flex items-center">
+      <Card 
+        className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform-gpu" 
+        shadow="md"
+        rounded="lg"
+      >
+        <div className="flex items-center p-5">
           <div className={`flex-shrink-0 rounded-full p-3 ${colorClasses[color]}`}>
             {icon}
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
+              <dt className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">{title}</dt>
               <dd>
-                <div className="text-lg font-medium text-gray-900">{value}</div>
+                <div className="text-xl font-semibold text-gray-900 dark:text-white">{value}</div>
               </dd>
             </dl>
           </div>
         </div>
         {change !== undefined && (
-          <div className="mt-3 text-sm">
-            <span className={change >= 0 ? 'text-green-600' : 'text-red-600'}>
+          <div className="bg-gray-50 dark:bg-secondary-800/50 px-5 py-3 border-t border-gray-200 dark:border-gray-700 text-sm">
+            <span className={change >= 0 
+              ? 'text-green-600 dark:text-green-400 font-medium' 
+              : 'text-red-600 dark:text-red-400 font-medium'
+            }>
               {change >= 0 ? `+${change}%` : `${change}%`}
             </span>
-            <span className="text-gray-500 ml-1">compared to last month</span>
+            <span className="text-gray-500 dark:text-gray-400 ml-1">compared to last month</span>
           </div>
         )}
       </Card>
@@ -79,15 +86,16 @@ const Dashboard: React.FC = () => {
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="border-b border-gray-200 pb-5 mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-medium text-gray-900">Welcome, {user?.name || 'User'}</h2>
-            <p className="mt-1 text-sm text-gray-500">{formattedDate}</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Welcome, {user?.name || 'User'}</h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{formattedDate}</p>
           </div>
           <div className="mt-3 sm:mt-0 flex space-x-3">
             <Button
               variant="primary"
               size="sm"
+              rounded="lg"
               icon={
                 <svg xmlns="http://www.w3.org/2000/svg" className="-ml-1 mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
@@ -99,11 +107,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div>
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+        <div className="animate-fadeIn">
+          <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-5">
             Overview
           </h3>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard 
               title="Total Appointments" 
               value={stats.totalAppointments} 
@@ -137,7 +145,7 @@ const Dashboard: React.FC = () => {
             />
             <StatCard 
               title="Monthly Revenue" 
-              value={`$${stats.revenueThisMonth}`} 
+              value={`$${stats.revenueThisMonth.toLocaleString()}`} 
               color="success"
               icon={
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -155,33 +163,55 @@ const Dashboard: React.FC = () => {
             padding="lg"
             shadow="lg"
             rounded="lg"
+            hover={true}
+            className="transition-all duration-300"
           >
             {tenant ? (
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business Name</h4>
-                  <p className="mt-1 text-sm text-gray-900">{tenant.name}</p>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Business Name</h4>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white font-medium">{tenant.name}</p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Subdomain</h4>
-                  <p className="mt-1 text-sm text-gray-900">{tenant.subdomain}.planca.app</p>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subdomain</h4>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">
+                    <span className="font-medium">{tenant.subdomain}</span>
+                    <span className="text-gray-500 dark:text-gray-400">.planca.app</span>
+                  </p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Address</h4>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</h4>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">
                     {tenant.address && `${tenant.address}, ${tenant.city}, ${tenant.state} ${tenant.zipCode}`}
                   </p>
                 </div>
                 <div className="pt-3">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    rounded="lg"
+                    icon={
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    }
+                  >
                     Edit Business Settings
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500">No business information found.</p>
-                <Button variant="primary" className="mt-4" size="sm">
+              <div className="text-center py-8">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">No business information found.</p>
+                <Button 
+                  variant="primary" 
+                  size="sm" 
+                  rounded="lg"
+                  className="shadow-md hover:shadow-lg"
+                >
                   Create Business
                 </Button>
               </div>
@@ -193,42 +223,61 @@ const Dashboard: React.FC = () => {
             padding="lg"
             shadow="lg"
             rounded="lg"
+            hover={true}
+            className="transition-all duration-300"
             actions={
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                rounded="lg"
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                }
+              >
                 View All
               </Button>
             }
           >
-            <div className="overflow-hidden">
+            <div className="overflow-hidden -mx-6">
               {[1, 2, 3].map((_, index) => (
                 <div 
                   key={index} 
-                  className={`p-4 flex items-center space-x-4 ${
-                    index !== 2 ? 'border-b border-gray-200' : ''
-                  }`}
+                  className={`px-6 py-4 flex items-center space-x-4 transition-colors duration-200 
+                    hover:bg-gray-50 dark:hover:bg-secondary-700/50
+                    ${index !== 2 ? 'border-b border-gray-200 dark:border-gray-700' : ''}`}
                 >
                   <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary-100 text-primary-800">
+                    <div className={`flex items-center justify-center h-10 w-10 rounded-full 
+                      ${index === 0 ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' :
+                        index === 1 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}`}>
                       {['JS', 'AK', 'MB'][index]}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {['John Smith', 'Alice King', 'Mark Brown'][index]}
                     </p>
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                       {['Haircut', 'Beard Trim', 'Facial'][index]}
                     </p>
                   </div>
-                  <div className="inline-flex items-center text-sm font-medium text-gray-700">
-                    {['14:00', '15:30', '17:15'][index]}
+                  <div className="inline-flex items-center text-sm font-semibold">
+                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full px-3 py-1">
+                      {['14:00', '15:30', '17:15'][index]}
+                    </span>
                   </div>
                 </div>
               ))}
               
               {[1, 2, 3].length === 0 && (
-                <div className="text-center py-4">
-                  <p className="text-gray-500">No appointments today.</p>
+                <div className="text-center py-12">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-gray-500 dark:text-gray-400">No appointments today.</p>
                 </div>
               )}
             </div>

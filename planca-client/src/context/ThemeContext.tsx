@@ -6,6 +6,7 @@ interface ThemeContextType {
   themeMode: ThemeMode;
   toggleDarkMode: () => void;
   setThemeMode: (mode: ThemeMode) => void;
+  isTransitioning: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -19,10 +20,22 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(
     themeMode === ThemeMode.DARK || (themeMode === ThemeMode.SYSTEM && isPrefersDarkMode())
   );
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+
+  // Apply theme with transition effect
+  const applyThemeWithTransition = (dark: boolean) => {
+    setIsTransitioning(true);
+    applyThemeMode(dark);
+    
+    // Reset transition state after the CSS transition completes
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
+  };
 
   useEffect(() => {
     // Apply theme based on current state
-    applyThemeMode(isDarkMode);
+    applyThemeWithTransition(isDarkMode);
   }, [isDarkMode]);
 
   useEffect(() => {
@@ -81,7 +94,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, themeMode, toggleDarkMode, setThemeMode }}>
+    <ThemeContext.Provider value={{ isDarkMode, themeMode, toggleDarkMode, setThemeMode, isTransitioning }}>
       {children}
     </ThemeContext.Provider>
   );

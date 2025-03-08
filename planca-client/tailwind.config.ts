@@ -84,6 +84,8 @@ export default {
         'gradient-primary': 'linear-gradient(135deg, var(--tw-gradient-stops))',
         'gradient-dark': 'linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to))',
         'gradient-cta': 'linear-gradient(135deg, var(--tw-gradient-from), var(--tw-gradient-to))',
+        'gradient-shine': 'linear-gradient(45deg, transparent 25%, rgba(255, 255, 255, 0.1) 50%, transparent 75%)',
+        'noise': "url('/noise.png')"
       },
       boxShadow: {
         'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
@@ -97,6 +99,9 @@ export default {
         'primary': '0 4px 14px rgba(255, 0, 0, 0.25)',
         'primary-lg': '0 8px 20px rgba(255, 0, 0, 0.3)',
         'inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+        'inner-lg': 'inset 0 4px 8px 0 rgba(0, 0, 0, 0.12)',
+        'glow': '0 0 15px 2px rgba(255, 0, 0, 0.3)',
+        'glow-lg': '0 0 30px 5px rgba(255, 0, 0, 0.4)',
         'none': 'none',
       },
       borderRadius: {
@@ -109,6 +114,93 @@ export default {
         '2xl': '1rem',
         '3xl': '1.5rem',
         'full': '9999px',
+      },
+      animation: {
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'bounce-slow': 'bounce 2s infinite',
+        'spin-slow': 'spin 3s linear infinite',
+        'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'fade-out': 'fadeOut 0.5s ease-in-out',
+        'slide-in-up': 'slideInUp 0.5s ease-in-out',
+        'slide-in-down': 'slideInDown 0.5s ease-in-out',
+        'slide-in-left': 'slideInLeft 0.5s ease-in-out',
+        'slide-in-right': 'slideInRight 0.5s ease-in-out',
+        'scale-in': 'scaleIn 0.4s ease-in-out',
+        'shine': 'shine 2.5s infinite linear',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        slideInUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideInDown: {
+          '0%': { transform: 'translateY(-20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideInLeft: {
+          '0%': { transform: 'translateX(-20px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        slideInRight: {
+          '0%': { transform: 'translateX(20px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        shine: {
+          '0%': { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
+      },
+      scale: {
+        '98': '0.98',
+        '102': '1.02',
+      },
+      // Standardized spacing
+      spacing: {
+        '0': '0',
+        px: '1px',
+        '0.5': '0.125rem',
+        '1': '0.25rem',
+        '1.5': '0.375rem',
+        '2': '0.5rem',
+        '2.5': '0.625rem',
+        '3': '0.75rem',
+        '3.5': '0.875rem',
+        '4': '1rem',
+        '5': '1.25rem',
+        '6': '1.5rem',
+        '8': '2rem',
+        '10': '2.5rem',
+        '12': '3rem',
+        '16': '4rem',
+        '20': '5rem',
+        '24': '6rem',
+        '32': '8rem',
+        '40': '10rem',
+        '48': '12rem',
+        '56': '14rem',
+        '64': '16rem',
+        '72': '18rem',
+        '80': '20rem',
+        '96': '24rem',
+      },
+      blur: {
+        xs: '2px',
+      },
+      backdropBlur: {
+        xs: '2px',
       },
       typography: {
         DEFAULT: {
@@ -144,39 +236,12 @@ export default {
           },
         },
       },
-      // Standardized spacing
-      spacing: {
-        '0': '0',
-        px: '1px',
-        '0.5': '0.125rem',
-        '1': '0.25rem',
-        '1.5': '0.375rem',
-        '2': '0.5rem',
-        '2.5': '0.625rem',
-        '3': '0.75rem',
-        '3.5': '0.875rem',
-        '4': '1rem',
-        '5': '1.25rem',
-        '6': '1.5rem',
-        '8': '2rem',
-        '10': '2.5rem',
-        '12': '3rem',
-        '16': '4rem',
-        '20': '5rem',
-        '24': '6rem',
-        '32': '8rem',
-        '40': '10rem',
-        '48': '12rem',
-        '56': '14rem',
-        '64': '16rem',
-        '72': '18rem',
-        '80': '20rem',
-        '96': '24rem',
-      },
     },
   },
   darkMode: 'class', // Enable class-based dark mode
   plugins: [
-    tailwindForms
+    tailwindForms({
+      strategy: 'class',
+    })
   ],
 } satisfies Config;
