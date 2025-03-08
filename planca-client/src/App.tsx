@@ -17,6 +17,9 @@ import Register from '@/features/auth/Register';
 import BusinessRegistration from '@/features/auth/BusinessRegistration';
 import Dashboard from '@/features/dashboard/Dashboard';
 
+// New components
+import HomePage from '@/features/home/HomePage';
+
 // Route protection components
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import BusinessRequiredRoute from '@/components/common/BusinessRequiredRoute';
@@ -36,6 +39,7 @@ const AppContent: React.FC = () => {
 
   if (
     loading &&
+    window.location.pathname !== "/" &&
     window.location.pathname !== "/login" &&
     window.location.pathname !== "/register"
   ) {
@@ -45,7 +49,7 @@ const AppContent: React.FC = () => {
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
           </div>
-          <p className="text-center mt-4 text-gray-600">Loading...</p>
+          <p className="text-center mt-4 text-gray-600">Yükleniyor...</p>
         </div>
       </div>
     );
@@ -54,6 +58,7 @@ const AppContent: React.FC = () => {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
@@ -73,10 +78,10 @@ const AppContent: React.FC = () => {
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Appointments
+                  Randevular
                 </h1>
                 <p className="text-gray-600">
-                  This page is under development.
+                  Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>
             </AppLayout>
@@ -89,10 +94,10 @@ const AppContent: React.FC = () => {
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Customers
+                  Müşteriler
                 </h1>
                 <p className="text-gray-600">
-                  This page is under development.
+                  Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>
             </AppLayout>
@@ -105,10 +110,10 @@ const AppContent: React.FC = () => {
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Services
+                  Hizmetler
                 </h1>
                 <p className="text-gray-600">
-                  This page is under development.
+                  Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>
             </AppLayout>
@@ -121,10 +126,10 @@ const AppContent: React.FC = () => {
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Settings
+                  Ayarlar
                 </h1>
                 <p className="text-gray-600">
-                  This page is under development.
+                  Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>
             </AppLayout>
@@ -133,8 +138,7 @@ const AppContent: React.FC = () => {
       </Route>
 
       {/* Redirects */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
