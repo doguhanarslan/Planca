@@ -92,7 +92,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-lg w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center">
@@ -102,9 +102,9 @@ const Register: React.FC = () => {
               </svg>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-secondary-900 mb-2">Planca</h1>
-          <h2 className="text-xl font-semibold text-secondary-800 mb-2">Hesabınızı Oluşturun</h2>
-          <p className="text-base text-secondary-600">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planca</h1>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Hesabınızı Oluşturun</h2>
+          <p className="text-base text-gray-600">
             veya{' '}
             <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
               mevcut hesabınıza giriş yapın
@@ -120,7 +120,7 @@ const Register: React.FC = () => {
           />
         )}
 
-        <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
           <Formik
             initialValues={{
               firstName: '',
@@ -252,7 +252,7 @@ const Register: React.FC = () => {
                     <div className="w-full border-t border-gray-200"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-secondary-500">veya şununla devam edin</span>
+                    <span className="px-2 bg-white text-gray-500">veya şununla devam edin</span>
                   </div>
                 </div>
                 
@@ -277,7 +277,7 @@ const Register: React.FC = () => {
                   </button>
                 </div>
                 
-                <p className="text-xs text-center text-secondary-500 mt-4">
+                <p className="text-xs text-center text-gray-500 mt-4">
                   Kayıt olarak, Kullanım Koşullarını ve Gizlilik Politikasını kabul etmiş olursunuz.
                 </p>
               </Form>

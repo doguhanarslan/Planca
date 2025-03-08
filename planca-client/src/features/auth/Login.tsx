@@ -49,7 +49,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center">
@@ -59,9 +59,9 @@ const Login: React.FC = () => {
               </svg>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-secondary-900 mb-2">Planca</h1>
-          <h2 className="text-xl font-semibold text-secondary-800 mb-2">Hesabınıza Giriş Yapın</h2>
-          <p className="text-base text-secondary-600">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planca</h1>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Hesabınıza Giriş Yapın</h2>
+          <p className="text-base text-gray-600">
             veya{' '}
             <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
               yeni bir hesap oluşturun
@@ -77,7 +77,7 @@ const Login: React.FC = () => {
           />
         )}
 
-        <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
           <Formik
             initialValues={{ email: '', password: '', rememberMe: false }}
             validationSchema={loginValidationSchema}
@@ -132,7 +132,7 @@ const Login: React.FC = () => {
                       onChange={() => setFieldValue('rememberMe', !values.rememberMe)}
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     />
-                    <label htmlFor="rememberMe" className="ml-2 block text-sm text-secondary-700">
+                    <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
                       Beni hatırla
                     </label>
                   </div>
@@ -164,7 +164,7 @@ const Login: React.FC = () => {
                     <div className="w-full border-t border-gray-200"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-secondary-500">veya şununla devam edin</span>
+                    <span className="px-2 bg-white text-gray-500">veya şununla devam edin</span>
                   </div>
                 </div>
                 
@@ -193,12 +193,12 @@ const Login: React.FC = () => {
           </Formik>
         </div>
         
-        <p className="mt-6 text-center text-sm text-secondary-500">
-          <a href="#" className="font-medium text-secondary-600 hover:text-secondary-500">
+        <p className="mt-6 text-center text-sm text-gray-500">
+          <a href="#" className="font-medium text-gray-600 hover:text-gray-500">
             Gizlilik Politikası
           </a>
           {' • '}
-          <a href="#" className="font-medium text-secondary-600 hover:text-secondary-500">
+          <a href="#" className="font-medium text-gray-600 hover:text-gray-500">
             Kullanım Koşulları
           </a>
         </p>

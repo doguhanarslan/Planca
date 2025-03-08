@@ -23,14 +23,27 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2';
   
   // Variant-specific styling
-  const variantClasses: Record<string, string> = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm dark:bg-primary-700 dark:hover:bg-primary-600 dark:focus:ring-primary-400',
-    secondary: 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 shadow-sm dark:bg-emerald-700 dark:hover:bg-emerald-600',
-    outline: 'border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-primary-500 dark:border-gray-600 dark:text-gray-200 dark:bg-secondary-800 dark:hover:bg-secondary-700',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm dark:bg-red-700 dark:hover:bg-red-600',
-    success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 shadow-sm dark:bg-green-700 dark:hover:bg-green-600',
-    warning: 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500 shadow-sm dark:bg-yellow-600 dark:hover:bg-yellow-500',
-    ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500 dark:text-gray-300 dark:hover:bg-secondary-700',
+  const getVariantClasses = (variant: string): string => {
+    switch(variant) {
+      case 'primary':
+        return 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm dark:bg-primary-700 dark:hover:bg-primary-600 dark:focus:ring-primary-400';
+      case 'secondary':
+        return 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 shadow-sm dark:bg-emerald-700 dark:hover:bg-emerald-600';
+      case 'outline':
+        return 'border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-primary-500 dark:border-gray-600 dark:text-gray-200 dark:bg-secondary-800 dark:hover:bg-secondary-700';
+      case 'danger':
+        return 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm dark:bg-red-700 dark:hover:bg-red-600';
+      case 'success':
+        return 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 shadow-sm dark:bg-green-700 dark:hover:bg-green-600';
+      case 'warning':
+        return 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500 shadow-sm dark:bg-yellow-600 dark:hover:bg-yellow-500';
+      case 'ghost':
+        return 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500 dark:text-gray-300 dark:hover:bg-secondary-700';
+      case 'customRed':
+        return 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-400 shadow-sm';
+      default:
+        return 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm'; // Default to primary if invalid variant
+    }
   };
   
   // Size-specific styling
@@ -58,9 +71,9 @@ const Button: React.FC<ButtonProps> = ({
   // Combine all classes
   const classes = [
     baseClasses,
-    variantClasses[variant],
-    sizeClasses[size],
-    roundedClasses[rounded],
+    getVariantClasses(variant),
+    sizeClasses[size] || sizeClasses.md,
+    roundedClasses[rounded] || roundedClasses.md,
     (disabled || isLoading) ? disabledClasses : '',
     fullWidth ? 'w-full' : '',
     className

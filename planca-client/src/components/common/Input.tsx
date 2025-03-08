@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { InputProps } from '@/types';
 
 /**
- * Input component with various styles and states
+ * Input component with clean red and white styling
  */
 const Input = forwardRef<HTMLInputElement, InputProps>(({
   type = 'text',
@@ -29,16 +29,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   const hasError = error && touched;
   const uniqueId = id || name;
   
-  // Base input classes with dark mode support
+  // Base input classes
   const baseInputClasses = `
     block w-full rounded-md shadow-sm py-2.5 
     transition-colors duration-200
     ${hasError 
-      ? 'border-red-300 text-red-900 dark:text-red-200 placeholder-red-300 dark:placeholder-red-400 focus:ring-red-500 focus:border-red-500 dark:border-red-600 dark:focus:ring-red-400' 
-      : 'border-gray-300 dark:border-secondary-600 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400'
+      ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' 
+      : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
     }
-    ${disabled ? 'bg-gray-100 dark:bg-secondary-700 cursor-not-allowed' : ''}
-    ${readOnly ? 'bg-gray-50 dark:bg-secondary-700 cursor-default' : 'dark:bg-secondary-800 dark:text-white'}
+    ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}
+    ${readOnly ? 'bg-gray-50 cursor-default' : ''}
     ${leftIcon ? 'pl-10' : 'pl-3'}
     ${rightIcon ? 'pr-10' : 'pr-3'}
   `;
@@ -48,13 +48,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   return (
     <div className={`mb-4 ${containerClassName}`}>
       {label && (
-        <label htmlFor={uniqueId} className={`block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ${labelClassName}`}>
+        <label htmlFor={uniqueId} className={`block text-sm font-medium text-gray-700 mb-1 ${labelClassName}`}>
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
       <div className="relative">
         {leftIcon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
             {leftIcon}
           </div>
         )}
@@ -77,7 +77,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
         />
         
         {rightIcon && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
             {rightIcon}
           </div>
         )}
@@ -92,13 +92,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       </div>
       
       {hasError && (
-        <p className="mt-2 text-sm text-red-600 dark:text-red-400" id={`${uniqueId}-error`}>
+        <p className="mt-2 text-sm text-red-600" id={`${uniqueId}-error`}>
           {error}
         </p>
       )}
       
       {helpText && !hasError && (
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400" id={`${uniqueId}-description`}>
+        <p className="mt-2 text-sm text-gray-500" id={`${uniqueId}-description`}>
           {helpText}
         </p>
       )}

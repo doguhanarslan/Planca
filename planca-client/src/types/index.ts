@@ -1,3 +1,6 @@
+import React from "react";
+
+
 // User Types
 export interface User {
     id: string;
@@ -165,14 +168,6 @@ export type ButtonStyle = 'solid' | 'outline' | 'ghost' | 'light';
     rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
     hover?: boolean;
     transparent?: boolean;
-  }
-  export interface User {
-    id: string;
-    email: string;
-    name?: string;
-    firstName: string;
-    lastName: string;
-    roles: string[];
   }
   export interface AppLayoutProps {
     children: React.ReactNode;

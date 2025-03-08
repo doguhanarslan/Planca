@@ -2,7 +2,7 @@ import React from 'react';
 import { CardProps } from '@/types';
 
 /**
- * Card component for containing content with various styling options
+ * Card component for containing content with clean red and white styling
  */
 const Card: React.FC<CardProps> = ({ 
   children, 
@@ -45,18 +45,18 @@ const Card: React.FC<CardProps> = ({
     full: 'rounded-3xl',
   };
 
-  // Background and border styles with dark mode support
+  // Background and border styles
   const bgClasses = transparent 
-    ? 'bg-white/90 backdrop-blur-sm dark:bg-secondary-800/90' 
-    : 'bg-white dark:bg-secondary-800';
+    ? 'bg-white/90 backdrop-blur-sm' 
+    : 'bg-white';
   
   const borderClasses = border 
-    ? 'border border-gray-200 dark:border-secondary-700' 
+    ? 'border border-gray-200' 
     : '';
 
-  // Hover effect with dark mode support
+  // Hover effect
   const hoverClasses = hover 
-    ? 'transition-all duration-300 hover:shadow-lg dark:hover:shadow-secondary-900/50 hover:-translate-y-1' 
+    ? 'transition-all duration-300 hover:shadow-lg hover:-translate-y-1' 
     : '';
 
   const baseClasses = [
@@ -73,15 +73,15 @@ const Card: React.FC<CardProps> = ({
       {/* Card Header with Title and Actions */}
       {(title || actions) && (
         <div className={`flex justify-between items-center ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pt-4'} 
-                        border-b border-gray-200 dark:border-secondary-700 pb-3`}>
+                        border-b border-gray-200 pb-3`}>
           <div>
             {title && (
-              <h3 className={`text-lg font-medium text-gray-900 dark:text-gray-100 ${titleClassName}`}>
+              <h3 className={`text-lg font-medium text-gray-900 ${titleClassName}`}>
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-sm text-gray-500">
                 {subtitle}
               </p>
             )}
@@ -101,7 +101,7 @@ const Card: React.FC<CardProps> = ({
       
       {/* Card Footer */}
       {footer && (
-        <div className={`border-t border-gray-200 dark:border-secondary-700 ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pb-4'} pt-3`}>
+        <div className={`border-t border-gray-200 ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pb-4'} pt-3`}>
           {footer}
         </div>
       )}

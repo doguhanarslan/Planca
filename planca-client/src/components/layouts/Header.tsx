@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 import Button from '@/components/common/Button';
@@ -8,11 +8,6 @@ const Header: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
-  // Apply dark mode class to body
-  useEffect(() => {
-    document.body.classList.add('dark');
-  }, []);
-
   const navItems = [
     { name: 'Ana Sayfa', href: '/' },
     { name: 'Özellikler', href: '/#features' },
@@ -21,7 +16,7 @@ const Header: React.FC = () => {
   ];
 
   return (
-    <header className="bg-secondary-900 border-b border-secondary-700 sticky top-0 z-50 shadow-lg">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
@@ -29,7 +24,7 @@ const Header: React.FC = () => {
             <Link to="/" className="flex items-center group">
               <span className="font-bold text-2xl text-primary-600 group-hover:text-primary-500 transition-colors duration-200">
                 Planca
-                <span className="text-white group-hover:text-gray-200 ml-1 transition-colors duration-200">.</span>
+                <span className="text-gray-800 group-hover:text-gray-600 ml-1 transition-colors duration-200">.</span>
               </span>
             </Link>
           </div>
@@ -42,8 +37,8 @@ const Header: React.FC = () => {
                 to={item.href}
                 className={`text-base font-medium transition-colors duration-200 ${
                   location.pathname === item.href
-                    ? 'text-primary-500'
-                    : 'text-gray-300 hover:text-primary-400'
+                    ? 'text-primary-600'
+                    : 'text-gray-600 hover:text-primary-500'
                 }`}
               >
                 {item.name}
@@ -69,7 +64,7 @@ const Header: React.FC = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="border-gray-600 text-gray-200 hover:bg-secondary-800"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     Giriş Yap
                   </Button>
@@ -91,7 +86,7 @@ const Header: React.FC = () => {
           <div className="md:hidden flex items-center space-x-2">
             <button
               type="button"
-              className="text-gray-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
+              className="text-gray-600 hover:text-primary-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-expanded={mobileMenuOpen}
             >
@@ -136,7 +131,7 @@ const Header: React.FC = () => {
 
       {/* Mobile menu, show/hide based on menu state */}
       <div
-        className={`md:hidden bg-secondary-800 border-t border-secondary-700 transition-all duration-200 ease-in-out overflow-hidden ${
+        className={`md:hidden bg-white border-t border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
           mobileMenuOpen ? 'max-h-96' : 'max-h-0'
         }`}
       >
@@ -147,8 +142,8 @@ const Header: React.FC = () => {
               to={item.href}
               className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
                 location.pathname === item.href
-                  ? 'text-primary-400 bg-secondary-900' 
-                  : 'text-gray-300 hover:text-primary-400 hover:bg-secondary-900'
+                  ? 'text-primary-600 bg-gray-50' 
+                  : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -167,7 +162,7 @@ const Header: React.FC = () => {
             <>
               <Link
                 to="/login"
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-primary-400 hover:bg-secondary-900 transition-colors duration-200"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50 transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Giriş Yap
