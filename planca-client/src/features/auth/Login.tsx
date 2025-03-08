@@ -35,10 +35,16 @@ const Login: React.FC = () => {
   }, [isAuthenticated, isBusinessRegistered, navigate]);
 
   const handleLogin = async (
-    values: LoginCredentials, 
-    { setSubmitting }: FormikHelpers<LoginCredentials>
+    values: { email: string; password: string; rememberMe: boolean }, 
+    { setSubmitting }: FormikHelpers<{ email: string; password: string; rememberMe: boolean }>
   ) => {
-    await dispatch(loginUser(values));
+    // Convert form values to LoginCredentials type
+    const credentials: LoginCredentials = {
+      email: values.email,
+      password: values.password,
+      rememberMe: values.rememberMe
+    };
+    await dispatch(loginUser(credentials));
     setSubmitting(false);
   };
 

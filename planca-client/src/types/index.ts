@@ -7,7 +7,9 @@ export interface User {
     lastName: string;
     roles: string[];
   }
-  
+  export type WorkingHour = WorkSchedule;
+  export type ColorVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'info' | 'neutral';
+export type ButtonStyle = 'solid' | 'outline' | 'ghost' | 'light';
   // Tenant/Business Types
   export interface Tenant {
     id: string;
@@ -164,7 +166,14 @@ export interface User {
     hover?: boolean;
     transparent?: boolean;
   }
-  
+  export interface User {
+    id: string;
+    email: string;
+    name?: string;
+    firstName: string;
+    lastName: string;
+    roles: string[];
+  }
   export interface AppLayoutProps {
     children: React.ReactNode;
   }

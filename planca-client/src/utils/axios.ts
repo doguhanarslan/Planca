@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { refreshUserToken } from '@/features/auth/authSlice';
 import { Store } from '@reduxjs/toolkit';
 
@@ -23,12 +23,11 @@ export const initializeAxios = (store: Store): void => {
 
   // Add interceptor to include tenant ID in header
   instance.interceptors.request.use(
-    (config: AxiosRequestConfig): AxiosRequestConfig => {
+    (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
       const state = store.getState();
       if (state.auth.tenant?.id) {
-        // Make sure config.headers is defined
-        config.headers = config.headers || {};
-        config.headers['X-TenantId'] = state.auth.tenant.id;
+        // Set the tenant ID header
+        config.headers.set('X-TenantId', state.auth.tenant.id);
       }
       return config;
     },
@@ -40,7 +39,7 @@ export const initializeAxios = (store: Store): void => {
     (response) => response,
     async (error: AxiosError) => {
       // Type assertion for originalRequest
-      const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+      const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
       // If error 401 and not yet retried
       if (error.response?.status === 401 && !originalRequest._retry) {
