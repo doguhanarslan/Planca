@@ -1,4 +1,3 @@
-import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
@@ -15,7 +14,7 @@ export default [
       parser: typescriptParser,
       parserOptions: {
         ecmaVersion: 'latest',
-        ecmaFeatures: { jsx: true },
+        ecmaFeatures: { jsx: true,tsx: true },
         sourceType: 'module',
         project: ['./tsconfig.json'],
       },
