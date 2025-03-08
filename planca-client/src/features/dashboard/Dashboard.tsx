@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import AppLayout from '../../components/layouts/AppLayout';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
+import { useAppSelector } from '@/app/hooks';
+import AppLayout from '@/components/layouts/AppLayout';
+import Card from '@/components/common/Card';
+import Button from '@/components/common/Button';
+import { DashboardStats } from '@/types';
 
-const Dashboard = () => {
-  const { user, tenant } = useSelector((state) => state.auth);
-  const [stats, setStats] = useState({
+const Dashboard: React.FC = () => {
+  const { user, tenant } = useAppSelector((state) => state.auth);
+  const [stats, setStats] = useState<DashboardStats>({
     totalAppointments: 0,
     upcomingAppointments: 0,
     customersCount: 0,
     revenueThisMonth: 0
   });
   
-  // Bu kısım gerçek uygulamada API'den veri çekmek için kullanılacak
+  // This would fetch data from API in a real app
   useEffect(() => {
     // Mock data
     setStats({
@@ -24,8 +25,16 @@ const Dashboard = () => {
     });
   }, []);
 
-  const StatCard = ({ title, value, icon, change, color = 'primary' }) => {
-    const colorClasses = {
+  interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: React.ReactNode;
+    change?: number;
+    color?: 'primary' | 'secondary' | 'success' | 'warning';
+  }
+
+  const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change, color = 'primary' }) => {
+    const colorClasses: Record<string, string> = {
       primary: 'bg-primary-100 text-primary-800',
       secondary: 'bg-secondary-100 text-secondary-800',
       success: 'bg-green-100 text-green-800',
@@ -52,7 +61,7 @@ const Dashboard = () => {
             <span className={change >= 0 ? 'text-green-600' : 'text-red-600'}>
               {change >= 0 ? `+${change}%` : `${change}%`}
             </span>
-            <span className="text-gray-500 ml-1">geçen aya göre</span>
+            <span className="text-gray-500 ml-1">compared to last month</span>
           </div>
         )}
       </Card>
@@ -60,7 +69,7 @@ const Dashboard = () => {
   };
 
   const currentDate = new Date();
-  const formattedDate = new Intl.DateTimeFormat('tr-TR', {
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -72,7 +81,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="border-b border-gray-200 pb-5 mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-medium text-gray-900">Hoş geldiniz, {user?.name || 'Kullanıcı'}</h2>
+            <h2 className="text-lg font-medium text-gray-900">Welcome, {user?.name || 'User'}</h2>
             <p className="mt-1 text-sm text-gray-500">{formattedDate}</p>
           </div>
           <div className="mt-3 sm:mt-0 flex space-x-3">
@@ -85,18 +94,18 @@ const Dashboard = () => {
                 </svg>
               }
             >
-              Yeni Randevu
+              New Appointment
             </Button>
           </div>
         </div>
 
         <div>
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Genel Bakış
+            Overview
           </h3>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard 
-              title="Toplam Randevu" 
+              title="Total Appointments" 
               value={stats.totalAppointments} 
               icon={
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,7 +115,7 @@ const Dashboard = () => {
               change={12}
             />
             <StatCard 
-              title="Bekleyen Randevu" 
+              title="Upcoming Appointments" 
               value={stats.upcomingAppointments} 
               color="warning"
               icon={
@@ -116,7 +125,7 @@ const Dashboard = () => {
               }
             />
             <StatCard 
-              title="Toplam Müşteri" 
+              title="Total Customers" 
               value={stats.customersCount} 
               color="secondary"
               icon={
@@ -127,8 +136,8 @@ const Dashboard = () => {
               change={5}
             />
             <StatCard 
-              title="Aylık Gelir" 
-              value={`${stats.revenueThisMonth} ₺`} 
+              title="Monthly Revenue" 
+              value={`$${stats.revenueThisMonth}`} 
               color="success"
               icon={
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -142,7 +151,7 @@ const Dashboard = () => {
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card 
-            title="İşletme Bilgileri" 
+            title="Business Information" 
             padding="lg"
             shadow="lg"
             rounded="lg"
@@ -150,43 +159,43 @@ const Dashboard = () => {
             {tenant ? (
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">İşletme adı</h4>
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business Name</h4>
                   <p className="mt-1 text-sm text-gray-900">{tenant.name}</p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Alt alan adı</h4>
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Subdomain</h4>
                   <p className="mt-1 text-sm text-gray-900">{tenant.subdomain}.planca.app</p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Adres</h4>
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Address</h4>
                   <p className="mt-1 text-sm text-gray-900">
                     {tenant.address && `${tenant.address}, ${tenant.city}, ${tenant.state} ${tenant.zipCode}`}
                   </p>
                 </div>
                 <div className="pt-3">
                   <Button variant="outline" size="sm">
-                    İşletme Ayarlarını Düzenle
+                    Edit Business Settings
                   </Button>
                 </div>
               </div>
             ) : (
               <div className="text-center py-4">
-                <p className="text-gray-500">İşletme bilgileri bulunamadı.</p>
+                <p className="text-gray-500">No business information found.</p>
                 <Button variant="primary" className="mt-4" size="sm">
-                  İşletme Oluştur
+                  Create Business
                 </Button>
               </div>
             )}
           </Card>
 
           <Card 
-            title="Bugünkü Randevular" 
+            title="Today's Appointments" 
             padding="lg"
             shadow="lg"
             rounded="lg"
             actions={
               <Button variant="outline" size="sm">
-                Tümünü Gör
+                View All
               </Button>
             }
           >
@@ -200,15 +209,15 @@ const Dashboard = () => {
                 >
                   <div className="flex-shrink-0">
                     <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary-100 text-primary-800">
-                      {['AY', 'MK', 'SK'][index]}
+                      {['JS', 'AK', 'MB'][index]}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {['Ahmet Yılmaz', 'Mehmet Kara', 'Selim Kurt'][index]}
+                      {['John Smith', 'Alice King', 'Mark Brown'][index]}
                     </p>
                     <p className="text-sm text-gray-500 truncate">
-                      {['Saç Kesimi', 'Sakal Tıraşı', 'Cilt Bakımı'][index]}
+                      {['Haircut', 'Beard Trim', 'Facial'][index]}
                     </p>
                   </div>
                   <div className="inline-flex items-center text-sm font-medium text-gray-700">
@@ -219,7 +228,7 @@ const Dashboard = () => {
               
               {[1, 2, 3].length === 0 && (
                 <div className="text-center py-4">
-                  <p className="text-gray-500">Bugün için randevu bulunmuyor.</p>
+                  <p className="text-gray-500">No appointments today.</p>
                 </div>
               )}
             </div>

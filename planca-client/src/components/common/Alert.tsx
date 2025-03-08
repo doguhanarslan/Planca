@@ -1,19 +1,10 @@
-// src/components/common/Alert.jsx
 import React, { useState, useEffect } from 'react';
+import { AlertProps } from '@/types';
 
 /**
  * Alert component for notifications
- * 
- * @param {Object} props - Component props
- * @param {'info'|'success'|'warning'|'error'} [props.type='info'] - Alert type
- * @param {string} [props.title] - Alert title
- * @param {string|React.ReactNode} props.message - Alert message
- * @param {Function} [props.onClose] - Close handler
- * @param {string} [props.className=''] - Additional CSS classes
- * @param {boolean} [props.autoClose=false] - Whether to auto-close
- * @param {number} [props.autoCloseTime=5000] - Auto-close time in ms
  */
-const Alert = ({ 
+const Alert: React.FC<AlertProps> = ({ 
   type = 'info', 
   title, 
   message, 
@@ -37,44 +28,43 @@ const Alert = ({
 
   if (!visible) return null;
 
-  // Doğrudan hex renk kodları kullanarak kesin renkler
-  const alertClasses = {
+  const alertClasses: Record<string, string> = {
     info: 'bg-blue-50 border-blue-300',
     success: 'bg-green-50 border-green-300',
     warning: 'bg-yellow-50 border-yellow-300',
-    error: 'bg-[#fbd5d5]/90 border-[#f08080]', // Daha kapalı kırmızı tonları
+    error: 'bg-red-200/50 border-red-300',
   };
 
-  const iconClasses = {
+  const iconClasses: Record<string, string> = {
     info: 'text-blue-400',
     success: 'text-green-400',
     warning: 'text-yellow-400',
-    error: 'text-[#cc3333]', // Kapalı kırmızı
+    error: 'text-red-400',
   };
 
-  const textClasses = {
+  const textClasses: Record<string, string> = {
     info: 'text-blue-800',
     success: 'text-green-800',
     warning: 'text-yellow-800',
-    error: 'text-[#b22222]', // Koyu kırmızı
+    error: 'text-red-700',
   };
 
-  const ringClasses = {
+  const ringClasses: Record<string, string> = {
     info: 'focus:ring-blue-500',
     success: 'focus:ring-green-500',
     warning: 'focus:ring-yellow-500',
-    error: 'focus:ring-[#e05252]', // Orta kırmızı
+    error: 'focus:ring-red-300',
   };
 
-  const hoverClasses = {
+  const hoverClasses: Record<string, string> = {
     info: 'hover:bg-blue-100',
     success: 'hover:bg-green-100',
     warning: 'hover:bg-yellow-100',
-    error: 'hover:bg-[#fecaca]', // Açık kırmızı hover
+    error: 'hover:bg-red-100',
   };
 
   return (
-    <div className={`rounded-lg backdrop-blur-sm border-l-4 p-4 ${alertClasses[type]} ${textClasses[type]} ${className}`} role="alert">
+    <div className={`rounded-md border-l-4 p-4 ${alertClasses[type]} ${textClasses[type]} ${className}`} role="alert">
       <div className="flex items-start">
         <div className="flex-shrink-0 pt-0.5">
           {type === 'info' && (
@@ -114,9 +104,9 @@ const Alert = ({
                   onClose();
                 }}
                 className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${hoverClasses[type]} ${ringClasses[type]}`}
-                aria-label="Kapat"
+                aria-label="Close"
               >
-                <span className="sr-only">Kapat</span>
+                <span className="sr-only">Close</span>
                 <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>

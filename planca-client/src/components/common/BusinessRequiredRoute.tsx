@@ -1,13 +1,13 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 
 /**
  * Protected route that requires both authentication and a registered business
  * Redirects to create-business if authenticated but no business
  * Redirects to login if not authenticated
  */
-const BusinessRequiredRoute = () => {
+const BusinessRequiredRoute: React.FC = () => {
   const { isAuthenticated, isBusinessRegistered, loading } = useAuth();
   const location = useLocation();
 

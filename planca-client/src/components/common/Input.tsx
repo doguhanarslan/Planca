@@ -1,31 +1,10 @@
-// src/components/common/Input.jsx
 import React, { forwardRef } from 'react';
+import { InputProps } from '@/types';
 
 /**
  * Input component with various styles and states
- * 
- * @param {Object} props - Component props
- * @param {string} [props.type='text'] - Input type
- * @param {string} props.name - Input name
- * @param {string} [props.id] - Input id
- * @param {string} [props.label] - Input label
- * @param {string} [props.placeholder] - Input placeholder
- * @param {string|number} [props.value] - Input value
- * @param {Function} [props.onChange] - Change handler
- * @param {Function} [props.onBlur] - Blur handler
- * @param {string} [props.error] - Error message
- * @param {boolean} [props.touched] - Whether field was touched
- * @param {boolean} [props.required=false] - Whether field is required
- * @param {boolean} [props.disabled=false] - Whether field is disabled
- * @param {boolean} [props.readOnly=false] - Whether field is read-only
- * @param {string} [props.className=''] - Additional CSS classes
- * @param {string} [props.containerClassName=''] - Container CSS classes
- * @param {string} [props.labelClassName=''] - Label CSS classes
- * @param {string} [props.helpText] - Help text
- * @param {React.ReactNode} [props.leftIcon] - Left icon
- * @param {React.ReactNode} [props.rightIcon] - Right icon
  */
-const Input = forwardRef(({
+const Input = forwardRef<HTMLInputElement, InputProps>(({
   type = 'text',
   name,
   id,
@@ -52,10 +31,10 @@ const Input = forwardRef(({
   
   const inputClasses = `
     block w-full rounded-md border shadow-sm py-3
-    transition-all duration-200
+    transition-colors duration-200
     ${hasError 
       ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-300 focus:border-red-300' 
-      : 'border-gray-300 focus:ring-[#e05252] focus:border-[#e05252] focus:outline-none'
+      : 'border-gray-300 focus:ring-red-300 focus:border-red-300'
     }
     ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}
     ${readOnly ? 'bg-gray-50 cursor-default' : ''}
@@ -68,7 +47,7 @@ const Input = forwardRef(({
     <div className={`mb-4 ${containerClassName}`}>
       {label && (
         <label htmlFor={uniqueId} className={`block text-sm font-medium text-gray-700 mb-1 ${labelClassName}`}>
-          {label} {required && <span className="text-[#cc3333]">*</span>}
+          {label} {required && <span className="text-red-300">*</span>}
         </label>
       )}
       <div className="relative">

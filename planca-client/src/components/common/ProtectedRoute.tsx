@@ -1,12 +1,12 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 
 /**
  * Protected route that requires authentication
  * Redirects to login if not authenticated
  */
-const ProtectedRoute = () => {
+const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 

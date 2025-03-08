@@ -1,14 +1,20 @@
 import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Formik, Form, FieldArray } from 'formik';
+import { Formik, Form, FieldArray, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { createBusinessForUser, clearError } from './authSlice';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
-import Alert from '../../components/common/Alert';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { BusinessData, WorkSchedule } from '@/types';
+import Input from '@/components/common/Input';
+import Button from '@/components/common/Button';
+import Alert from '@/components/common/Alert';
 
-const daysOfWeek = [
+interface DayOption {
+  value: number;
+  label: string;
+}
+
+const daysOfWeek: DayOption[] = [
   { value: 0, label: 'Sunday' },
   { value: 1, label: 'Monday' },
   { value: 2, label: 'Tuesday' },
@@ -51,10 +57,16 @@ const businessValidationSchema = Yup.object({
   )
 });
 
-const BusinessRegistration = () => {
-  const dispatch = useDispatch();
+interface FormValues extends Omit<BusinessData, 'workSchedule'> {
+  workSchedule: (WorkSchedule & { id?: string })[];
+  logoUrl: string;
+  primaryColor: string;
+}
+
+const BusinessRegistration: React.FC = () => {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, isBusinessRegistered, loading, error } = useSelector((state) => state.auth);
+  const { isAuthenticated, isBusinessRegistered, loading, error } = useAppSelector((state) => state.auth);
 
   // If not authenticated, redirect to login
   useEffect(() => {
@@ -65,20 +77,24 @@ const BusinessRegistration = () => {
     }
   }, [isAuthenticated, isBusinessRegistered, navigate]);
 
-  const handleCreateBusiness = async (values) => {
+  const handleCreateBusiness = async (
+    values: FormValues,
+    { setSubmitting }: FormikHelpers<FormValues>
+  ) => {
     // Format the work schedule into the expected API format
     const workSchedule = values.workSchedule.map(schedule => ({
-      day: parseInt(schedule.day),
+      day: parseInt(schedule.day.toString()),
       openTime: schedule.openTime,
       closeTime: schedule.closeTime
     }));
 
-    const businessData = {
+    const businessData: BusinessData = {
       ...values,
       workSchedule
     };
 
     await dispatch(createBusinessForUser(businessData));
+    setSubmitting(false);
   };
 
   // Default working hours for new business (9 AM - 5 PM, Monday to Friday)
@@ -109,7 +125,7 @@ const BusinessRegistration = () => {
           />
         )}
 
-        <Formik
+        <Formik<FormValues>
           initialValues={{
             name: '',
             subdomain: '',
@@ -293,13 +309,20 @@ const BusinessRegistration = () => {
                               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                             />
                             {errors.workSchedule && 
+                             Array.isArray(errors.workSchedule) &&
                              errors.workSchedule[index] && 
-                             errors.workSchedule[index].openTime && 
+                             typeof errors.workSchedule[index] === 'object' &&
+                             'openTime' in errors.workSchedule[index] && 
                              touched.workSchedule && 
+                             Array.isArray(touched.workSchedule) &&
                              touched.workSchedule[index] && 
-                             touched.workSchedule[index].openTime && (
+                             typeof touched.workSchedule[index] === 'object' &&
+                             'openTime' in touched.workSchedule[index] && (
                               <p className="mt-2 text-sm text-red-600">
-                                {errors.workSchedule[index].openTime}
+                                {errors.workSchedule[index] && 
+                                 typeof errors.workSchedule[index] === 'object' && 
+                                 'openTime' in errors.workSchedule[index] &&
+                                 String(errors.workSchedule[index].openTime)}
                               </p>
                             )}
                           </div>
@@ -317,13 +340,20 @@ const BusinessRegistration = () => {
                               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                             />
                             {errors.workSchedule && 
+                             Array.isArray(errors.workSchedule) &&
                              errors.workSchedule[index] && 
-                             errors.workSchedule[index].closeTime && 
+                             typeof errors.workSchedule[index] === 'object' &&
+                             'closeTime' in errors.workSchedule[index] && 
                              touched.workSchedule && 
+                             Array.isArray(touched.workSchedule) &&
                              touched.workSchedule[index] && 
-                             touched.workSchedule[index].closeTime && (
+                             typeof touched.workSchedule[index] === 'object' &&
+                             'closeTime' in touched.workSchedule[index] && (
                               <p className="mt-2 text-sm text-red-600">
-                                {errors.workSchedule[index].closeTime}
+                                {errors.workSchedule[index] && 
+                                 typeof errors.workSchedule[index] === 'object' && 
+                                 'closeTime' in errors.workSchedule[index] &&
+                                 String(errors.workSchedule[index].closeTime)}
                               </p>
                             )}
                           </div>

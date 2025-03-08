@@ -1,4 +1,3 @@
-import { useSelector, useDispatch } from 'react-redux';
 import { useCallback, useEffect } from 'react';
 import { 
   loginUser, 
@@ -7,15 +6,17 @@ import {
   fetchCurrentUser,
   logoutUser, 
   refreshUserToken 
-} from '../features/auth/authSlice';
+} from '@/features/auth/authSlice';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { LoginCredentials, RegisterUserData, BusinessData } from '@/types';
 
 /**
  * Custom hook for authentication functionality
  * @returns {Object} Authentication methods and state
  */
 const useAuth = () => {
-  const dispatch = useDispatch();
-  const auth = useSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector((state) => state.auth);
 
   // Check if the user is authenticated on mount
   useEffect(() => {
@@ -26,19 +27,19 @@ const useAuth = () => {
 
   // Login function
   const login = useCallback(
-    (credentials) => dispatch(loginUser(credentials)),
+    (credentials: LoginCredentials) => dispatch(loginUser(credentials)),
     [dispatch]
   );
 
   // Register function
   const register = useCallback(
-    (userData) => dispatch(registerUser(userData)),
+    (userData: RegisterUserData) => dispatch(registerUser(userData)),
     [dispatch]
   );
 
   // Create business function
   const createBusiness = useCallback(
-    (businessData) => dispatch(createBusinessForUser(businessData)),
+    (businessData: BusinessData) => dispatch(createBusinessForUser(businessData)),
     [dispatch]
   );
 

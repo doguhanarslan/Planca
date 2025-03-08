@@ -1,32 +1,35 @@
-import React, { useEffect } from "react";
+import React, { useEffect } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-} from "react-router-dom";
-import { Provider, useDispatch, useSelector } from "react-redux";
-import store from "./app/store";
-import { fetchCurrentUser } from "./features/auth/authSlice";
+} from 'react-router-dom';
+import { Provider } from 'react-redux';
+import store from '@/app/store';
+import { fetchCurrentUser } from '@/features/auth/authSlice';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { AuthState } from '@/types';
 
 // Auth components
-import Login from "./features/auth/Login";
-import Register from "./features/auth/Register";
-import BusinessRegistration from "./features/auth/BusinessRegistration";
-import Dashboard from "./features/dashboard/Dashboard";
+import Login from '@/features/auth/Login';
+import Register from '@/features/auth/Register';
+import BusinessRegistration from '@/features/auth/BusinessRegistration';
+import Dashboard from '@/features/dashboard/Dashboard';
 
 // Route protection components
-import ProtectedRoute from "./components/common/ProtectedRoute";
-import BusinessRequiredRoute from "./components/common/BusinessRequiredRoute";
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import BusinessRequiredRoute from '@/components/common/BusinessRequiredRoute';
 
-// Layouts bileşeni
-import AppLayout from "./components/layouts/AppLayout";
+// Layout component
+import AppLayout from '@/components/layouts/AppLayout';
 
-const AppContent = () => {
-  const dispatch = useDispatch();
-  const { loading } = useSelector((state) => state.auth);
+const AppContent: React.FC = () => {
+  const dispatch = useAppDispatch();
+  // Explicitly type the state selector return type
+  const { loading } = useAppSelector((state): AuthState => state.auth);
 
-  // Uygulama başlatıldığında kullanıcı bilgilerini kontrol et
+  // Check user info when app starts
   useEffect(() => {
     dispatch(fetchCurrentUser());
   }, [dispatch]);
@@ -42,7 +45,7 @@ const AppContent = () => {
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
           </div>
-          <p className="text-center mt-4 text-gray-600">Yükleniyor...</p>
+          <p className="text-center mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -70,10 +73,10 @@ const AppContent = () => {
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Randevular
+                  Appointments
                 </h1>
                 <p className="text-gray-600">
-                  Bu sayfa henüz geliştirilme aşamasındadır.
+                  This page is under development.
                 </p>
               </div>
             </AppLayout>
@@ -86,10 +89,10 @@ const AppContent = () => {
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Müşteriler
+                  Customers
                 </h1>
                 <p className="text-gray-600">
-                  Bu sayfa henüz geliştirilme aşamasındadır.
+                  This page is under development.
                 </p>
               </div>
             </AppLayout>
@@ -102,10 +105,10 @@ const AppContent = () => {
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Hizmetler
+                  Services
                 </h1>
                 <p className="text-gray-600">
-                  Bu sayfa henüz geliştirilme aşamasındadır.
+                  This page is under development.
                 </p>
               </div>
             </AppLayout>
@@ -118,10 +121,10 @@ const AppContent = () => {
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Ayarlar
+                  Settings
                 </h1>
                 <p className="text-gray-600">
-                  Bu sayfa henüz geliştirilme aşamasındadır.
+                  This page is under development.
                 </p>
               </div>
             </AppLayout>

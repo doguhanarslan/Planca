@@ -1,7 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import { CardProps } from '@/types';
 
-const Card = ({ 
+/**
+ * Card component for containing content with various styling options
+ */
+const Card: React.FC<CardProps> = ({ 
   children, 
   className = '', 
   title, 
@@ -14,20 +17,18 @@ const Card = ({
   border = true,
   rounded = 'md',
   hover = false,
-  transparent = false, // Şeffaflık seçeneği
-  gradient = false, // Gradient effect option
+  transparent = false,
   ...props 
 }) => {
-  const shadowClasses = {
+  const shadowClasses: Record<string, string> = {
     none: '',
     sm: 'shadow-sm',
     md: 'shadow',
     lg: 'shadow-lg',
     xl: 'shadow-xl',
-    card: 'shadow-card',
   };
 
-  const paddingClasses = {
+  const paddingClasses: Record<string, string> = {
     none: 'p-0',
     sm: 'p-2',
     normal: 'p-4',
@@ -35,7 +36,7 @@ const Card = ({
     xl: 'p-8',
   };
 
-  const roundedClasses = {
+  const roundedClasses: Record<string, string> = {
     none: 'rounded-none',
     sm: 'rounded-sm',
     md: 'rounded-md',
@@ -44,29 +45,22 @@ const Card = ({
     full: 'rounded-3xl',
   };
 
-  // Arka plan sınıfları - yeni seçenekler için güncellendi
-  let bgClasses = '';
-  if (transparent) {
-    bgClasses = 'bg-white/90 backdrop-blur-sm';
-  } else if (gradient) {
-    bgClasses = 'bg-gradient-to-br from-white to-gray-50';
-  } else {
-    bgClasses = 'bg-white';
-  }
+  // Background transparency option
+  const bgClasses = transparent ? 'bg-white/90 backdrop-blur-sm' : 'bg-white';
 
   const baseClasses = `
     ${bgClasses}
     ${border ? 'border border-gray-200' : ''}
     ${shadowClasses[shadow]}
     ${roundedClasses[rounded]}
-    ${hover ? 'transition-all duration-300 hover:shadow-lg hover:border-softred-200' : ''}
+    ${hover ? 'transition-shadow duration-300 hover:shadow-lg' : ''}
     ${className}
   `;
 
   return (
     <div className={baseClasses} {...props}>
       {(title || actions) && (
-        <div className={`flex justify-between items-center ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pt-4'} ${border ? 'border-b border-gray-200' : ''} pb-3`}>
+        <div className={`flex justify-between items-center ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pt-4'} border-b border-gray-200 pb-3`}>
           <div>
             {title && (
               <h3 className={`text-lg font-medium text-gray-900 ${titleClassName}`}>
@@ -92,29 +86,12 @@ const Card = ({
       </div>
       
       {footer && (
-        <div className={`${border ? 'border-t border-gray-200' : ''} ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pb-4'} pt-3`}>
+        <div className={`border-t border-gray-200 ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pb-4'} pt-3`}>
           {footer}
         </div>
       )}
     </div>
   );
-};
-
-Card.propTypes = {
-  children: PropTypes.node,
-  className: PropTypes.string,
-  title: PropTypes.node,
-  titleClassName: PropTypes.string,
-  subtitle: PropTypes.node,
-  footer: PropTypes.node,
-  actions: PropTypes.node,
-  shadow: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'xl', 'card']),
-  padding: PropTypes.oneOf(['none', 'sm', 'normal', 'lg', 'xl']),
-  border: PropTypes.bool,
-  rounded: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'xl', 'full']),
-  hover: PropTypes.bool,
-  transparent: PropTypes.bool,
-  gradient: PropTypes.bool,
 };
 
 export default Card;
