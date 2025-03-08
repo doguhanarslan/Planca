@@ -1,0 +1,122 @@
+/* Dark mode styles for Planca */
+
+/* Apply dark mode adjustments when user selects dark color scheme */
+@media (prefers-color-scheme: dark) {
+    body {
+      background-color: #121212;
+      color: #e5e5e5;
+    }
+  
+    /* Header styles for dark mode */
+    header {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+    }
+  
+    /* Fix navigation text in dark mode */
+    header nav a {
+      color: #e5e5e5 !important;
+    }
+    
+    header nav a:hover {
+      color: #ef4444 !important;
+    }
+  
+    /* Fix button visibility in dark mode */
+    .btn-outline-dark-mode {
+      border-color: #ef4444 !important;
+      color: #ef4444 !important;
+    }
+  
+    /* For white buttons in dark mode */
+    .btn-light-dark-mode {
+      background-color: #e5e5e5 !important;
+      color: #121212 !important;
+    }
+  
+    /* Fix hero section text */
+    .hero-section {
+      background: linear-gradient(to right, #7f1d1d, #991b1b) !important;
+    }
+  
+    .hero-section h1,
+    .hero-section p {
+      color: #ffffff !important;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+  
+    /* Fix cards in dark mode */
+    .card-dark-mode {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+    }
+  
+    /* Fix text colors for various sections */
+    .text-dark-mode {
+      color: #e5e5e5 !important;
+    }
+  
+    .text-muted-dark-mode {
+      color: #9ca3af !important;
+    }
+    
+    /* Fix backgrounds */
+    .bg-white-dark-mode {
+      background-color: #1f2937 !important;
+    }
+    
+    .bg-light-dark-mode {
+      background-color: #111827 !important;
+    }
+  }
+  
+  /* Class-based dark mode for manual toggling */
+  .dark {
+    background-color: #121212;
+    color: #e5e5e5;
+  }
+  
+  .dark header {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+  }
+  
+  .dark header nav a {
+    color: #e5e5e5 !important;
+  }
+  
+  .dark header nav a:hover {
+    color: #ef4444 !important;
+  }
+  
+  .dark .btn-outline-dark {
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+  }
+  
+  .dark .hero-section {
+    background: linear-gradient(to right, #7f1d1d, #991b1b) !important;
+  }
+  
+  .dark .hero-section h1,
+  .dark .hero-section p {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Add specific fixes for Kayıt Ol and Giriş Yap buttons */
+  .dark-mode-btn-fix {
+    background-color: #ef4444 !important;
+    color: white !important;
+    border: 1px solid #ef4444 !important;
+  }
+  
+  .dark-mode-btn-outline-fix {
+    background-color: transparent !important;
+    color: #e5e5e5 !important;
+    border: 1px solid #e5e5e5 !important;
+  }
+  
+  .dark-mode-btn-outline-fix:hover {
+    background-color: rgba(229, 229, 229, 0.1) !important;
+  }

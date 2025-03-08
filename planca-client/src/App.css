@@ -3,6 +3,11 @@
   text-align: center;
 }
 
+/* Dark mode text color fixes */
+.dark #root {
+  color: #e5e5e5;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -16,6 +21,25 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
+/* Dark mode button fixes */
+.dark-mode-hero-btn {
+  background-color: #ffffff !important;
+  color: #b91c1c !important;
+  border-color: #ffffff !important;
+}
+
+.dark-mode-hero-btn:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.dark-mode-hero-outline-btn {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.dark-mode-hero-outline-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);

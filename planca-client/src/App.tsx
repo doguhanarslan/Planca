@@ -10,7 +10,7 @@ import store from '@/app/store';
 import { fetchCurrentUser } from '@/features/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { AuthState } from '@/types';
-
+import '@/styles/darkMode.css'; // Import dark mode styles
 // Auth components
 import Login from '@/features/auth/Login';
 import Register from '@/features/auth/Register';
