@@ -45,30 +45,43 @@ const Card: React.FC<CardProps> = ({
     full: 'rounded-3xl',
   };
 
-  // Background transparency option
-  const bgClasses = transparent ? 'bg-white/90 backdrop-blur-sm' : 'bg-white';
+  // Background and border styles with dark mode support
+  const bgClasses = transparent 
+    ? 'bg-white/90 backdrop-blur-sm dark:bg-secondary-800/90' 
+    : 'bg-white dark:bg-secondary-800';
+  
+  const borderClasses = border 
+    ? 'border border-gray-200 dark:border-secondary-700' 
+    : '';
 
-  const baseClasses = `
-    ${bgClasses}
-    ${border ? 'border border-gray-200' : ''}
-    ${shadowClasses[shadow]}
-    ${roundedClasses[rounded]}
-    ${hover ? 'transition-shadow duration-300 hover:shadow-lg' : ''}
-    ${className}
-  `;
+  // Hover effect with dark mode support
+  const hoverClasses = hover 
+    ? 'transition-all duration-300 hover:shadow-lg dark:hover:shadow-secondary-900/50 hover:-translate-y-1' 
+    : '';
+
+  const baseClasses = [
+    bgClasses,
+    borderClasses,
+    shadowClasses[shadow],
+    roundedClasses[rounded],
+    hoverClasses,
+    className
+  ].join(' ');
 
   return (
     <div className={baseClasses} {...props}>
+      {/* Card Header with Title and Actions */}
       {(title || actions) && (
-        <div className={`flex justify-between items-center ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pt-4'} border-b border-gray-200 pb-3`}>
+        <div className={`flex justify-between items-center ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pt-4'} 
+                        border-b border-gray-200 dark:border-secondary-700 pb-3`}>
           <div>
             {title && (
-              <h3 className={`text-lg font-medium text-gray-900 ${titleClassName}`}>
+              <h3 className={`text-lg font-medium text-gray-900 dark:text-gray-100 ${titleClassName}`}>
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {subtitle}
               </p>
             )}
@@ -81,12 +94,14 @@ const Card: React.FC<CardProps> = ({
         </div>
       )}
       
+      {/* Card Body Content */}
       <div className={padding !== 'none' ? paddingClasses[padding] : ''}>
         {children}
       </div>
       
+      {/* Card Footer */}
       {footer && (
-        <div className={`border-t border-gray-200 ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pb-4'} pt-3`}>
+        <div className={`border-t border-gray-200 dark:border-secondary-700 ${padding !== 'none' ? paddingClasses[padding] : 'px-4 pb-4'} pt-3`}>
           {footer}
         </div>
       )}
