@@ -25,6 +25,12 @@ namespace Planca.Infrastructure.Persistence.Repositories
 
         public async Task BeginTransactionAsync()
         {
+            // Check if there's already a transaction at the database level
+            if (_dbContext.Database.CurrentTransaction != null)
+            {
+                return; // Already in a transaction
+            }
+
             if (_currentTransaction != null)
             {
                 return;
@@ -75,6 +81,30 @@ namespace Planca.Infrastructure.Persistence.Repositories
         {
             _currentTransaction?.Dispose();
             _dbContext.Dispose();
+        }
+
+
+        public async Task<TResult> ExecuteInTransactionAsync<TResult>(
+            Func<Task<TResult>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            var strategy = _dbContext.Database.CreateExecutionStrategy();
+
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    var result = await operation();
+                    await transaction.CommitAsync(cancellationToken);
+                    return result;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    throw;
+                }
+            });
         }
     }
 }

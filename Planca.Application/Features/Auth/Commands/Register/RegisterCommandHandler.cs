@@ -5,6 +5,7 @@ using Planca.Application.Common.Models;
 using Planca.Domain.Common.Enums;
 using Planca.Domain.Common.Interfaces;
 using Planca.Domain.Entities;
+using Planca.Domain.ValueObjects;
 using System;
 using System.Linq;
 using System.Threading;
@@ -52,12 +53,18 @@ namespace Planca.Application.Features.Auth.Commands.Register
                     return Result<AuthResponse>.Failure("Email is already registered");
                 }
 
-                // Create the user
-                var (createResult, userId) = await _identityService.CreateUserAsync(
-                    request.Email,
-                    request.Email,
-                    request.Password);
+                // Create the user with all necessary information
+                var userDto = new UserCreationDto
+                {
+                    UserName = request.Email,
+                    Email = request.Email,
+                    Password = request.Password,
+                    FirstName = request.FirstName ?? "", // Null check
+                    LastName = request.LastName ?? "",   // Null check
+                    PhoneNumber = request.PhoneNumber
+                };
 
+                var (createResult, userId) = await _identityService.CreateUserAsync(userDto);
                 if (!createResult.Succeeded)
                 {
                     _logger.LogWarning("User creation failed for {Email}: {Errors}",
@@ -65,41 +72,15 @@ namespace Planca.Application.Features.Auth.Commands.Register
                     return Result<AuthResponse>.Failure(createResult.Errors);
                 }
 
-                // Begin transaction for consistency between Identity and Domain entities
-                await _unitOfWork.BeginTransactionAsync();
-
                 try
                 {
-                    // Update user basic data
-                    var userData = new UserBasicData
-                    {
-                        FirstName = request.FirstName,
-                        LastName = request.LastName,
-                        Email = request.Email,
-                        PhoneNumber = request.PhoneNumber,
-                        TenantId = request.TenantId
-                    };
-
-                    var updateResult = await _identityService.UpdateUserBasicDataAsync(userId, userData);
-                    if (!updateResult.Succeeded)
-                    {
-                        _logger.LogWarning("User data update failed for {Email}: {Errors}",
-                            request.Email, string.Join(", ", updateResult.Errors));
-
-                        // Rollback and return failure
-                        await _unitOfWork.RollbackTransactionAsync();
-                        return Result<AuthResponse>.Failure("Failed to update user data");
-                    }
-
                     // Add user to role
                     var roleResult = await _identityService.AddToRoleAsync(userId, request.Role);
                     if (!roleResult.Succeeded)
                     {
                         _logger.LogWarning("Role assignment failed for {Email}: {Errors}",
                             request.Email, string.Join(", ", roleResult.Errors));
-
-                        // Rollback and return failure
-                        await _unitOfWork.RollbackTransactionAsync();
+                        await _identityService.DeleteUserAsync(userId);
                         return Result<AuthResponse>.Failure("Failed to assign role");
                     }
 
@@ -113,8 +94,19 @@ namespace Planca.Application.Features.Auth.Commands.Register
                         await CreateEmployeeEntity(userId, request);
                     }
 
-                    // Save all changes
+                    // Save changes
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    // Update tenant if needed
+                    if (request.TenantId.HasValue)
+                    {
+                        var tenantResult = await _identityService.UpdateUserTenantAsync(userId, request.TenantId.Value);
+                        if (!tenantResult.Succeeded)
+                        {
+                            _logger.LogWarning("Failed to update tenant for user {Email}", request.Email);
+                            // Continue anyway, this is not critical
+                        }
+                    }
 
                     // Get user roles
                     var roles = await _identityService.GetUserRolesAsync(userId);
@@ -124,7 +116,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
                         userId,
                         request.Email,
                         roles,
-                        null);
+                        request.TenantId?.ToString());
 
                     // Generate refresh token
                     var refreshToken = Guid.NewGuid().ToString();
@@ -133,9 +125,6 @@ namespace Planca.Application.Features.Auth.Commands.Register
 
                     // Store refresh token
                     await _identityService.UpdateUserRefreshTokenAsync(userId, refreshToken, refreshTokenExpiryTime);
-
-                    // Commit transaction
-                    await _unitOfWork.CommitTransactionAsync();
 
                     // Create response
                     var response = new AuthResponse
@@ -153,13 +142,17 @@ namespace Planca.Application.Features.Auth.Commands.Register
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error during transaction for user registration: {Email}", request.Email);
+                    _logger.LogError(ex, "Error during user registration process: {Email}", request.Email);
 
-                    // Rollback transaction
-                    await _unitOfWork.RollbackTransactionAsync();
-
-                    // Delete the created user to ensure consistency
-                    await _identityService.DeleteUserAsync(userId);
+                    // Try to clean up the created user
+                    try
+                    {
+                        await _identityService.DeleteUserAsync(userId);
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        _logger.LogError(cleanupEx, "Failed to clean up user after registration error: {UserId}", userId);
+                    }
 
                     return Result<AuthResponse>.Failure($"Registration failed: {ex.Message}");
                 }
@@ -176,13 +169,23 @@ namespace Planca.Application.Features.Auth.Commands.Register
             var customer = new Customer
             {
                 UserId = userId,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
+                FirstName = request.FirstName ?? "",
+                LastName = request.LastName ?? "",
                 Email = request.Email,
-                PhoneNumber = request.PhoneNumber,
-                TenantId = request.TenantId ?? Guid.Empty, // Add null check here
+                PhoneNumber = request.PhoneNumber ?? "",
+                Notes = "",  // Initialize with empty string
+                TenantId = request.TenantId ?? Guid.Empty,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System"
+                CreatedBy = "System",
+                // Initialize Address with an empty object instead of leaving it null
+                Address = new Address
+                {
+                    Street = "",
+                    City = "",
+                    State = "",
+                    ZipCode = "",
+                    Country = ""
+                }
             };
 
             await _customerRepository.AddAsync(customer);
@@ -193,15 +196,19 @@ namespace Planca.Application.Features.Auth.Commands.Register
             var employee = new Employee
             {
                 UserId = userId,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
+                FirstName = request.FirstName ?? "",
+                LastName = request.LastName ?? "",
                 Email = request.Email,
-                PhoneNumber = request.PhoneNumber,
+                PhoneNumber = request.PhoneNumber ?? "",
                 Title = "New Employee",
                 IsActive = true,
-                TenantId = request.TenantId ?? Guid.Empty, // Add null check here
+                TenantId = request.TenantId ?? Guid.Empty,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System"
+                CreatedBy = "System",
+                // Initialize ServiceIds as an empty list
+                ServiceIds = new List<Guid>(),
+                // Initialize WorkingHours as an empty list
+                WorkingHours = new List<WorkingHours>()
             };
 
             await _employeeRepository.AddAsync(employee);

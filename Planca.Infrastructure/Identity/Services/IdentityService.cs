@@ -23,17 +23,23 @@ namespace Planca.Infrastructure.Identity.Services
             _roleManager = roleManager;
         }
 
-        public async Task<(Result Result, string UserId)> CreateUserAsync(string userName, string email, string password)
+        public async Task<(Result Result, string UserId)> CreateUserAsync(UserCreationDto userDto)
         {
             var user = new ApplicationUser
             {
-                UserName = userName,
-                Email = email,
-                EmailConfirmed = true // For simplicity
+                UserName = userDto.UserName,
+                Email = userDto.Email,
+                EmailConfirmed = true,
+                FirstName = userDto.FirstName ?? "", // Null koruması
+                LastName = userDto.LastName ?? "",   // Null koruması
+                PhoneNumber = userDto.PhoneNumber,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                RefreshToken = string.Empty,
+                RefreshTokenExpiryTime = DateTime.UtcNow
             };
 
-            var result = await _userManager.CreateAsync(user, password);
-
+            var result = await _userManager.CreateAsync(user, userDto.Password);
             return (result.ToApplicationResult(), user.Id);
         }
 

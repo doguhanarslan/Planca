@@ -13,12 +13,12 @@ import {
 class AuthService {
   // Auth endpoint constants
   private static readonly ENDPOINTS = {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    CREATE_BUSINESS: '/auth/create-business',
-    REFRESH_TOKEN: '/auth/refresh-token',
-    CURRENT_USER: '/auth/current-user',
-    LOGOUT: '/auth/logout',
+    LOGIN: '/Auth/login',
+    REGISTER: '/Auth/register',
+    CREATE_BUSINESS: '/Auth/create-business',
+    REFRESH_TOKEN: '/Auth/refresh-token',
+    CURRENT_USER: '/Auth/current-user',
+    LOGOUT: '/Auth/logout',
   };
 
   /**

@@ -2,21 +2,15 @@
   api:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80  # Sadece HTTP kullan, HTTPS kaldırıldı
-      # Sertifika ayarlarını kaldırıyoruz
-      # - ASPNETCORE_Kestrel__Certificates__Default__Password=planca
-      # - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-      - ConnectionStrings__DefaultConnection=Host=172.22.25.189;Database=planca_dev;Username=postgres;Password=postgres
+      - ASPNETCORE_URLS=http://+:80
+      # ÖNEMLİ: API, veritabanına "db" host adı ile bağlanmalı (Docker servis adı)
+      - ConnectionStrings__DefaultConnection=Host=db;Database=planca;Username=postgres;Password=postgres
     ports:
-      - "7000:80"     # Sadece HTTP portu
+      - "7000:80"
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      # HTTPS sertifika bağlantısını kaldırıyoruz
-      # - ${APPDATA}/ASP.NET/Https:/https:ro
     restart: on-failure
-    depends_on:
-      - db
-  
+
   db:
     ports:
       - "5432:5432"
@@ -24,3 +18,4 @@
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=planca_dev
+    restart: on-failure

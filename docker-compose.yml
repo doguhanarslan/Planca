@@ -1,27 +1,42 @@
-﻿services:
+﻿
+services:
   api:
     build:
       context: .
       dockerfile: Planca.API/Dockerfile
-    # Eğer burada port tanımları varsa, bunları silin veya düzeltin
-    # ports:
-    #   - "7000:80"
-    #   - "7001:443"
+    container_name: planca_api
+    ports:
+      - "5288:80"
+      - "7288:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Database=planca;Username=postgres;Password=postgres
+      - JwtSettings__Key=your-secure-jwt-secret-key-must-be-at-least-32-characters-long
+      - JwtSettings__Issuer=planca-api
+      - JwtSettings__Audience=planca-clients
+      - JwtSettings__DurationInMinutes=60
     depends_on:
       - db
     networks:
       - planca-network
-      
+
   db:
     image: postgres:15
+    container_name: planca_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=planca
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - planca-network
 
 networks:
   planca-network:
     driver: bridge
-    
+
 volumes:
-  postgres-data:
+  postgres_data:

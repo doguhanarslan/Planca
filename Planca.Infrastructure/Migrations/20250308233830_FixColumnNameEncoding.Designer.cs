@@ -12,8 +12,8 @@ using Planca.Infrastructure.Persistence.Context;
 namespace Planca.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250305230436_FixMissingTablesAndColumns")]
-    partial class FixMissingTablesAndColumns
+    [Migration("20250308233830_FixColumnNameEncoding")]
+    partial class FixColumnNameEncoding
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -29,7 +29,7 @@ namespace Planca.Infrastructure.Migrations
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -51,7 +51,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("rolenameındex");
+                        .HasDatabaseName("rolenameindex");
 
                     b.ToTable("roles", (string)null);
                 });
@@ -61,7 +61,7 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
@@ -76,13 +76,13 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<string>("RoleId")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("roleıd");
+                        .HasColumnName("roleid");
 
                     b.HasKey("Id")
                         .HasName("pk_aspnetroleclaims");
 
                     b.HasIndex("RoleId")
-                        .HasDatabaseName("ıx_aspnetroleclaims_roleıd");
+                        .HasDatabaseName("ix_aspnetroleclaims_roleid");
 
                     b.ToTable("role_claims", (string)null);
                 });
@@ -92,7 +92,7 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
@@ -107,13 +107,13 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("userıd");
+                        .HasColumnName("userid");
 
                     b.HasKey("Id")
                         .HasName("pk_aspnetuserclaims");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ıx_aspnetuserclaims_userıd");
+                        .HasDatabaseName("ix_aspnetuserclaims_userid");
 
                     b.ToTable("user_claims", (string)null);
                 });
@@ -135,13 +135,13 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("userıd");
+                        .HasColumnName("userid");
 
                     b.HasKey("LoginProvider", "ProviderKey")
                         .HasName("pk_aspnetuserlogins");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ıx_aspnetuserlogins_userıd");
+                        .HasDatabaseName("ix_aspnetuserlogins_userid");
 
                     b.ToTable("user_logins", (string)null);
                 });
@@ -150,17 +150,17 @@ namespace Planca.Infrastructure.Migrations
                 {
                     b.Property<string>("UserId")
                         .HasColumnType("text")
-                        .HasColumnName("userıd");
+                        .HasColumnName("userid");
 
                     b.Property<string>("RoleId")
                         .HasColumnType("text")
-                        .HasColumnName("roleıd");
+                        .HasColumnName("roleid");
 
                     b.HasKey("UserId", "RoleId")
                         .HasName("pk_aspnetuserroles");
 
                     b.HasIndex("RoleId")
-                        .HasDatabaseName("ıx_aspnetuserroles_roleıd");
+                        .HasDatabaseName("ix_aspnetuserroles_roleid");
 
                     b.ToTable("user_roles", (string)null);
                 });
@@ -169,7 +169,7 @@ namespace Planca.Infrastructure.Migrations
                 {
                     b.Property<string>("UserId")
                         .HasColumnType("text")
-                        .HasColumnName("userıd");
+                        .HasColumnName("userid");
 
                     b.Property<string>("LoginProvider")
                         .HasColumnType("text")
@@ -194,7 +194,7 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -207,11 +207,11 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid")
-                        .HasColumnName("customerıd");
+                        .HasColumnName("customerid");
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid")
-                        .HasColumnName("employeeıd");
+                        .HasColumnName("employeeid");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone")
@@ -234,7 +234,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uuid")
-                        .HasColumnName("serviceıd");
+                        .HasColumnName("serviceid");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone")
@@ -246,7 +246,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
-                        .HasColumnName("tenantıd");
+                        .HasColumnName("tenantid");
 
                     b.HasKey("Id")
                         .HasName("pk_appointments");
@@ -271,7 +271,7 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     b.Property<string>("Address")
                         .IsRequired()
@@ -327,13 +327,13 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
-                        .HasColumnName("tenantıd");
+                        .HasColumnName("tenantid");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(36)
                         .HasColumnType("character varying(36)")
-                        .HasColumnName("userıd");
+                        .HasColumnName("userid");
 
                     b.HasKey("Id")
                         .HasName("pk_customers");
@@ -350,7 +350,7 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -375,7 +375,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
-                        .HasColumnName("ısactive");
+                        .HasColumnName("isactive");
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone")
@@ -401,11 +401,11 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<string>("ServiceIds")
                         .IsRequired()
                         .HasColumnType("jsonb")
-                        .HasColumnName("serviceıds");
+                        .HasColumnName("serviceids");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
-                        .HasColumnName("tenantıd");
+                        .HasColumnName("tenantid");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -417,7 +417,7 @@ namespace Planca.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(36)
                         .HasColumnType("character varying(36)")
-                        .HasColumnName("userıd");
+                        .HasColumnName("userid");
 
                     b.Property<string>("WorkingHours")
                         .IsRequired()
@@ -434,7 +434,7 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     b.Property<string>("Color")
                         .IsRequired()
@@ -463,7 +463,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
-                        .HasColumnName("ısactive");
+                        .HasColumnName("isactive");
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone")
@@ -487,7 +487,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
-                        .HasColumnName("tenantıd");
+                        .HasColumnName("tenantid");
 
                     b.HasKey("Id")
                         .HasName("pk_services");
@@ -504,7 +504,7 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     b.Property<string>("Address")
                         .IsRequired()
@@ -535,7 +535,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
-                        .HasColumnName("ısactive");
+                        .HasColumnName("isactive");
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone")
@@ -578,7 +578,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
-                        .HasColumnName("tenantıd");
+                        .HasColumnName("tenantid");
 
                     b.Property<string>("ZipCode")
                         .IsRequired()
@@ -602,7 +602,7 @@ namespace Planca.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     b.Property<TimeSpan>("CloseTime")
                         .HasColumnType("interval")
@@ -623,7 +623,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
-                        .HasColumnName("ısactive");
+                        .HasColumnName("isactive");
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone")
@@ -640,7 +640,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
-                        .HasColumnName("tenantıd");
+                        .HasColumnName("tenantid");
 
                     b.HasKey("Id")
                         .HasName("pk_tenantworkinghours");
@@ -655,7 +655,7 @@ namespace Planca.Infrastructure.Migrations
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text")
-                        .HasColumnName("ıd");
+                        .HasColumnName("id");
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer")
@@ -687,7 +687,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
-                        .HasColumnName("ısactive");
+                        .HasColumnName("isactive");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -741,7 +741,7 @@ namespace Planca.Infrastructure.Migrations
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
-                        .HasColumnName("tenantıd");
+                        .HasColumnName("tenantid");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean")
@@ -756,11 +756,11 @@ namespace Planca.Infrastructure.Migrations
                         .HasName("pk_aspnetusers");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("emailındex");
+                        .HasDatabaseName("emailindex");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasDatabaseName("usernameındex");
+                        .HasDatabaseName("usernameindex");
 
                     b.ToTable("users", (string)null);
                 });
@@ -772,7 +772,7 @@ namespace Planca.Infrastructure.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_aspnetroleclaims_aspnetroles_roleıd");
+                        .HasConstraintName("fk_aspnetroleclaims_aspnetroles_roleid");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -782,7 +782,7 @@ namespace Planca.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_aspnetuserclaims_aspnetusers_userıd");
+                        .HasConstraintName("fk_aspnetuserclaims_aspnetusers_userid");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
@@ -792,7 +792,7 @@ namespace Planca.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_aspnetuserlogins_aspnetusers_userıd");
+                        .HasConstraintName("fk_aspnetuserlogins_aspnetusers_userid");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -802,14 +802,14 @@ namespace Planca.Infrastructure.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_aspnetuserroles_aspnetroles_roleıd");
+                        .HasConstraintName("fk_aspnetuserroles_aspnetroles_roleid");
 
                     b.HasOne("Planca.Infrastructure.Identity.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_aspnetuserroles_aspnetusers_userıd");
+                        .HasConstraintName("fk_aspnetuserroles_aspnetusers_userid");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -819,7 +819,7 @@ namespace Planca.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_aspnetusertokens_aspnetusers_userıd");
+                        .HasConstraintName("fk_aspnetusertokens_aspnetusers_userid");
                 });
 
             modelBuilder.Entity("Planca.Domain.Entities.TenantWorkingHours", b =>
@@ -829,7 +829,7 @@ namespace Planca.Infrastructure.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_tenantworkinghours_tenants_tenantıd");
+                        .HasConstraintName("fk_tenantworkinghours_tenants_tenantid");
 
                     b.Navigation("Tenant");
                 });

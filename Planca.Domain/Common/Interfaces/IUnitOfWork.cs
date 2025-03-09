@@ -12,5 +12,8 @@ namespace Planca.Domain.Common.Interfaces
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();
+        Task<TResult> ExecuteInTransactionAsync<TResult>(
+            Func<Task<TResult>> operation,
+            CancellationToken cancellationToken = default);
     }
 }

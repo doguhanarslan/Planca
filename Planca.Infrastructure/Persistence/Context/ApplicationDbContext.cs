@@ -44,29 +44,29 @@ namespace Planca.Infrastructure.Persistence.Context
             // PostgreSQL için tüm tablo ve kolon adlarını lowercase yapma
             foreach (var entity in builder.Model.GetEntityTypes())
             {
-                // Tablo adını lowercase'e çevir
-                entity.SetTableName(entity.GetTableName().ToLower());
+                // Tablo adını lowercase'e çevir - ToLower() yerine ToLowerInvariant() kullan
+                entity.SetTableName(entity.GetTableName().ToLowerInvariant());
 
                 // Tüm property'lerin (kolonların) adlarını lowercase'e çevir
                 foreach (var property in entity.GetProperties())
                 {
-                    property.SetColumnName(property.GetColumnName().ToLower());
+                    property.SetColumnName(property.GetColumnName().ToLowerInvariant());
                 }
 
                 // Key, foreign key ve index adlarını lowercase yap
                 foreach (var key in entity.GetKeys())
                 {
-                    key.SetName(key.GetName().ToLower());
+                    key.SetName(key.GetName().ToLowerInvariant());
                 }
 
                 foreach (var key in entity.GetForeignKeys())
                 {
-                    key.SetConstraintName(key.GetConstraintName().ToLower());
+                    key.SetConstraintName(key.GetConstraintName().ToLowerInvariant());
                 }
 
                 foreach (var index in entity.GetIndexes())
                 {
-                    index.SetDatabaseName(index.GetDatabaseName().ToLower());
+                    index.SetDatabaseName(index.GetDatabaseName().ToLowerInvariant());
                 }
             }
 

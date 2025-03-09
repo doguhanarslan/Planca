@@ -8,7 +8,7 @@ namespace Planca.Application.Common.Interfaces
     public interface IIdentityService
     {
         // User management
-        Task<(Result Result, string UserId)> CreateUserAsync(string userName, string email, string password);
+        Task<(Result Result, string UserId)> CreateUserAsync(UserCreationDto userDto);
         Task<Result> DeleteUserAsync(string userId);
         Task<string> GetUserNameAsync(string userId);
         Task<(Result Result, string UserId)> FindByEmailAsync(string email);
@@ -29,7 +29,7 @@ namespace Planca.Application.Common.Interfaces
         Task<Result> UpdateUserRefreshTokenAsync(string userId, string refreshToken, DateTime refreshTokenExpiryTime);
         Task<Result<(string RefreshToken, DateTime ExpiryTime)>> GetUserRefreshTokenAsync(string userId);
 
-        // User data - Eksik olan metodlar
+        // User data
         Task<Result<UserBasicData>> GetUserBasicDataAsync(string userId);
         Task<Result> UpdateUserBasicDataAsync(string userId, UserBasicData userData);
 
