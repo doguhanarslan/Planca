@@ -37,8 +37,13 @@ namespace Planca.API.Controllers
         public async Task<ActionResult> CreateBusiness(CreateBusinessCommand command)
         {
             // Mevcut kullanıcı ID'sini ekle
-            command.UserId = _currentUserService.UserId;
+            string userId = _currentUserService.UserId;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { error = "User identity not found" });
+            }
 
+            command.UserId = userId;
             var result = await Mediator.Send(command);
             return HandleActionResult(result);
         }
@@ -52,9 +57,21 @@ namespace Planca.API.Controllers
         }
 
         [HttpGet("current-user")]
-        [Authorize]
         public async Task<ActionResult> GetCurrentUser()
         {
+            // Check if user is authenticated before proceeding
+            if (!_currentUserService.IsAuthenticated)
+            {
+                // Return a 200 OK with information that user is not authenticated
+                // instead of a 401 error
+                return Ok(new
+                {
+                    isAuthenticated = false,
+                    message = "User is not authenticated"
+                });
+            }
+
+            // User is authenticated, proceed with getting user data
             var result = await Mediator.Send(new GetCurrentUserQuery());
             return HandleActionResult(result);
         }

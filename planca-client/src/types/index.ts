@@ -2,7 +2,7 @@ import React from "react";
 
 // User Types
 export interface User {
-  id: string;
+  id?: string;
   email: string;
   name?: string;
   firstName: string;
@@ -87,12 +87,10 @@ export interface LoginCredentials {
 export interface RegisterUserData {
   email: string;
   password: string;
-  confirmPassword: string;
   firstName: string;
   lastName: string;
   phoneNumber?: string;
-  marketingConsent?: boolean; // Pazarlama izni
-  termsAccepted?: boolean; // Şartları kabul etme
+  confirmPassword?:string;
 }
 
 export interface BusinessData {

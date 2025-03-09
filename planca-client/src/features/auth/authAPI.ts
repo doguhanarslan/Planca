@@ -46,9 +46,19 @@ class AuthService {
    */
   static async register(userData: RegisterUserData) {
     try {
+      // Make sure userData is properly formatted before sending
+      const requestData = {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: userData.password,
+        confirmPassword: userData.confirmPassword,
+        phoneNumber: userData.phoneNumber || ""
+      };
+      
       return await axios.post<ApiResponse<AuthResponse>>(
         this.ENDPOINTS.REGISTER, 
-        userData, 
+        requestData, 
         { withCredentials: true }
       );
     } catch (error) {

@@ -222,7 +222,8 @@ _pkginfo.txt
 *.appx
 *.appxbundle
 *.appxupload
-
+*.tar
+*.gz
 # Visual Studio cache files
 # files ending in .cache can be ignored
 *.[Cc]ache

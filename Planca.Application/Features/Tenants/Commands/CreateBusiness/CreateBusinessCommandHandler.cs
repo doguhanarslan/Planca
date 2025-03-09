@@ -34,63 +34,74 @@ namespace Planca.Application.Features.Tenants.Commands.CreateBusiness
 
         public async Task<Result<TenantDto>> Handle(CreateBusinessCommand request, CancellationToken cancellationToken)
         {
-            // 1. Subdomain benzersiz mi kontrol et
-            var allTenants = await _tenantRepository.ListAllAsync();
-            bool isSubdomainUnique = !allTenants.Any(t => t.Subdomain.ToLower() == request.Subdomain.ToLower());
-            if (!isSubdomainUnique)
+            try
             {
-                return Result<TenantDto>.Failure($"A tenant with the subdomain '{request.Subdomain}' already exists.");
-            }
 
-            // 2. Tenant entity'si oluştur
-            var tenant = new Tenant
-            {
-                Id = Guid.NewGuid(),
-                Name = request.Name,
-                Subdomain = request.Subdomain.ToLower(), // Subdomainleri küçük harfe çevir
-                LogoUrl = request.LogoUrl,
-                PrimaryColor = request.PrimaryColor,
-                IsActive = request.IsActive,
-                ConnectionString = null, // Varsayılan olarak null
-                                         // Adres bilgileri
-                Address = request.Address,
-                City = request.City,
-                State = request.State,
-                ZipCode = request.ZipCode,
-                CreatedBy = request.UserId ?? "System",
-                CreatedAt = DateTime.UtcNow
-            };
-
-            // Tenantlar için özel durum: TenantId, Id ile aynı olmalı
-            tenant.TenantId = tenant.Id;
-
-            // 3. Çalışma saatlerini ekle
-            if (request.WorkSchedule != null && request.WorkSchedule.Any())
-            {
-                tenant.WorkingHours = request.WorkSchedule.Select(ws => new TenantWorkingHours
+                var allTenants = await _tenantRepository.ListAllAsync();
+                bool isSubdomainUnique = !allTenants.Any(t => t.Subdomain.ToLower() == request.Subdomain.ToLower());
+                if (!isSubdomainUnique)
                 {
-                    TenantId = tenant.Id,
-                    DayOfWeek = ws.Day,
-                    OpenTime = ws.OpenTime,
-                    CloseTime = ws.CloseTime,
-                    IsActive = true,
+                    return Result<TenantDto>.Failure(
+                        $"A tenant with the subdomain '{request.Subdomain}' already exists.");
+                }
+
+                // 2. Tenant entity'si oluştur
+                var tenant = new Tenant
+                {
+                    Id = Guid.NewGuid(),
+                    Name = request.Name,
+                    Subdomain = request.Subdomain.ToLower(), // Subdomainleri küçük harfe çevir
+                    LogoUrl = request.LogoUrl,
+                    PrimaryColor = request.PrimaryColor,
+                    IsActive = request.IsActive,
+                    ConnectionString = null, // Varsayılan olarak null
+                    // Adres bilgileri
+                    Address = request.Address,
+                    City = request.City,
+                    State = request.State,
+                    ZipCode = request.ZipCode,
                     CreatedBy = request.UserId ?? "System",
                     CreatedAt = DateTime.UtcNow
-                }).ToList();
+                };
+
+                // Tenantlar için özel durum: TenantId, Id ile aynı olmalı
+                tenant.TenantId = tenant.Id;
+
+                // 3. Çalışma saatlerini ekle
+                if (request.WorkSchedule != null && request.WorkSchedule.Any())
+                {
+                    tenant.WorkingHours = request.WorkSchedule.Select(ws => new TenantWorkingHours
+                    {
+                        TenantId = tenant.Id,
+                        DayOfWeek = (DayOfWeek)ws.Day, // Cast from int to DayOfWeek enum
+                        OpenTime = TimeSpan.Parse(ws.OpenTimeString ?? "09:00"), // Parse from string with fallback
+                        CloseTime = TimeSpan.Parse(ws.CloseTimeString ?? "17:00"), // Parse from string with fallback
+                        IsActive = true,
+                        CreatedBy = request.UserId ?? "System",
+                        CreatedAt = DateTime.UtcNow
+                    }).ToList();
+                }
+
+                // 4. Repository'ye kaydet
+                await _tenantRepository.AddAsync(tenant);
+
+                // 5. Kullanıcıyı tenant ile ilişkilendir
+                await _identityService.UpdateUserTenantAsync(request.UserId, tenant.Id);
+
+                // 6. Değişiklikleri uygula
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                // 7. DTO'ya dönüştür ve sonucu döndür
+                var tenantDto = _mapper.Map<TenantDto>(tenant);
+                return Result<TenantDto>.Success(tenantDto);
+
             }
-
-            // 4. Repository'ye kaydet
-            await _tenantRepository.AddAsync(tenant);
-
-            // 5. Kullanıcıyı tenant ile ilişkilendir
-            await _identityService.UpdateUserTenantAsync(request.UserId, tenant.Id);
-
-            // 6. Değişiklikleri uygula
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            // 7. DTO'ya dönüştür ve sonucu döndür
-            var tenantDto = _mapper.Map<TenantDto>(tenant);
-            return Result<TenantDto>.Success(tenantDto);
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            // 1. Subdomain benzersiz mi kontrol et
         }
     }
 }

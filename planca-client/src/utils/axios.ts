@@ -49,6 +49,15 @@ export const initializeAxios = (store: Store): void => {
     }
   );
 
+  instance.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+  
+
   // Add response interceptor for token refresh
   instance.interceptors.response.use(
     (response) => {

@@ -1,15 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
-namespace Planca.Application.DTOs
+public class WorkDayScheduleDto
 {
-    public class WorkDayScheduleDto
+    public int Day { get; set; } // Changed from DayOfWeek to int
+
+    private TimeSpan _openTime;
+    private TimeSpan _closeTime;
+
+    [JsonIgnore] // Hide the actual TimeSpan property from serialization
+    public TimeSpan OpenTime
     {
-        public DayOfWeek Day { get; set; }
-        public TimeSpan OpenTime { get; set; }
-        public TimeSpan CloseTime { get; set; }
+        get => _openTime;
+        set => _openTime = value;
+    }
+
+    [JsonIgnore] // Hide the actual TimeSpan property from serialization
+    public TimeSpan CloseTime
+    {
+        get => _closeTime;
+        set => _closeTime = value;
+    }
+
+    // String properties for serialization/deserialization
+    public string OpenTimeString
+    {
+        get => _openTime.ToString(@"hh\:mm");
+        set => _openTime = TimeSpan.Parse(value);
+    }
+
+    public string CloseTimeString
+    {
+        get => _closeTime.ToString(@"hh\:mm");
+        set => _closeTime = TimeSpan.Parse(value);
     }
 }

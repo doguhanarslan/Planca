@@ -23,7 +23,7 @@ namespace Planca.Infrastructure.Persistence.Configurations
                 .HasMaxLength(50);
 
             builder.Property(t => t.ConnectionString)
-                .HasMaxLength(500);
+                .HasMaxLength(500).IsRequired(false);
 
             builder.Property(t => t.LogoUrl)
                 .HasMaxLength(1000);

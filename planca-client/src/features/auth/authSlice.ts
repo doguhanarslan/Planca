@@ -14,7 +14,7 @@ import {
   BusinessData, 
   User,
   Tenant
-} from '@/types';
+} from '@/types/index';
 
 /**
  * Async thunk for user login
@@ -37,11 +37,39 @@ export const loginUser = createAsyncThunk(
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: RegisterUserData, { rejectWithValue }) => {
+    // Daha detaylı undefined kontrolü
+    if (!userData || typeof userData !== 'object') {
+      return rejectWithValue(['Geçersiz kayıt verileri']);
+    }
+
     try {
+      // Gerekli alanların varlığını ve tipini kontrol et
+      const requiredFields = ['email', 'password', 'firstName', 'lastName'] as const;
+      const validations = {
+        email: (v: string) => typeof v === 'string' && v.includes('@'),
+        password: (v: string) => typeof v === 'string' && v.length >= 6,
+        firstName: (v: string) => typeof v === 'string' && v.length > 0,
+        lastName: (v: string) => typeof v === 'string' && v.length > 0
+      };
+
+      for (const field of requiredFields) {
+        const value = userData[field];
+        if (!value) {
+          return rejectWithValue([`${field} alanı gereklidir`]);
+        }
+        if (!validations[field](value)) {
+          return rejectWithValue([`${field} alanı geçersiz`]);
+        }
+      }
+
       const response = await register(userData);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.errors || ['Registration failed']);
+      const errorMessage = error.response?.data?.errors || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          'Kayıt işlemi başarısız';
+      return rejectWithValue(Array.isArray(errorMessage) ? errorMessage : [errorMessage]);
     }
   }
 );
@@ -50,7 +78,7 @@ export const registerUser = createAsyncThunk(
  * Async thunk for business creation
  */
 export const createBusinessForUser = createAsyncThunk(
-  'auth/createBusiness',
+  'auth/create-business',
   async (businessData: BusinessData, { rejectWithValue }) => {
     try {
       const response = await createBusiness(businessData);
@@ -60,7 +88,6 @@ export const createBusinessForUser = createAsyncThunk(
     }
   }
 );
-
 /**
  * Async thunk for token refresh
  */
@@ -123,8 +150,12 @@ const initialState: AuthState = {
  * Format user data from API response
  */
 function formatUserData(userData: any): User {
+  if (!userData) {
+    throw new Error('Kullanıcı verisi bulunamadı');
+  }
+
   return {
-    id: userData.userId,
+    id: userData.userId || userData.id,
     email: userData.email,
     name: userData.userName || `${userData.firstName} ${userData.lastName}`,
     firstName: userData.firstName,
@@ -195,9 +226,18 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
-        const userData = action.payload.data;
-        state.user = formatUserData(userData);
-        state.isAuthenticated = true;
+        const userData = action.payload?.data || action.payload;
+        if (userData) {
+          // Kullanıcı verilerini formatlayıp state'e kaydediyoruz
+          state.user = formatUserData(userData);
+          // Token'ı localStorage'a kaydediyoruz
+          if (userData.token) {
+            localStorage.setItem('token', userData.token);
+          }
+          // Kullanıcıyı giriş yapmış olarak işaretliyoruz
+          state.isAuthenticated = true;
+          state.isBusinessRegistered = false;
+        }
         state.loading = false;
       })
       .addCase(registerUser.rejected, (state, action) => {

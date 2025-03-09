@@ -50,45 +50,28 @@ const Register: React.FC = () => {
   }, [isAuthenticated, isBusinessRegistered, navigate]);
 
   const handleRegister = async (
-    values: {
-      firstName: string;
-      lastName: string;
-      email: string;
-      phoneNumber: string;
-      password: string;
-      confirmPassword: string;
-    },
-    { setSubmitting, setTouched }: FormikHelpers<{
-      firstName: string;
-      lastName: string;
-      email: string;
-      phoneNumber: string;
-      password: string;
-      confirmPassword: string;
-    }>
+    values: RegisterUserData,
+    { setSubmitting, setTouched }: FormikHelpers<RegisterUserData>
   ) => {
-    // Mark all fields as touched when form is submitted
     setTouched({
       firstName: true,
       lastName: true,
       email: true,
       phoneNumber: true,
       password: true,
-      confirmPassword: true,
+      confirmPassword: true
     });
-
-    // Convert form values to RegisterUserData type
-    const userData: RegisterUserData = {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      email: values.email,
-      phoneNumber: values.phoneNumber,
-      password: values.password,
-      confirmPassword: values.confirmPassword
-    };
-
-    await dispatch(registerUser(userData));
-    setSubmitting(false);
+  
+    try {
+      // Register işlemini gerçekleştir
+      await dispatch(registerUser(values)).unwrap();
+      // Başarılı kayıt sonrası otomatik olarak create-business sayfasına yönlendirilecek
+      // (useEffect hook'u isAuthenticated değiştiğinde bunu yapacak)
+    } catch (error) {
+      console.error('Kayıt işlemi başarısız:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
