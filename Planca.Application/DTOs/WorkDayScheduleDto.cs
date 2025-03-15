@@ -1,36 +1,35 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
-public class WorkDayScheduleDto
+namespace Planca.Application.DTOs
 {
-    public int Day { get; set; } // Changed from DayOfWeek to int
-
-    private TimeSpan _openTime;
-    private TimeSpan _closeTime;
-
-    [JsonIgnore] // Hide the actual TimeSpan property from serialization
-    public TimeSpan OpenTime
+    public class WorkDayScheduleDto
     {
-        get => _openTime;
-        set => _openTime = value;
-    }
+        public int Day { get; set; } // Represents DayOfWeek as int (0 = Sunday, 1 = Monday, etc.)
 
-    [JsonIgnore] // Hide the actual TimeSpan property from serialization
-    public TimeSpan CloseTime
-    {
-        get => _closeTime;
-        set => _closeTime = value;
-    }
+        // Store the actual time values as strings for serialization
+        private string _openTimeString = "09:00";
+        private string _closeTimeString = "17:00";
 
-    // String properties for serialization/deserialization
-    public string OpenTimeString
-    {
-        get => _openTime.ToString(@"hh\:mm");
-        set => _openTime = TimeSpan.Parse(value);
-    }
+        [JsonIgnore]
+        public TimeSpan OpenTime => string.IsNullOrEmpty(_openTimeString) ?
+            TimeSpan.Parse("09:00") : TimeSpan.Parse(_openTimeString);
 
-    public string CloseTimeString
-    {
-        get => _closeTime.ToString(@"hh\:mm");
-        set => _closeTime = TimeSpan.Parse(value);
+        [JsonIgnore]
+        public TimeSpan CloseTime => string.IsNullOrEmpty(_closeTimeString) ?
+            TimeSpan.Parse("17:00") : TimeSpan.Parse(_closeTimeString);
+
+        // String properties for serialization/deserialization
+        public string OpenTimeString
+        {
+            get => _openTimeString;
+            set => _openTimeString = value;
+        }
+
+        public string CloseTimeString
+        {
+            get => _closeTimeString;
+            set => _closeTimeString = value;
+        }
     }
 }

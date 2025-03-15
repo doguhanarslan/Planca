@@ -26,10 +26,10 @@ namespace Planca.Domain.Entities
         public List<TenantWorkingHours> WorkingHours { get; set; } = new List<TenantWorkingHours>();
 
         // For Tenant entity, the TenantId is the same as its Id
-        public new Guid TenantId
-        {
-            get => Id;
-            set => Id = value;
-        }
+        //public new Guid TenantId
+        //{
+        //    get => Id;
+        //    set => Id = value;
+        //}
     }
 }

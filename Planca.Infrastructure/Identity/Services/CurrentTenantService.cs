@@ -17,18 +17,32 @@ namespace Planca.Infrastructure.Identity.Services
 
         public Guid GetTenantId()
         {
+            // First check if it's already set in the HttpContext.Items (from middleware)
             if (_httpContextAccessor.HttpContext?.Items["TenantId"] is Guid guid)
             {
                 return guid;
+            }
+
+            // Try to get from JWT token claims
+            var tenantIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("TenantId");
+            if (tenantIdClaim != null && Guid.TryParse(tenantIdClaim.Value, out var claimTenantId))
+            {
+                // Store it in HttpContext.Items for future use
+                if (_httpContextAccessor.HttpContext != null)
+                    _httpContextAccessor.HttpContext.Items["TenantId"] = claimTenantId;
+                return claimTenantId;
             }
 
             // Try to get from header
             if (_httpContextAccessor.HttpContext?.Request.Headers.ContainsKey(TenantIdHeaderName) == true)
             {
                 var headerValue = _httpContextAccessor.HttpContext.Request.Headers[TenantIdHeaderName].ToString();
-                if (Guid.TryParse(headerValue, out var tenantId))
+                if (Guid.TryParse(headerValue, out var headerTenantId))
                 {
-                    return tenantId;
+                    // Store it in HttpContext.Items for future use
+                    if (_httpContextAccessor.HttpContext != null)
+                        _httpContextAccessor.HttpContext.Items["TenantId"] = headerTenantId;
+                    return headerTenantId;
                 }
             }
 

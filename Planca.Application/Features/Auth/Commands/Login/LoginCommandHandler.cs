@@ -28,6 +28,7 @@ namespace Planca.Application.Features.Auth.Commands.Login
             _logger = logger;
         }
 
+        // In LoginCommandHandler.cs
         public async Task<Result<AuthResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
             try

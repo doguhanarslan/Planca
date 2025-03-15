@@ -33,7 +33,7 @@ const BusinessRequiredRoute: React.FC = () => {
       </div>
     );
   }
-
+  console.log("Auth state:", { isAuthenticated, isBusinessRegistered, loading });
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

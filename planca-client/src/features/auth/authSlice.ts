@@ -15,12 +15,12 @@ import {
   User,
   Tenant
 } from '@/types/index';
-
+import { STORAGE } from '@/utils/constants';
 /**
  * Async thunk for user login
  */
 export const loginUser = createAsyncThunk(
-  'auth/login',
+  'Auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       const response = await login(credentials);
@@ -81,10 +81,21 @@ export const createBusinessForUser = createAsyncThunk(
   'auth/create-business',
   async (businessData: BusinessData, { rejectWithValue }) => {
     try {
+      console.log('Action received data:', businessData); // Debug için log
+      if (!businessData) {
+        throw new Error('Business data is required');
+      }
+      
       const response = await createBusiness(businessData);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.errors || ['Business creation failed']);
+      console.error('Create business error:', error); // Debug için log
+      return rejectWithValue(
+        error.response?.data?.errors || 
+        error.response?.data?.message || 
+        error.message || 
+        ['Business creation failed']
+      );
     }
   }
 );
@@ -108,7 +119,7 @@ export const refreshUserToken = createAsyncThunk(
  * Async thunk for fetching current user data
  */
 export const fetchCurrentUser = createAsyncThunk(
-  'auth/getCurrentUser',
+  'auth/current-user',
   async (_, { rejectWithValue }) => {
     try {
       const response = await getCurrentUser();
@@ -208,8 +219,13 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-        const userData = action.payload.data;
-        state.user = formatUserData(userData);
+        const userData = action.payload?.data || action.payload;
+        if(userData){
+          state.user = formatUserData(userData);
+          if (userData.token) {
+            localStorage.setItem(STORAGE.AUTH_TOKEN, userData.token);
+          }
+        }
         state.tenant = formatTenantData(userData);
         state.isAuthenticated = true;
         state.isBusinessRegistered = !!userData.tenantId;
@@ -251,19 +267,22 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(createBusinessForUser.fulfilled, (state, action) => {
-        const businessData = action.payload.data;
-        state.tenant = {
-          id: businessData.id,
-          name: businessData.name,
-          subdomain: businessData.subdomain,
-          ...businessData
-        };
-        state.isBusinessRegistered = true;
+        const businessData = action.payload?.data || action.payload;
+        if (businessData) {
+          state.tenant = {
+            id: businessData.id,
+            name: businessData.name,
+            subdomain: businessData.subdomain,
+            ...businessData
+          };
+          state.isBusinessRegistered = true;
+        }
         state.loading = false;
       })
       .addCase(createBusinessForUser.rejected, (state, action) => {
         state.error = action.payload as string[] | string;
         state.loading = false;
+        console.error('Business creation rejected:', action.payload); // Debug için log
       })
       
       // Refresh token cases

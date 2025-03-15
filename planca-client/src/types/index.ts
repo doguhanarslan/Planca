@@ -58,11 +58,8 @@ export interface SocialMediaLinks {
 
 export interface WorkSchedule {
   day: number;
-  openTime: string;
-  closeTime: string;
-  breakStart?: string; // Mola başlangıç saati
-  breakEnd?: string; // Mola bitiş saati
-  isClosed?: boolean; // Kapalı günler için bayrak
+  openTimeString: string;
+  closeTimeString: string;
 }
 
 // Authentication Types

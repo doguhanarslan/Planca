@@ -33,7 +33,7 @@ namespace Planca.API.Controllers
         }
 
         [HttpPost("create-business")]
-        [Authorize] // Kullanıcı giriş yapmış olmalı
+         // Kullanıcı giriş yapmış olmalı
         public async Task<ActionResult> CreateBusiness(CreateBusinessCommand command)
         {
             // Mevcut kullanıcı ID'sini ekle

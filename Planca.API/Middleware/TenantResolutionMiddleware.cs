@@ -22,6 +22,19 @@ namespace Planca.API.Middleware
 
         public async Task InvokeAsync(HttpContext context, ApplicationDbContext dbContext)
         {
+            var tenantIdClaim = context.User?.FindFirst("TenantId");
+            if (tenantIdClaim != null && Guid.TryParse(tenantIdClaim.Value, out var tenantIdFromToken))
+            {
+                var tenant = await dbContext.Tenants.FindAsync(tenantIdFromToken);
+                if (tenant != null && tenant.IsActive)
+                {
+                    context.Items["TenantId"] = tenantIdFromToken;
+                    context.Items["TenantName"] = tenant.Name;
+                    _logger.LogInformation("Tenant resolved from token: {TenantName} ({TenantId})",
+                        tenant.Name, tenantIdFromToken);
+                }
+            }
+
             // Check header for tenant ID
             if (context.Request.Headers.TryGetValue(TenantIdHeaderName, out var tenantIdHeader) &&
                 Guid.TryParse(tenantIdHeader, out var tenantId))

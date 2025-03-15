@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { refreshUserToken } from '@/features/auth/authSlice';
 import { Store } from '@reduxjs/toolkit';
-
+import { STORAGE } from '@/utils/constants';
 // Modern HTTP client configuration
 const instance: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5288/api',
@@ -57,7 +57,16 @@ export const initializeAxios = (store: Store): void => {
     return config;
   });
   
-
+  instance.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem(STORAGE.AUTH_TOKEN);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
   // Add response interceptor for token refresh
   instance.interceptors.response.use(
     (response) => {

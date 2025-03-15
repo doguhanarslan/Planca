@@ -14,7 +14,7 @@ namespace Planca.Infrastructure.Identity.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-
+       
         public IdentityService(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager)
@@ -228,13 +228,26 @@ namespace Planca.Infrastructure.Identity.Services
                 return Result<UserBasicData>.Failure("User not found");
             }
 
+            // Check that the required fields aren't null
+            if (string.IsNullOrEmpty(user.FirstName) || string.IsNullOrEmpty(user.LastName))
+            {
+                // Log warning but don't fail - use empty strings instead
+                Console.WriteLine("User {UserId} has missing name information", userId);
+            }
+            var roles = await _userManager.GetRolesAsync(user);
             var userData = new UserBasicData
             {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
+                Id = user.Id,
+                UserName = user.UserName,
+                FirstName = user.FirstName ?? "",
+                LastName = user.LastName ?? "",
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
-                TenantId = user.TenantId
+                TenantId = user.TenantId,
+                // Include these additional properties
+                CreatedAt = user.CreatedAt,
+                IsActive = user.IsActive,
+                Roles = roles.ToArray()
             };
 
             return Result<UserBasicData>.Success(userData);

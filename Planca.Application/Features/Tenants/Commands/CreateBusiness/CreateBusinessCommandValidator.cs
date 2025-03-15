@@ -1,4 +1,7 @@
 ﻿using FluentValidation;
+using Planca.Application.DTOs;
+using Planca.Application.Features.Tenants.Commands.CreateBusiness;
+using System;
 using System.Text.RegularExpressions;
 
 namespace Planca.Application.Features.Tenants.Commands.CreateBusiness
@@ -39,9 +42,24 @@ namespace Planca.Application.Features.Tenants.Commands.CreateBusiness
             RuleFor(v => v.WorkSchedule)
                 .NotEmpty().WithMessage("Work schedule is required");
 
+            // Validate that each day's OpenTimeString represents a time before CloseTimeString
             RuleForEach(v => v.WorkSchedule).ChildRules(schedule => {
-                schedule.RuleFor(s => s.OpenTime)
-                    .LessThan(s => s.CloseTime)
+                schedule.RuleFor(s => s.OpenTimeString)
+                    .Must((s, openTimeStr) => {
+                        if (string.IsNullOrEmpty(openTimeStr) || string.IsNullOrEmpty(s.CloseTimeString))
+                            return true; // Skip validation if either string is empty
+
+                        try
+                        {
+                            TimeSpan openTime = TimeSpan.Parse(openTimeStr);
+                            TimeSpan closeTime = TimeSpan.Parse(s.CloseTimeString);
+                            return openTime < closeTime;
+                        }
+                        catch
+                        {
+                            return false; // If parsing fails, validation fails
+                        }
+                    })
                     .WithMessage("Open time must be before close time");
             });
         }
