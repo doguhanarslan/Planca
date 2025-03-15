@@ -66,6 +66,8 @@ export interface WorkSchedule {
 export interface AuthState {
   user: User | null;
   tenant: Tenant | null;
+  token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isBusinessRegistered: boolean;
   loading: boolean;

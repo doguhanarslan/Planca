@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.IdentityModel.Tokens.Jwt; // Add this import
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Planca.Application.Common.Interfaces;
 
@@ -13,7 +14,8 @@ namespace Planca.Infrastructure.Identity.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public string UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "default-user-id";
+        public string UserId => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true ?
+            _httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Sub) : null;
 
         public string UserName => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
 

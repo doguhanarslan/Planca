@@ -134,7 +134,8 @@ namespace Planca.Application.Features.Auth.Commands.Register
                         UserId = userId,
                         UserName = $"{request.FirstName} {request.LastName}",
                         Email = request.Email,
-                        Roles = roles.ToArray()
+                        Roles = roles.ToArray(),
+                        TenantId = null
                     };
 
                     _logger.LogInformation("User {Email} registered successfully with role {Role}", request.Email, request.Role);

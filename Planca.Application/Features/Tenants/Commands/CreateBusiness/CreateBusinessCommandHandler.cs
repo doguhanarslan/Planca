@@ -19,17 +19,20 @@ namespace Planca.Application.Features.Tenants.Commands.CreateBusiness
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IIdentityService _identityService;
+        private readonly ITokenService _tokenService;
 
         public CreateBusinessCommandHandler(
             IRepository<Tenant> tenantRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            IIdentityService identityService)
+            IIdentityService identityService,
+            ITokenService tokenService)
         {
             _tenantRepository = tenantRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _identityService = identityService;
+            _tokenService = tokenService;
         }
 
         public async Task<Result<TenantDto>> Handle(CreateBusinessCommand request, CancellationToken cancellationToken)
@@ -91,9 +94,29 @@ namespace Planca.Application.Features.Tenants.Commands.CreateBusiness
                 // 6. Değişiklikleri uygula
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                // 7. DTO'ya dönüştür ve sonucu döndür
-                var tenantDto = _mapper.Map<TenantDto>(tenant);
-                return Result<TenantDto>.Success(tenantDto);
+
+                var userRoles = await _identityService.GetUserRolesAsync(request.UserId);
+                var userData = await _identityService.GetUserBasicDataAsync(request.UserId);
+                if (userData.Succeeded)
+                {
+                    // Yeni token oluştur - TenantId artık dolu
+                    var token = _tokenService.CreateToken(
+                        request.UserId,
+                        userData.Data.Email,
+                        userRoles,
+                        tenant.Id.ToString());
+
+                    // 8. DTO'ya dönüştür ve token bilgisini ekle
+                    var tenantDtoWithToken = _mapper.Map<TenantDto>(tenant);
+                    tenantDtoWithToken.AuthToken = token; // Controller'da cookie için kullanılacak
+                    return Result<TenantDto>.Success(tenantDtoWithToken);
+                }
+                else
+                {
+                    // Token oluşturulamadı, yine de tenant bilgisini döndür
+                    var tenantDtoWithoutToken = _mapper.Map<TenantDto>(tenant);
+                    return Result<TenantDto>.Success(tenantDtoWithoutToken);
+                }
 
             }
             catch (Exception e)

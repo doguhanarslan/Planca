@@ -34,9 +34,9 @@ namespace Planca.Infrastructure.Identity.Services
             }
 
             // Add tenant ID if available
-            
+
             claims.Add(new Claim("TenantId",
-                !string.IsNullOrEmpty(tenantId) ? tenantId : "00000000-0000-0000-0000-000000000000"));
+        !string.IsNullOrEmpty(tenantId) ? tenantId : Guid.Empty.ToString()));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

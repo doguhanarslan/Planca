@@ -85,6 +85,7 @@ namespace Planca.Application.Features.Auth.Commands.Login
                     UserId = userId,
                     UserName = $"{userDataResult.Data.FirstName} {userDataResult.Data.LastName}",
                     Email = request.Email,
+                    TenantId = userDataResult.Data.TenantId,
                     Roles = roles.ToArray()
                 };
 

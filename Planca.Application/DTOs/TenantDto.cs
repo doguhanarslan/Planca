@@ -11,16 +11,15 @@ namespace Planca.Application.DTOs
         public string LogoUrl { get; set; }
         public string PrimaryColor { get; set; }
         public bool IsActive { get; set; }
-
-        // Adres bilgileri
         public string Address { get; set; }
         public string City { get; set; }
         public string State { get; set; }
         public string ZipCode { get; set; }
-
-        // Çalışma saatleri
         public List<TenantWorkingHoursDto> WorkingHours { get; set; }
+
+        // İşletme oluşturulduktan sonra yeni token için
+        public string AuthToken { get; set; }
     }
 
-    
+
 }

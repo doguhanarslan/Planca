@@ -4,6 +4,7 @@ using Planca.Application.Common.Exceptions;
 using Planca.Application.Common.Interfaces;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using UnauthorizedAccessException = Planca.Application.Common.Exceptions.UnauthorizedAccessException;
@@ -54,6 +55,7 @@ namespace Planca.Application.Features.Auth.Queries.GetCurrentUser
                 FirstName = userDataResult.Data.FirstName,
                 LastName = userDataResult.Data.LastName,
                 PhoneNumber = userDataResult.Data.PhoneNumber,
+                TenantId = userDataResult.Data.TenantId,
                 Roles = userDataResult.Data.Roles // UserBasicData'da roller var
             };
 

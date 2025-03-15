@@ -1,79 +1,100 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿// Planca.API/Controllers/AuthController.cs
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Planca.Application.Features.Auth.Commands.Login;
-using Planca.Application.Features.Auth.Commands.Register;
-using Planca.Application.Features.Auth.Commands.RefreshToken;
-using Planca.Application.Features.Auth.Queries.GetCurrentUser;
-using System.Threading.Tasks;
-using Planca.Application.Features.Tenants.Commands.CreateBusiness;
+using Planca.API.Controllers;
 using Planca.Application.Common.Interfaces;
-namespace Planca.API.Controllers
+using Planca.Application.Features.Auth.Commands.Login;
+using Planca.Application.Features.Auth.Commands.RefreshToken;
+using Planca.Application.Features.Tenants.Commands.CreateBusiness;
+
+public class AuthController : BaseApiController
 {
-    public class AuthController : BaseApiController
+    private readonly ICurrentUserService _currentUserService;
+
+    public AuthController(ICurrentUserService currentUserService)
     {
-        private readonly ICurrentUserService _currentUserService;
-        public AuthController(ICurrentUserService currentUserService)
-        {
-            _currentUserService = currentUserService;
-        }
-        [HttpPost("login")]
-        [AllowAnonymous]
-        public async Task<ActionResult> Login(LoginCommand command)
-        {
-            var result = await Mediator.Send(command);
-            return HandleActionResult(result);
-        }
+        _currentUserService = currentUserService;
+    }
 
-        [HttpPost("register")]
-        [AllowAnonymous]
-        public async Task<ActionResult> Register(RegisterCommand command)
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task<ActionResult> Login(LoginCommand command)
+    {
+        var result = await Mediator.Send(command);
+
+        if (result.Succeeded)
         {
-            var result = await Mediator.Send(command);
-            return HandleActionResult(result);
+            // JWT'yi HTTP-only cookie olarak ayarla
+            SetTokenCookie(result.Data.Token);
         }
 
-        [HttpPost("create-business")]
-         // Kullanıcı giriş yapmış olmalı
-        public async Task<ActionResult> CreateBusiness(CreateBusinessCommand command)
-        {
-            // Mevcut kullanıcı ID'sini ekle
-            string userId = _currentUserService.UserId;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { error = "User identity not found" });
-            }
+        return HandleActionResult(result);
+    }
 
-            command.UserId = userId;
-            var result = await Mediator.Send(command);
-            return HandleActionResult(result);
+    [HttpPost("register")]
+    [AllowAnonymous]
+    public async Task<ActionResult> Register(RegisterCommand command)
+    {
+        var result = await Mediator.Send(command);
+
+        if (result.Succeeded)
+        {
+            // JWT'yi HTTP-only cookie olarak ayarla
+            SetTokenCookie(result.Data.Token);
         }
 
-        [HttpPost("refresh-token")]
-        [AllowAnonymous]
-        public async Task<ActionResult> RefreshToken(RefreshTokenCommand command)
+        return HandleActionResult(result);
+    }
+
+    [HttpPost("create-business")]
+    public async Task<ActionResult> CreateBusiness(CreateBusinessCommand command)
+    {
+        // Mevcut kullanıcı ID'sini ekle
+        string userId = _currentUserService.UserId;
+        if (string.IsNullOrEmpty(userId))
         {
-            var result = await Mediator.Send(command);
-            return HandleActionResult(result);
+            return Unauthorized(new { error = "User identity not found" });
         }
 
-        [HttpGet("current-user")]
-        public async Task<ActionResult> GetCurrentUser()
-        {
-            // Check if user is authenticated before proceeding
-            if (!_currentUserService.IsAuthenticated)
-            {
-                // Return a 200 OK with information that user is not authenticated
-                // instead of a 401 error
-                return Ok(new
-                {
-                    isAuthenticated = false,
-                    message = "User is not authenticated"
-                });
-            }
+        command.UserId = userId;
+        var result = await Mediator.Send(command);
 
-            // User is authenticated, proceed with getting user data
-            var result = await Mediator.Send(new GetCurrentUserQuery());
-            return HandleActionResult(result);
+        if (result.Succeeded && !string.IsNullOrEmpty(result.Data.AuthToken))
+        {
+            // Yeni token'ı HTTP-only cookie olarak ayarla
+            SetTokenCookie(result.Data.AuthToken);
         }
+
+        return HandleActionResult(result);
+    }
+
+    [HttpPost("refresh-token")]
+    [AllowAnonymous]
+    public async Task<ActionResult> RefreshToken(RefreshTokenCommand command)
+    {
+        var result = await Mediator.Send(command);
+
+        if (result.Succeeded)
+        {
+            // Yeni JWT'yi HTTP-only cookie olarak ayarla
+            SetTokenCookie(result.Data.Token);
+        }
+
+        return HandleActionResult(result);
+    }
+
+    // HTTP-only cookie ayarlama helper metodu
+    private void SetTokenCookie(string token)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Expires = DateTime.UtcNow.AddDays(7), // Cookie süresi
+            Secure = true, // HTTPS üzerinden gönder
+            SameSite = SameSiteMode.Strict // CSRF koruması için
+        };
+
+        Response.Cookies.Append("jwt", token, cookieOptions);
     }
 }

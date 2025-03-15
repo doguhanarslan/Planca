@@ -115,7 +115,8 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
                     UserId = userId,
                     UserName = $"{userDataResult.Data.FirstName} {userDataResult.Data.LastName}",
                     Email = userDataResult.Data.Email,
-                    Roles = roles.ToArray()
+                    Roles = roles.ToArray(),
+                    TenantId = userDataResult.Data.TenantId
                 };
 
                 _logger.LogInformation("Token refreshed successfully for user {UserId}", userId);
