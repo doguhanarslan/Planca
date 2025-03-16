@@ -106,48 +106,11 @@ export const refreshUserToken = createAsyncThunk(
   'auth/refreshToken',
   async (_, { rejectWithValue }) => {
     try {
-      // Uses refresh token in HttpOnly cookie
       const response = await refreshToken();
-      
-      // Check if we have a valid response with data
-      if (response?.data?.succeeded) {
-        return response.data;
-      } else {
-        // API returned success:false or unexpected structure
-        return rejectWithValue(
-          response?.data?.message || 
-          response?.data?.errors || 
-          'Token refresh failed with an invalid response'
-        );
-      }
+      return response.data;
     } catch (error: any) {
-      // Enhanced error handling with detailed logging
-      console.error('Token refresh failed:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      
-      // Handle different error status codes
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        return rejectWithValue('Your session has expired. Please login again.');
-      } else if (error.response?.status === 400) {
-        return rejectWithValue(
-          error.response?.data?.errors || 
-          error.response?.data?.message || 
-          'Invalid refresh token request'
-        );
-      } else if (error.response?.status === 500) {
-        return rejectWithValue('Server error while refreshing authentication. Please try again later.');
-      }
-      
-      // Default error fallback
-      return rejectWithValue(
-        error.response?.data?.errors || 
-        error.response?.data?.message || 
-        [error.message || 'Token refresh failed']
-      );
+      console.error('Token refresh error:', error.response?.data || error.message);
+      return rejectWithValue('Authentication failed. Please log in again.');
     }
   }
 );
@@ -259,21 +222,27 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         const userData = action.payload?.data || action.payload;
-        if(userData){
+        if(userData) {
           state.user = formatUserData(userData);
           
-          // Store tokens in Redux state instead of localStorage
-          state.token = userData.token ?? null;
-          state.refreshToken = userData.refreshToken ?? null;
+          // Maintain tenant information from the response
+          state.tenant = formatTenantData(userData);
+          
+          // We don't store the actual token since it's in an HTTP-only cookie,
+          // but we do need to track the authenticated state and tenant association
+          state.isAuthenticated = true;
+          state.isBusinessRegistered = !!userData.tenantId || !!state.tenant;
+          
+          // For debugging/dev purposes, you could optionally store the tenantId 
+          // separately if it's included directly in the response
+          // state.tenantId = userData.tenantId;
         }
-        state.tenant = formatTenantData(userData);
-        state.isAuthenticated = true;
-        state.isBusinessRegistered = !!userData.tenantId;
         state.loading = false;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.error = action.payload as string[] | string;
         state.loading = false;
+        state.isAuthenticated = false;
       })
       
       // Register cases
@@ -312,9 +281,11 @@ const authSlice = createSlice({
             subdomain: businessData.subdomain,
             ...businessData
           };
-          state.token = businessData.token ?? state.token;
-          state.refreshToken = businessData.refreshToken ?? state.refreshToken;
+          // Don't try to extract tokens from response - they're in HTTP-only cookies
+          // state.token = businessData.token ?? state.token; 
+          // state.refreshToken = businessData.refreshToken ?? state.refreshToken;
           state.isBusinessRegistered = true;
+          state.isAuthenticated = true; // Ensure we maintain authenticated state
         }
         state.loading = false;
       })

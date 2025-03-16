@@ -92,42 +92,33 @@ class AuthService {
    */
   static async refreshToken() {
     try {
-      // Make the refresh token request
-      // Note: For HttpOnly cookies, the refresh token is sent automatically in the cookie
       const response = await axios.post<ApiResponse<AuthResponse>>(
         this.ENDPOINTS.REFRESH_TOKEN,
         {}, // Empty body since the token is in the cookie
-        { 
-          withCredentials: true // Essential for sending and receiving cookies
-        }
+        { withCredentials: true }
       );
       
-      // If successful, return the response with the new token info
       return response;
     } catch (error) {
       if (isAxiosError(error)) {
-        // Log detailed error information for debugging
         console.error('Token refresh failed:', {
           status: error.response?.status,
           statusText: error.response?.statusText,
-          data: error.response?.data,
-          message: error.message
+          data: error.response?.data
         });
         
-        // Add specific handling for common errors
-        if (error.response?.status === 401) {
-          console.error('Authentication expired. User must log in again.');
-        } else if (error.response?.status === 400) {
-          console.error('Invalid refresh token or token expired.');
-        } else if (error.response?.status === 403) {
-          console.error('Forbidden: User not allowed to refresh token.');
+        // If the token is invalid/expired, we should clear local state
+        if (error.response?.status === 401 || error.response?.status === 400) {
+          console.warn('Authentication expired, redirecting to login...');
+          // Don't throw here - return a standardized error object
+          return {
+            data: {
+              succeeded: false,
+              message: 'Your session has expired. Please log in again.'
+            }
+          } as any;
         }
-      } else {
-        // Handle non-Axios errors
-        console.error('Unexpected error during token refresh:', error);
       }
-      
-      // Rethrow for handling in the calling code
       throw error;
     }
   }

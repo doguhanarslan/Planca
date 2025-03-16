@@ -28,7 +28,9 @@ const useAuth = () => {
 
   // Optimized login function with useCallback
   const login = useCallback(
-    (credentials: LoginCredentials) => dispatch(loginUser(credentials)),
+    (credentials: LoginCredentials) => dispatch(loginUser(credentials)).then(()=>{
+      dispatch(fetchCurrentUser());
+    }),
     [dispatch]
   );
 
@@ -40,7 +42,10 @@ const useAuth = () => {
 
   // Optimized create business function with useCallback
   const createBusiness = useCallback(
-    (businessData: BusinessData) => dispatch(createBusinessForUser(businessData)),
+    (businessData: BusinessData) => dispatch(createBusinessForUser(businessData)).then(() => {
+      // After successful business creation, fetch updated user data 
+      dispatch(fetchCurrentUser());
+    }),
     [dispatch]
   );
 
