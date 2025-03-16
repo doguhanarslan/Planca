@@ -211,9 +211,10 @@ export const DEFAULTS = {
     .map(day => ({
       day: day.value,
       openTime: '09:00',
-      closeTime: '17:00'
+      closeTime: '17:00',
+      openTimeString: '09:00',
+      closeTimeString: '17:00'
     } as WorkingHour)),
-  
   // Varsayılan birincil marka rengi
   PRIMARY_COLOR: '#ff0000',
   

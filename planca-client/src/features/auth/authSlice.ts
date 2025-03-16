@@ -108,9 +108,46 @@ export const refreshUserToken = createAsyncThunk(
     try {
       // Uses refresh token in HttpOnly cookie
       const response = await refreshToken();
-      return response.data;
+      
+      // Check if we have a valid response with data
+      if (response?.data?.succeeded) {
+        return response.data;
+      } else {
+        // API returned success:false or unexpected structure
+        return rejectWithValue(
+          response?.data?.message || 
+          response?.data?.errors || 
+          'Token refresh failed with an invalid response'
+        );
+      }
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.errors || ['Token refresh failed']);
+      // Enhanced error handling with detailed logging
+      console.error('Token refresh failed:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      // Handle different error status codes
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        return rejectWithValue('Your session has expired. Please login again.');
+      } else if (error.response?.status === 400) {
+        return rejectWithValue(
+          error.response?.data?.errors || 
+          error.response?.data?.message || 
+          'Invalid refresh token request'
+        );
+      } else if (error.response?.status === 500) {
+        return rejectWithValue('Server error while refreshing authentication. Please try again later.');
+      }
+      
+      // Default error fallback
+      return rejectWithValue(
+        error.response?.data?.errors || 
+        error.response?.data?.message || 
+        [error.message || 'Token refresh failed']
+      );
     }
   }
 );
@@ -275,6 +312,8 @@ const authSlice = createSlice({
             subdomain: businessData.subdomain,
             ...businessData
           };
+          state.token = businessData.token ?? state.token;
+          state.refreshToken = businessData.refreshToken ?? state.refreshToken;
           state.isBusinessRegistered = true;
         }
         state.loading = false;
@@ -323,6 +362,8 @@ const authSlice = createSlice({
         const userData = action.payload.data;
         if (userData) {
           state.user = formatUserData(userData);
+          state.token = userData.token ?? null;
+          state.refreshToken = userData.refreshToken ?? null;
           state.tenant = formatTenantData(userData);
           state.isAuthenticated = true;
           state.isBusinessRegistered = !!userData.tenantId;
@@ -332,6 +373,8 @@ const authSlice = createSlice({
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.error = action.payload as string[] | string;
         state.loading = false;
+        state.token = null;
+        state.refreshToken = null;
       })
       
       // Logout cases

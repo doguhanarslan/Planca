@@ -9,6 +9,7 @@ using Planca.Infrastructure.Persistence;
 using Serilog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Planca.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,7 +53,17 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowAnyHeader());
 });
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", builder =>
+    {
+        builder
+            .WithOrigins("http://localhost:5173") // Your Vite frontend
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials(); // This is crucial for cookies
+    });
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -77,8 +88,8 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseHttpsRedirection();
 
 // Enable CORS
+app.UseCors("AllowFrontend");
 app.UseCors("AllowAll");
-
 // Add authentication & authorization
 app.UseAuthentication();
 app.UseAuthorization();

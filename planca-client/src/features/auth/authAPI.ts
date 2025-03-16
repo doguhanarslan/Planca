@@ -1,4 +1,5 @@
 import axios from '@/utils/axios';
+import { isAxiosError } from 'axios';
 import { 
   LoginCredentials, 
   RegisterUserData, 
@@ -91,17 +92,45 @@ class AuthService {
    */
   static async refreshToken() {
     try {
-      return await axios.post<ApiResponse<AuthResponse>>(
-        this.ENDPOINTS.REFRESH_TOKEN, 
-        {}, 
-        { withCredentials: true }
+      // Make the refresh token request
+      // Note: For HttpOnly cookies, the refresh token is sent automatically in the cookie
+      const response = await axios.post<ApiResponse<AuthResponse>>(
+        this.ENDPOINTS.REFRESH_TOKEN,
+        {}, // Empty body since the token is in the cookie
+        { 
+          withCredentials: true // Essential for sending and receiving cookies
+        }
       );
+      
+      // If successful, return the response with the new token info
+      return response;
     } catch (error) {
-      console.error('Token refresh error:', error);
+      if (isAxiosError(error)) {
+        // Log detailed error information for debugging
+        console.error('Token refresh failed:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message
+        });
+        
+        // Add specific handling for common errors
+        if (error.response?.status === 401) {
+          console.error('Authentication expired. User must log in again.');
+        } else if (error.response?.status === 400) {
+          console.error('Invalid refresh token or token expired.');
+        } else if (error.response?.status === 403) {
+          console.error('Forbidden: User not allowed to refresh token.');
+        }
+      } else {
+        // Handle non-Axios errors
+        console.error('Unexpected error during token refresh:', error);
+      }
+      
+      // Rethrow for handling in the calling code
       throw error;
     }
   }
-
   /**
    * Get the currently logged-in user
    * @returns Promise with the current user data
