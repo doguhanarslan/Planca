@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Planca.Application.Common.Interfaces;
@@ -11,19 +12,54 @@ namespace Planca.Infrastructure.Identity.Services
 {
     public class TokenService : ITokenService
     {
+
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IConfiguration _configuration;
 
-        public TokenService(IConfiguration configuration)
+        public TokenService(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+        }
+        public string GetToken()
+        {
+            _httpContextAccessor.HttpContext.Request.Cookies.TryGetValue("jwt", out var token);
+            return token;
         }
 
+        public string GetRefreshToken()
+        {
+            _httpContextAccessor.HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+            return refreshToken;
+        }
+
+        public void StoreTokens(string token, string refreshToken, DateTime tokenExpiry, DateTime refreshTokenExpiry)
+        {
+            _httpContextAccessor.HttpContext.Response.Cookies.Append("jwt", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false, // Geliştirme ortamında HTTP kullanıyorsanız
+                SameSite = SameSiteMode.None,
+                Path = "/",
+                Expires = tokenExpiry
+            });
+
+            _httpContextAccessor.HttpContext.Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false, // Geliştirme ortamında HTTP kullanıyorsanız
+                SameSite = SameSiteMode.None,
+                Path = "/",
+                Expires = refreshTokenExpiry
+            });
+        }
         public string CreateToken(string userId, string email, IList<string> roles, string tenantId = null)
         {
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(JwtRegisteredClaimNames.Email, email),
+                new Claim(ClaimTypes.Name, email), // Kullanıcı adı için ClaimTypes.Name ekleyin
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
@@ -36,7 +72,7 @@ namespace Planca.Infrastructure.Identity.Services
             // Add tenant ID if available
 
             claims.Add(new Claim("TenantId",
-        !string.IsNullOrEmpty(tenantId) ? tenantId : Guid.Empty.ToString()));
+                   !string.IsNullOrEmpty(tenantId) ? tenantId : Guid.Empty.ToString()));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

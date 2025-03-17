@@ -16,15 +16,17 @@ namespace Planca.Application.Features.Auth.Queries.GetCurrentUser
         private readonly ICurrentUserService _currentUserService;
         private readonly IUserService _userService;
         private readonly ILogger<GetCurrentUserQueryHandler> _logger;
-
+        private readonly ITokenService _tokenService;
         public GetCurrentUserQueryHandler(
             ICurrentUserService currentUserService,
             IUserService userService,
-            ILogger<GetCurrentUserQueryHandler> logger)
+            ILogger<GetCurrentUserQueryHandler> logger,
+            ITokenService tokenService)
         {
             _currentUserService = currentUserService;
             _userService = userService;
             _logger = logger;
+            _tokenService = tokenService;
         }
 
         public async Task<Result<UserDto>> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
@@ -50,7 +52,7 @@ namespace Planca.Application.Features.Auth.Queries.GetCurrentUser
             var userDto = new UserDto
             {
                 Id = userId,
-                UserName = _currentUserService.UserName ?? userDataResult.Data.UserName,
+                UserName = userDataResult.Data.Email,
                 Email = userDataResult.Data.Email,
                 FirstName = userDataResult.Data.FirstName,
                 LastName = userDataResult.Data.LastName,

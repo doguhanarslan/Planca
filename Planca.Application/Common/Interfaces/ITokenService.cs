@@ -20,5 +20,8 @@ namespace Planca.Application.Common.Interfaces
         /// <param name="token">JWT token</param>
         /// <returns>Kullanıcı ID'si veya token geçersizse boş string</returns>
         string GetUserIdFromToken(string token);
+        string GetToken();
+        string GetRefreshToken();
+        void StoreTokens(string token, string refreshToken, DateTime tokenExpiry, DateTime refreshTokenExpiry);
     }
 }

@@ -33,7 +33,7 @@ namespace Planca.API.Controllers
             if (result.Succeeded)
             {
                 // Set JWT as HTTP-only cookie
-                SetTokenCookie(result.Data.Token);
+                SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
 
                 // Return auth data WITHOUT including the token in the response body
                 // This prevents the token from being stored in JavaScript
@@ -63,7 +63,7 @@ namespace Planca.API.Controllers
             if (result.Succeeded)
             {
                 // Set JWT as HTTP-only cookie
-                SetTokenCookie(result.Data.Token);
+                SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
             }
 
             return HandleActionResult(result);
@@ -73,7 +73,6 @@ namespace Planca.API.Controllers
         /// Creates a new business and assigns it to the current user
         /// </summary>
         [HttpPost("create-business")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -89,10 +88,10 @@ namespace Planca.API.Controllers
             command.UserId = userId;
             var result = await Mediator.Send(command);
 
-            if (result.Succeeded && !string.IsNullOrEmpty(result.Data.AuthToken))
+            if (result.Succeeded)
             {
                 // Set new token as HTTP-only cookie
-                SetTokenCookie(result.Data.AuthToken);
+                SetTokenCookie(result.Data.Token,result.Data.RefreshToken);
             }
 
             return HandleActionResult(result);
@@ -103,27 +102,43 @@ namespace Planca.API.Controllers
         /// </summary>
         [HttpPost("refresh-token")]
         [AllowAnonymous]
-        public async Task<ActionResult> RefreshToken(RefreshTokenCommand command)
+        public async Task<ActionResult> RefreshToken([FromBody] RefreshTokenCommand command)
         {
+            // If body is empty, create a new command
+            command ??= new RefreshTokenCommand();
+
+            // Read token and refresh token from cookies and add to command
+            if (Request.Cookies.TryGetValue("jwt", out var jwtCookie))
+            {
+                command.Token = jwtCookie;
+            }
+
+            if (Request.Cookies.TryGetValue("refreshToken", out var refreshCookie))
+            {
+                command.RefreshToken = refreshCookie;
+            }
+
             var result = await Mediator.Send(command);
 
             if (result.Succeeded)
             {
-                // Set the new JWT as HTTP-only cookie
-                SetTokenCookie(result.Data.Token);
+                // Set new tokens as cookies
+                SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
 
-                // Return auth data WITHOUT including the token
+                // Return user information without tokens in the response body
                 return Ok(new
                 {
                     userId = result.Data.UserId,
                     userName = result.Data.UserName,
+                    email = result.Data.Email,
                     roles = result.Data.Roles,
-                    refreshToken = result.Data.RefreshToken
+                    tenantId = result.Data.TenantId
                 });
             }
 
-            return BadRequest(result.Errors);
+            return BadRequest(new { errors = result.Errors });
         }
+
 
         /// <summary>
         /// Logs out the current user by clearing the authentication cookie
@@ -134,6 +149,8 @@ namespace Planca.API.Controllers
         {
             // Clear the JWT cookie
             Response.Cookies.Delete("jwt");
+            Response.Cookies.Delete("refreshToken");
+
 
             return Ok(new { message = "Logged out successfully" });
         }
@@ -142,7 +159,6 @@ namespace Planca.API.Controllers
         /// Returns the current authenticated user's information
         /// </summary>
         [HttpGet("current-user")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> GetCurrentUser()
@@ -166,17 +182,25 @@ namespace Planca.API.Controllers
         }
 
         // Helper method to set an HTTP-only cookie with the JWT token
-        private void SetTokenCookie(string token)
+        private void SetTokenCookie(string token,string refreshToken)
         {
-            var cookieOptions = new CookieOptions
+            var JwtTokenCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddMinutes(30), // Cookie duration
+                Secure = false, // Send only over HTTPS
+                SameSite = SameSiteMode.Strict // CSRF protection
+            };
+            var RefreshTokenCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(7), // Cookie duration
-                Secure = true, // Send only over HTTPS
+                Secure = false, // Send only over HTTPS
                 SameSite = SameSiteMode.Strict // CSRF protection
             };
+            Response.Cookies.Append("jwt", token, JwtTokenCookieOptions);
 
-            Response.Cookies.Append("jwt", token, cookieOptions);
+            Response.Cookies.Append("refreshToken", refreshToken, RefreshTokenCookieOptions);
         }
     }
 }

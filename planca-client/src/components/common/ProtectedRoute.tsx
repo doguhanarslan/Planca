@@ -1,13 +1,13 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import useAuth from '@/hooks/useAuth';
+import { useAppSelector } from '@/app/hooks';
 
 /**
  * Modern Protected route component with enhanced loading state
  * Redirects to login if not authenticated
  */
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
   const location = useLocation();
 
   // Enhanced loading state with modern spinner

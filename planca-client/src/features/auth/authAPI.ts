@@ -7,6 +7,7 @@ import {
   ApiResponse, 
   AuthResponse 
 } from '@/types';
+import { fetchCurrentUser } from './authSlice';
 
 /**
  * Authentication service containing all API calls for auth functionality
@@ -33,7 +34,7 @@ class AuthService {
         this.ENDPOINTS.LOGIN, 
         credentials, 
         { withCredentials: true }
-      );
+      ).finally(()=>fetchCurrentUser());
     } catch (error) {
       console.error('Login error:', error);
       throw error;

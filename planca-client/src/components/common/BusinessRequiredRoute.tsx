@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import useAuth from '@/hooks/useAuth';
+import { useAppSelector } from '@/app/hooks';
 
 /**
  * Modern Protected route that requires both authentication and a registered business
@@ -8,7 +9,7 @@ import useAuth from '@/hooks/useAuth';
  * Redirects to login if not authenticated
  */
 const BusinessRequiredRoute: React.FC = () => {
-  const { isAuthenticated, isBusinessRegistered, loading } = useAuth();
+  const { isAuthenticated, isBusinessRegistered, loading } = useAppSelector((state)=>state.auth);
   const location = useLocation();
 
   // Enhanced loading state with modern pulse effect
@@ -33,16 +34,15 @@ const BusinessRequiredRoute: React.FC = () => {
       </div>
     );
   }
-  console.log("Auth state:", { isAuthenticated, isBusinessRegistered, loading });
   // Redirect to login if not authenticated
+  if (!isBusinessRegistered) {
+    return <Navigate to="/create-business" state={{ from: location }} replace />;
+  }
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Redirect to business registration if authenticated but no business
-  if (!isBusinessRegistered) {
-    return <Navigate to="/create-business" state={{ from: location }} replace />;
-  }
 
   // Render child routes
   return <Outlet />;

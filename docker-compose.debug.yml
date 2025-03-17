@@ -1,0 +1,22 @@
+---
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Planca.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - DOTNET_USE_POLLING_FILE_WATCHER=1
+    ports:
+    - "5288:80"
+    - "7288:443"
+    - "4024:4024"
+
+    volumes:
+      - ~/.vsdbg:/remote_debugger:ro
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+      - ./Planca.API:/app
+    cap_add:
+      - SYS_PTRACE

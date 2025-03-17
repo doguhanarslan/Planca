@@ -224,25 +224,22 @@ const authSlice = createSlice({
         const userData = action.payload?.data || action.payload;
         if(userData) {
           state.user = formatUserData(userData);
+          state.token = userData.token ?? null;
+          state.refreshToken = userData.refreshToken ?? null;
           
-          // Maintain tenant information from the response
-          state.tenant = formatTenantData(userData);
+          // Tenant bilgilerini kaydet
+          if (userData.tenant) {
+            state.tenant = userData.tenant;
+          } else if (userData.tenantId) {
+            state.tenant = { id: userData.tenantId, name: userData.tenantName || 'İşletme', subdomain: '' };
+          }
           
-          // We don't store the actual token since it's in an HTTP-only cookie,
-          // but we do need to track the authenticated state and tenant association
           state.isAuthenticated = true;
-          state.isBusinessRegistered = !!userData.tenantId || !!state.tenant;
-          
-          // For debugging/dev purposes, you could optionally store the tenantId 
-          // separately if it's included directly in the response
-          // state.tenantId = userData.tenantId;
+          // İşletme kaydını doğru şekilde kontrol et
+          state.isBusinessRegistered = !!(userData.tenantId || userData.tenant?.id);
+          console.log('Login success, business registered:', state.isBusinessRegistered, 'tenantId:', userData.tenant?.id);
         }
         state.loading = false;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.error = action.payload as string[] | string;
-        state.loading = false;
-        state.isAuthenticated = false;
       })
       
       // Register cases
@@ -330,14 +327,24 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-        const userData = action.payload.data;
+        const userData = action.payload?.data || action.payload;
         if (userData) {
           state.user = formatUserData(userData);
-          state.token = userData.token ?? null;
-          state.refreshToken = userData.refreshToken ?? null;
-          state.tenant = formatTenantData(userData);
+          
+          // Tenant bilgilerini kaydet
+          if (userData.tenant) {
+            state.tenant = userData.tenant;
+          } else if (userData.tenantId) {
+            state.tenant = { id: userData.tenantId, name: userData.tenantName || 'İşletme', subdomain: '' };
+          }
+          
           state.isAuthenticated = true;
-          state.isBusinessRegistered = !!userData.tenantId;
+          // İşletme kaydını doğru şekilde kontrol et
+          state.isBusinessRegistered = !!(userData.tenantId || userData.tenant?.id);
+          console.log('Current user fetched, business registered:', state.isBusinessRegistered, 'tenantId:', userData.tenantId);
+        } else {
+          state.isAuthenticated = false;
+          state.isBusinessRegistered = false;
         }
         state.loading = false;
       })

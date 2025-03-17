@@ -108,7 +108,8 @@ namespace Planca.Application.Features.Tenants.Commands.CreateBusiness
 
                     // 8. DTO'ya dönüştür ve token bilgisini ekle
                     var tenantDtoWithToken = _mapper.Map<TenantDto>(tenant);
-                    tenantDtoWithToken.AuthToken = token; // Controller'da cookie için kullanılacak
+                    tenantDtoWithToken.Token = token; // Controller'da cookie için kullanılacak
+                    tenantDtoWithToken.RefreshToken = _identityService.GetUserRefreshTokenAsync(request.UserId).Result.Data.RefreshToken; // Controller'da cookie için kullanılacak
                     return Result<TenantDto>.Success(tenantDtoWithToken);
                 }
                 else

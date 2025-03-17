@@ -33,15 +33,36 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
         {
             try
             {
-                // Validate the JWT token format
-                if (!_tokenService.ValidateToken(request.Token))
+                // Get effective token and refresh token values
+                string token = request.GetEffectiveToken();
+                string refreshToken = request.GetEffectiveRefreshToken();
+
+                _logger.LogInformation("Processing refresh token. TokenSource={TokenSource}, RefreshTokenSource={RefreshTokenSource}",
+                    !string.IsNullOrEmpty(request.Token) ? "Body" : "Cookie",
+                    !string.IsNullOrEmpty(request.RefreshToken) ? "Body" : "Cookie");
+
+                // Check for token presence
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogWarning("JWT token is missing from both request body and cookies");
+                    return Result<AuthResponse>.Failure("JWT token is required");
+                }
+
+                if (string.IsNullOrEmpty(refreshToken))
+                {
+                    _logger.LogWarning("Refresh token is missing from both request body and cookies");
+                    return Result<AuthResponse>.Failure("Refresh token is required");
+                }
+
+                // Validate token format
+                if (!_tokenService.ValidateToken(token))
                 {
                     _logger.LogWarning("Invalid token format during refresh token request");
                     return Result<AuthResponse>.Failure("Invalid token format");
                 }
 
-                // Extract user ID from the token - Infrastructure katmanına delegasyon
-                var userId = _tokenService.GetUserIdFromToken(request.Token);
+                // Extract user ID from token
+                var userId = _tokenService.GetUserIdFromToken(token);
 
                 if (string.IsNullOrEmpty(userId))
                 {
@@ -68,7 +89,7 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
                 var (storedRefreshToken, expiryTime) = storedTokenResult.Data;
 
                 // Validate refresh token
-                if (storedRefreshToken != request.RefreshToken)
+                if (storedRefreshToken != refreshToken)
                 {
                     _logger.LogWarning("Refresh token mismatch for user {UserId}", userId);
                     return Result<AuthResponse>.Failure("Invalid refresh token");
@@ -92,19 +113,19 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
                 // Get user roles
                 var roles = await _identityService.GetUserRolesAsync(userId);
 
-                // Generate new JWT token
+                // Create new JWT token
                 var newToken = _tokenService.CreateToken(
                     userId,
                     userDataResult.Data.Email,
                     roles,
-                    userDataResult.Data.TenantId?.ToString());
+                    userDataResult.Data.TenantId?.ToString() ?? string.Empty);
 
-                // Generate new refresh token
+                // Create new refresh token
                 var newRefreshToken = Guid.NewGuid().ToString();
                 var refreshTokenExpiryDays = _appSettings.RefreshTokenExpiryDays;
                 var newExpiryTime = DateTime.UtcNow.AddDays(refreshTokenExpiryDays);
 
-                // Store new refresh token
+                // Save new refresh token
                 await _identityService.UpdateUserRefreshTokenAsync(userId, newRefreshToken, newExpiryTime);
 
                 // Create response
@@ -130,3 +151,4 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
         }
     }
 }
+

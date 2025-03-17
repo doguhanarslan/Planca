@@ -9,7 +9,6 @@ import {
 } from '@/features/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { LoginCredentials, RegisterUserData, BusinessData } from '@/types';
-
 /**
  * Enhanced hook for authentication functionality
  * Provides optimized authentication methods and state access
@@ -18,19 +17,25 @@ import { LoginCredentials, RegisterUserData, BusinessData } from '@/types';
 const useAuth = () => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state) => state.auth);
-
+  
   // Check if the user is authenticated on mount, but only if we need to
   useEffect(() => {
-    if (!auth.user && !auth.loading) {
-      dispatch(fetchCurrentUser());
-    }
+    const checkAuth = async () => {
+      if (!auth.user && !auth.loading) {
+        try {
+          await dispatch(fetchCurrentUser()).unwrap();
+          console.log('User fetched in useAuth hook', auth);
+        } catch (err) {
+          console.error('Failed to fetch user:', err);
+        }
+      }
+    };
+    
+    checkAuth();
   }, [dispatch, auth.user, auth.loading]);
-
   // Optimized login function with useCallback
   const login = useCallback(
-    (credentials: LoginCredentials) => dispatch(loginUser(credentials)).then(()=>{
-      dispatch(fetchCurrentUser());
-    }),
+    (credentials: LoginCredentials) => dispatch(loginUser(credentials)),
     [dispatch]
   );
 

@@ -9,7 +9,6 @@ services:
       - "5288:80"
       - "7288:443"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Database=planca;Username=postgres;Password=postgres
       - JwtSettings__Key=your-secure-jwt-secret-key-must-be-at-least-32-characters-long
       - JwtSettings__Issuer=planca-api

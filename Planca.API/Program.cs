@@ -10,6 +10,11 @@ using Serilog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Planca.Domain.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +38,37 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
 });
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+        .AddJwtBearer(options =>
+        {
+            // Token validation parameters...
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])),
+                ValidateIssuer = true,
+                ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+                ValidateAudience = true,
+                ValidAudience = builder.Configuration["JwtSettings:Audience"],
+                ClockSkew = TimeSpan.Zero,
+                NameClaimType = JwtRegisteredClaimNames.Sub,   // ÖNEMLİ: Name claim tipini belirt
+                RoleClaimType = ClaimTypes.Role    // ÖNEMLİ: Role claim tipini belirt
+            };
 
+            // Cookie'den token okuma
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    context.Token = context.Request.Cookies["jwt"];
+                    return Task.CompletedTask;
+                }
+            };
+        });
 // Add OpenAPI/Swagger support
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -64,8 +99,8 @@ builder.Services.AddCors(options =>
             .AllowCredentials(); // This is crucial for cookies
     });
 });
-var app = builder.Build();
 
+var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -79,6 +114,9 @@ else
     app.UseHsts();
 }
 
+app.UseCors("AllowMyOrigin");
+app.UseCors("AllowFrontend");
+app.UseCors("AllowAll");
 // Use custom exception handler middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -88,8 +126,6 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseHttpsRedirection();
 
 // Enable CORS
-app.UseCors("AllowFrontend");
-app.UseCors("AllowAll");
 // Add authentication & authorization
 app.UseAuthentication();
 app.UseAuthorization();

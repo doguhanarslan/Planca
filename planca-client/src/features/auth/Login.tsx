@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Formik, Form, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { loginUser, clearError } from './authSlice';
+import { loginUser, clearError, fetchCurrentUser } from './authSlice';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { LoginCredentials } from '@/types';
 import Input from '@/components/common/Input';
@@ -45,6 +45,7 @@ const Login: React.FC = () => {
       rememberMe: values.rememberMe
     };
     await dispatch(loginUser(credentials));
+    await dispatch(fetchCurrentUser());
     setSubmitting(false);
   };
 

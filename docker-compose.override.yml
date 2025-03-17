@@ -1,7 +1,6 @@
 ﻿services:
   api:
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80
       # ÖNEMLİ: API, veritabanına "db" host adı ile bağlanmalı (Docker servis adı)
       - ConnectionStrings__DefaultConnection=Host=db;Database=planca;Username=postgres;Password=postgres

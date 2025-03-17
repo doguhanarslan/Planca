@@ -18,7 +18,8 @@ namespace Planca.Application.DTOs
         public List<TenantWorkingHoursDto> WorkingHours { get; set; }
 
         // İşletme oluşturulduktan sonra yeni token için
-        public string AuthToken { get; set; }
+        public string Token { get; set; }
+        public string RefreshToken { get; set; }
     }
 
 

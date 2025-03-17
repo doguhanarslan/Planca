@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -50,29 +52,22 @@ namespace Planca.Infrastructure
             .AddDefaultTokenProviders();
 
             // Add JWT Authentication
-            var jwtSettings = configuration.GetSection("JwtSettings");
-            services.AddAuthentication(options =>
+            services.AddCors(options =>
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
+                options.AddPolicy("AllowMyOrigin", builder =>
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings["Issuer"],
-                    ValidAudience = jwtSettings["Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtSettings["Key"]))
-                };
+                    builder
+                        .WithOrigins(configuration.GetSection("Cors:Origins").Get<string[]>())
+                        .AllowCredentials() // ÇOK ÖNEMLİ: Cookie'lerin gönderilmesini sağlar
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
             });
 
-            // Infrastructure servisleri ekleme
 
+
+            // Infrastructure servisleri ekleme
+            services.AddHttpContextAccessor();
             // Interceptor'lar
             services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
