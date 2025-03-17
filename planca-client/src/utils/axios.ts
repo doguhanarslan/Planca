@@ -21,14 +21,12 @@ const instance: AxiosInstance = axios.create({
 });
 
 // Store Redux dispatch function for use in interceptors
-let storeDispatch: any = null;
 
 /**
  * Initialize the Axios instance with Redux store and configure interceptors
  * @param store - Redux store reference
  */
 export const initializeAxios = (store: Store): void => {
-  storeDispatch = store.dispatch;
 
   // Request interceptor
   instance.interceptors.request.use(
@@ -40,10 +38,7 @@ export const initializeAxios = (store: Store): void => {
         config.headers.set("X-TenantId", state.auth.tenant.id);
       }
       // If we have the token in Redux state, set it in the Authorization header
-      if (state.auth?.token) {
-        config.headers.Authorization = `Bearer ${state.auth.jwt}`;
-        config.headers.set("Authorization", `Bearer ${state.auth.jwt}`);
-      }
+      
       
       return config;
     },

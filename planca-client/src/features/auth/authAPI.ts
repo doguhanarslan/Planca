@@ -129,12 +129,28 @@ class AuthService {
    */
   static async getCurrentUser() {
     try {
-      return await axios.get<ApiResponse<AuthResponse>>(
-        this.ENDPOINTS.CURRENT_USER, 
+      console.log('Making getCurrentUser API request');
+      // Auth cookie will be sent automatically with withCredentials: true
+      const response = await axios.get<ApiResponse<AuthResponse>>(
+        this.ENDPOINTS.CURRENT_USER,
         { withCredentials: true }
       );
+      
+      // Log response for debugging
+      console.log('getCurrentUser response status:', response.status);
+      console.log('getCurrentUser has data:', !!response.data);
+      
+      return response;
     } catch (error) {
       console.error('Get current user error:', error);
+      
+      // 401 Unauthorized hatası alındığında hata fırlat
+      // Bu, Redux'ta rejected durumu tetikleyecek
+      if (isAxiosError(error) && error.response?.status === 401) {
+        console.log('User is not authenticated, rejecting with error');
+      }
+      
+      // Tüm hataları fırlat
       throw error;
     }
   }

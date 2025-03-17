@@ -15,6 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,16 +79,8 @@ builder.Services.AddSwaggerGen(c =>
 
 // Add HTTP Context Accessor
 builder.Services.AddHttpContextAccessor();
-
 // Add CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        builder => builder
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader());
-});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", builder =>
@@ -114,9 +107,9 @@ else
     app.UseHsts();
 }
 
-app.UseCors("AllowMyOrigin");
+
 app.UseCors("AllowFrontend");
-app.UseCors("AllowAll");
+
 // Use custom exception handler middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -127,9 +120,13 @@ app.UseHttpsRedirection();
 
 // Enable CORS
 // Add authentication & authorization
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 // Map controllers
 app.MapControllers();
 

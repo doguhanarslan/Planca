@@ -52,17 +52,7 @@ namespace Planca.Infrastructure
             .AddDefaultTokenProviders();
 
             // Add JWT Authentication
-            services.AddCors(options =>
-            {
-                options.AddPolicy("AllowMyOrigin", builder =>
-                {
-                    builder
-                        .WithOrigins(configuration.GetSection("Cors:Origins").Get<string[]>())
-                        .AllowCredentials() // ÇOK ÖNEMLİ: Cookie'lerin gönderilmesini sağlar
-                        .AllowAnyMethod()
-                        .AllowAnyHeader();
-                });
-            });
+           
 
 
 

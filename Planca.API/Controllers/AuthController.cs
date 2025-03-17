@@ -1,4 +1,6 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Planca.Application.Common.Interfaces;
@@ -73,6 +75,7 @@ namespace Planca.API.Controllers
         /// Creates a new business and assigns it to the current user
         /// </summary>
         [HttpPost("create-business")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -101,6 +104,7 @@ namespace Planca.API.Controllers
         /// Issues a new JWT token based on a valid refresh token
         /// </summary>
         [HttpPost("refresh-token")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [AllowAnonymous]
         public async Task<ActionResult> RefreshToken([FromBody] RefreshTokenCommand command)
         {
@@ -159,6 +163,7 @@ namespace Planca.API.Controllers
         /// Returns the current authenticated user's information
         /// </summary>
         [HttpGet("current-user")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> GetCurrentUser()

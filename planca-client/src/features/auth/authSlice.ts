@@ -150,8 +150,6 @@ export const logoutUser = createAsyncThunk(
  */
 const initialState: AuthState = {
   user: null,
-  token: null,        // Store token in Redux state instead of localStorage
-  refreshToken: null, // Also store the refresh token if you use one
   tenant: null,
   isAuthenticated: false,
   isBusinessRegistered: false,
@@ -224,8 +222,7 @@ const authSlice = createSlice({
         const userData = action.payload?.data || action.payload;
         if(userData) {
           state.user = formatUserData(userData);
-          state.token = userData.token ?? null;
-          state.refreshToken = userData.refreshToken ?? null;
+          
           
           // Tenant bilgilerini kaydet
           if (userData.tenant) {
@@ -252,8 +249,7 @@ const authSlice = createSlice({
         if (userData) {
           // Store user data and tokens in Redux state
           state.user = formatUserData(userData);
-          state.token = userData.token ?? null;
-          state.refreshToken = userData.refreshToken ?? null;
+
           state.isAuthenticated = true;
           state.isBusinessRegistered = false;
         }
@@ -301,8 +297,7 @@ const authSlice = createSlice({
         const userData = action.payload.data;
         if (userData) {
           state.user = formatUserData(userData);
-          state.token = userData.token ?? null;
-          state.refreshToken = userData.refreshToken ?? null;
+
           state.tenant = formatTenantData(userData);
           state.isAuthenticated = true;
           state.isBusinessRegistered = !!userData.tenantId;
@@ -312,8 +307,7 @@ const authSlice = createSlice({
       .addCase(refreshUserToken.rejected, (state, action) => {
         // When token refresh fails, log out the user
         state.user = null;
-        state.token = null;
-        state.refreshToken = null;
+
         state.tenant = null;
         state.isAuthenticated = false;
         state.isBusinessRegistered = false;
@@ -349,18 +343,20 @@ const authSlice = createSlice({
         state.loading = false;
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
-        state.error = action.payload as string[] | string;
+        console.log('fetchCurrentUser rejected:', action.error.message);
+        // Kullanıcı oturum açmadığında tüm state'i temizle
+        state.user = null;
+        state.tenant = null;
+        state.isAuthenticated = false;
+        state.isBusinessRegistered = false;
         state.loading = false;
-        state.token = null;
-        state.refreshToken = null;
       })
       
       // Logout cases
       .addCase(logoutUser.fulfilled, (state) => {
         // Clear all auth data including tokens
         state.user = null;
-        state.token = null;
-        state.refreshToken = null;
+
         state.tenant = null;
         state.isAuthenticated = false;
         state.isBusinessRegistered = false;

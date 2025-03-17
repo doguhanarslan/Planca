@@ -88,7 +88,19 @@ namespace Planca.Infrastructure.Identity.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+        public void DecodeToken(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
 
+            if (jsonToken != null)
+            {
+                foreach (var claim in jsonToken.Claims)
+                {
+                    Console.WriteLine($"{claim.Type}: {claim.Value}");
+                }
+            }
+        }
         public bool ValidateToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();

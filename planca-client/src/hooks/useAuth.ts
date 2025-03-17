@@ -1,90 +1,100 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { 
   loginUser, 
   registerUser,
   createBusinessForUser,
   fetchCurrentUser,
-  logoutUser, 
-  refreshUserToken 
+  logoutUser
 } from '@/features/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { LoginCredentials, RegisterUserData, BusinessData } from '@/types';
+
 /**
- * Enhanced hook for authentication functionality
- * Provides optimized authentication methods and state access
+ * Enhanced hook for authentication functionality using cookie authentication
  * @returns {Object} Authentication methods and state
  */
 const useAuth = () => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state) => state.auth);
+  const [authChecked, setAuthChecked] = useState(false);
   
-  // Check if the user is authenticated on mount, but only if we need to
+  // Check if the user is authenticated on mount
   useEffect(() => {
     const checkAuth = async () => {
-      if (!auth.user && !auth.loading) {
+      if (!auth.user && !auth.loading && !authChecked) {
         try {
+          console.log('Checking authentication status...');
           await dispatch(fetchCurrentUser()).unwrap();
-          console.log('User fetched in useAuth hook', auth);
+          setAuthChecked(true);
         } catch (err) {
-          console.error('Failed to fetch user:', err);
+          console.error('Authentication check failed:', err);
+          setAuthChecked(true);
         }
+      } else if (auth.user) {
+        setAuthChecked(true);
       }
     };
     
     checkAuth();
-  }, [dispatch, auth.user, auth.loading]);
-  // Optimized login function with useCallback
+  }, [dispatch, auth.user, auth.loading, authChecked]);
+
+  // Login function
   const login = useCallback(
-    (credentials: LoginCredentials) => dispatch(loginUser(credentials)),
+    async (credentials: LoginCredentials) => {
+      const result = await dispatch(loginUser(credentials)).unwrap();
+      // After login is successful, fetch the current user to get updated data
+      if (result?.succeeded) {
+        await dispatch(fetchCurrentUser()).unwrap();
+      }
+      return result;
+    },
     [dispatch]
   );
 
-  // Optimized register function with useCallback
+  // Register function
   const register = useCallback(
-    (userData: RegisterUserData) => dispatch(registerUser(userData)),
+    async (userData: RegisterUserData) => {
+      const result = await dispatch(registerUser(userData)).unwrap();
+      // After registration is successful, fetch the current user
+      if (result?.succeeded) {
+        await dispatch(fetchCurrentUser()).unwrap();
+      }
+      return result;
+    },
     [dispatch]
   );
 
-  // Optimized create business function with useCallback
+  // Create business function
   const createBusiness = useCallback(
-    (businessData: BusinessData) => dispatch(createBusinessForUser(businessData)).then(() => {
-      // After successful business creation, fetch updated user data 
-      dispatch(fetchCurrentUser());
-    }),
+    async (businessData: BusinessData) => {
+      const result = await dispatch(createBusinessForUser(businessData)).unwrap();
+      // After business creation, refresh user data
+      if (result?.succeeded) {
+        await dispatch(fetchCurrentUser()).unwrap();
+      }
+      return result;
+    },
     [dispatch]
   );
 
-  // Optimized logout function with useCallback
+  // Logout function
   const logout = useCallback(
     () => dispatch(logoutUser()),
     [dispatch]
   );
 
-  // Optimized refresh token function with useCallback
-  const refreshToken = useCallback(
-    () => dispatch(refreshUserToken()),
-    [dispatch]
-  );
-
-  // Memoized auth state to prevent unnecessary re-renders
-  const authState = useMemo(() => ({
-    // Authentication state
+  return {
     user: auth.user,
     tenant: auth.tenant,
     isAuthenticated: auth.isAuthenticated,
     isBusinessRegistered: auth.isBusinessRegistered,
     loading: auth.loading,
     error: auth.error,
-  }), [auth.user, auth.tenant, auth.isAuthenticated, auth.isBusinessRegistered, auth.loading, auth.error]);
-
-  return {
-    ...authState,
-    // Authentication methods
+    authChecked,
     login,
     register,
     createBusiness,
-    logout,
-    refreshToken,
+    logout
   };
 };
 
