@@ -28,7 +28,7 @@ namespace Planca.Infrastructure
                 options.UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)
-                        .EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null)));
+                        ));
 
             // Add Identity
             services.AddIdentity<ApplicationUser, IdentityRole>(options =>

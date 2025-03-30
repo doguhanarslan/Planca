@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Planca.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class FixColumnNameEncoding : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -126,7 +126,7 @@ namespace Planca.Infrastructure.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     subdomain = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    connectionstring = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    connectionstring = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     logourl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     primarycolor = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     isactive = table.Column<bool>(type: "boolean", nullable: false),

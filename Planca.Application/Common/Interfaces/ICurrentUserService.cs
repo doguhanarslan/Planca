@@ -11,6 +11,7 @@ namespace Planca.Application.Common.Interfaces
         string UserId { get; }
         string UserName { get; }
         bool IsAuthenticated { get; }
+        string TenantId { get; }  // Yeni property
         bool IsInRole(string role);
     }
 }

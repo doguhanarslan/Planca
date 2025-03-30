@@ -52,7 +52,23 @@ export const initializeAxios = (store: Store): void => {
   
       
      
-  
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+      if (error.response.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          // Refresh token endpoint'ini çağır
+          await axios.post("/auth/refresh-token", {}, { withCredentials: true });
+          return instance(originalRequest); // İsteği tekrarla
+        } catch (refreshError) {
+          // Refresh token da geçersizse kullanıcıyı logout yap
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
 
   // Additional logging interceptor
   instance.interceptors.response.use(

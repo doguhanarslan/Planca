@@ -103,7 +103,7 @@ export const createBusinessForUser = createAsyncThunk(
  * Async thunk for token refresh
  */
 export const refreshUserToken = createAsyncThunk(
-  'auth/refreshToken',
+  'auth/refresh-token',
   async (_, { rejectWithValue }) => {
     try {
       const response = await refreshToken();
@@ -182,7 +182,7 @@ function formatTenantData(tenantData: any): Tenant | null {
   if (!tenantData?.tenantId) return null;
   
   return {
-    id: tenantData.tenantId,
+    id: tenantData.tenantId || tenantData.id,
     name: tenantData.tenantName || 'Unknown Business',
     subdomain: tenantData.subdomain || '',
     ...tenantData.tenant
@@ -322,23 +322,39 @@ const authSlice = createSlice({
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         const userData = action.payload?.data || action.payload;
+        console.log('Raw userData from API:', userData); // Debug amaçlı
+        
         if (userData) {
           state.user = formatUserData(userData);
           
-          // Tenant bilgilerini kaydet
-          if (userData.tenant) {
-            state.tenant = userData.tenant;
-          } else if (userData.tenantId) {
-            state.tenant = { id: userData.tenantId, name: userData.tenantName || 'İşletme', subdomain: '' };
+          // TenantId kontrolü - tüm olası property isimleri
+          const tenantId = userData.tenantId || userData.tenant?.id || null;
+          console.log('Extracted tenantId:', tenantId); // Debug amaçlı
+          
+          if (tenantId) {
+            // Tenant bilgisi varsa kaydet
+            state.tenant = {
+              id: tenantId,
+              name: userData.tenantName || userData.tenant?.name || 'İşletme',
+              subdomain: userData.tenant?.subdomain || ''
+            };
+            state.isBusinessRegistered = true;
+          } else {
+            state.tenant = null;
+            state.isBusinessRegistered = false;
           }
           
           state.isAuthenticated = true;
-          // İşletme kaydını doğru şekilde kontrol et
-          state.isBusinessRegistered = !!(userData.tenantId || userData.tenant?.id);
-          console.log('Current user fetched, business registered:', state.isBusinessRegistered, 'tenantId:', userData.tenantId);
+          console.log('Current user state updated:', {
+            isAuthenticated: state.isAuthenticated,
+            isBusinessRegistered: state.isBusinessRegistered,
+            tenantId: state.tenant?.id
+          });
         } else {
           state.isAuthenticated = false;
           state.isBusinessRegistered = false;
+          state.user = null;
+          state.tenant = null;
         }
         state.loading = false;
       })

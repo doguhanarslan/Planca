@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Planca.Application.Common.Interfaces;
 using Planca.Infrastructure.Identity.Services;
 using Planca.Infrastructure.Persistence.Context;
 using Planca.Infrastructure.Persistence.Interceptors;
@@ -37,17 +38,18 @@ namespace Planca.Infrastructure.Persistence
     }
 
     // Mock implementation for design time factory
-    public class MockCurrentTenantService : Planca.Application.Common.Interfaces.ICurrentTenantService
+    public class MockCurrentTenantService : ICurrentTenantService
     {
         public Guid GetTenantId() => Guid.Empty;
         public string GetTenantName() => "Design";
         public bool IsValid() => true;
     }
 
-    public class MockCurrentUserService : Planca.Application.Common.Interfaces.ICurrentUserService
+    public class MockCurrentUserService : ICurrentUserService
     {
         public string UserId => "Design";
         public string UserName => "DesignUser";
+        public string TenantId => "TenantId";
         public bool IsAuthenticated => true;
         public bool IsInRole(string role) => true;
     }

@@ -57,7 +57,7 @@ namespace Planca.Application.Features.Auth.Queries.GetCurrentUser
                 FirstName = userDataResult.Data.FirstName,
                 LastName = userDataResult.Data.LastName,
                 PhoneNumber = userDataResult.Data.PhoneNumber,
-                TenantId = userDataResult.Data.TenantId,
+                TenantId = userDataResult.Data.TenantId.ToString(),
                 Roles = userDataResult.Data.Roles // UserBasicData'da roller var
             };
 

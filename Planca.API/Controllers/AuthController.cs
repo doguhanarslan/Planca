@@ -18,10 +18,12 @@ namespace Planca.API.Controllers
     public class AuthController : BaseApiController
     {
         private readonly ICurrentUserService _currentUserService;
+        private readonly ITokenService _tokenService;
 
-        public AuthController(ICurrentUserService currentUserService)
+        public AuthController(ICurrentUserService currentUserService, ITokenService tokenService)
         {
             _currentUserService = currentUserService;
+            _tokenService = tokenService;
         }
 
         /// <summary>
@@ -34,17 +36,23 @@ namespace Planca.API.Controllers
 
             if (result.Succeeded)
             {
+                Console.WriteLine($"Login successful for: {command.Email}");
+                Console.WriteLine($"Token length: {result.Data.Token?.Length ?? 0}");
+
                 // Set JWT as HTTP-only cookie
                 SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
 
+                // Get token from cookie to verify it was set properly
+                var tokenFromCookie = Request.Cookies["jwt"];
+                Console.WriteLine($"Token in cookie after setting: {(string.IsNullOrEmpty(tokenFromCookie) ? "Not found" : "Found, length=" + tokenFromCookie.Length)}");
+
                 // Return auth data WITHOUT including the token in the response body
-                // This prevents the token from being stored in JavaScript
                 return Ok(new
                 {
                     userId = result.Data.UserId,
                     userName = result.Data.UserName,
                     roles = result.Data.Roles,
-                    refreshToken = result.Data.RefreshToken // This is just a reference, not the auth token
+                    isAuthenticated = true
                 });
             }
 
@@ -64,8 +72,16 @@ namespace Planca.API.Controllers
 
             if (result.Succeeded)
             {
-                // Set JWT as HTTP-only cookie
+                // Set encrypted JWT as HTTP-only cookie
                 SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
+
+                return Ok(new
+                {
+                    userId = result.Data.UserId,
+                    userName = result.Data.UserName,
+                    email = result.Data.Email,
+                    isAuthenticated = true
+                });
             }
 
             return HandleActionResult(result);
@@ -81,32 +97,59 @@ namespace Planca.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> CreateBusiness(CreateBusinessCommand command)
         {
-            // Add current user ID
-            string userId = _currentUserService.UserId;
-            if (string.IsNullOrEmpty(userId))
+            try
             {
-                return Unauthorized(new { error = "User identity not found" });
+                // Hem HttpContext.User hem de token üzerinden kullanıcı kimliğini almaya çalış
+                string userId = _currentUserService.UserId;
+
+                // Eğer hala userId boşsa, hatayı log'la ve unauthorized döndür
+                if (string.IsNullOrEmpty(userId))
+                {
+                    Console.WriteLine("UserId not found in token or HttpContext.User");
+                    Console.WriteLine($"IsAuthenticated: {_currentUserService.IsAuthenticated}");
+                    var token = _tokenService.GetToken();
+                    Console.WriteLine($"Token exists: {!string.IsNullOrEmpty(token)}");
+
+                    return Unauthorized(new { error = "User identity not found" });
+                }
+
+                command.UserId = userId;
+                var result = await Mediator.Send(command);
+
+                if (result.Succeeded)
+                {
+                    // Set new token with TenantId as HTTP-only cookie
+                    SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
+
+                    // Return success response
+                    return Ok(new
+                    {
+                        businessId = result.Data.Id,
+                        businessName = result.Data.Name,
+                        tenantId = result.Data.Id,
+                        success = true
+                    });
+                }
+
+                return HandleActionResult(result);
             }
-
-            command.UserId = userId;
-            var result = await Mediator.Send(command);
-
-            if (result.Succeeded)
+            catch (Exception ex)
             {
-                // Set new token as HTTP-only cookie
-                SetTokenCookie(result.Data.Token,result.Data.RefreshToken);
+                Console.WriteLine($"CreateBusiness error: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                return StatusCode(500, new { error = ex.Message });
             }
-
-            return HandleActionResult(result);
         }
 
         /// <summary>
         /// Issues a new JWT token based on a valid refresh token
         /// </summary>
         [HttpPost("refresh-token")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [AllowAnonymous]
-        public async Task<ActionResult> RefreshToken([FromBody] RefreshTokenCommand command)
+        public async Task<ActionResult> RefreshToken([FromBody] RefreshTokenCommand command = null)
         {
             // If body is empty, create a new command
             command ??= new RefreshTokenCommand();
@@ -126,7 +169,7 @@ namespace Planca.API.Controllers
 
             if (result.Succeeded)
             {
-                // Set new tokens as cookies
+                // Set new encrypted tokens as cookies
                 SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
 
                 // Return user information without tokens in the response body
@@ -136,13 +179,16 @@ namespace Planca.API.Controllers
                     userName = result.Data.UserName,
                     email = result.Data.Email,
                     roles = result.Data.Roles,
-                    tenantId = result.Data.TenantId
+                    isAuthenticated = true
                 });
             }
 
+            // Token geçersizse çerezleri temizle
+            Response.Cookies.Delete("jwt");
+            Response.Cookies.Delete("refreshToken");
+
             return BadRequest(new { errors = result.Errors });
         }
-
 
         /// <summary>
         /// Logs out the current user by clearing the authentication cookie
@@ -151,10 +197,17 @@ namespace Planca.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult Logout()
         {
-            // Clear the JWT cookie
-            Response.Cookies.Delete("jwt");
-            Response.Cookies.Delete("refreshToken");
+            // Clear the JWT and refresh token cookies with secure options
+            var options = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(-1) // Geçmiş bir tarih ayarlayarak cookie'yi siler
+            };
 
+            Response.Cookies.Delete("jwt", options);
+            Response.Cookies.Delete("refreshToken", options);
 
             return Ok(new { message = "Logged out successfully" });
         }
@@ -168,15 +221,48 @@ namespace Planca.API.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> GetCurrentUser()
         {
-            var result = await Mediator.Send(new GetCurrentUserQuery());
-            return HandleActionResult(result);
+            try
+            {
+                // CurrentUserService'den TenantId'yi doğrudan al
+                var tenantId = _currentUserService.TenantId;
+                Console.WriteLine($"Controller - TenantId from CurrentUserService: {tenantId ?? "null"}");
+
+                var result = await Mediator.Send(new GetCurrentUserQuery());
+
+                if (result.Succeeded)
+                {
+                    // Manuel olarak yeni bir anonim nesne oluştur ve TenantId'yi ekle
+                    var userData = new
+                    {
+                        id = result.Data.Id,
+                        userName = result.Data.UserName,
+                        email = result.Data.Email,
+                        roles = result.Data.Roles,
+                        // TenantId'yi direkt olarak service'den al
+                        tenantId = tenantId, // Küçük harf 'tenantId' kullan (JavaScript convention)
+                        isAuthenticated = true
+                    };
+
+                    // Yanıtı tam olarak logla
+                    Console.WriteLine($"Sending response to frontend: {System.Text.Json.JsonSerializer.Serialize(userData)}");
+
+                    return Ok(userData);
+                }
+
+                return HandleActionResult(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetCurrentUser error: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         /// <summary>
         /// Changes the current user's password
         /// </summary>
         [HttpPost("change-password")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -186,26 +272,31 @@ namespace Planca.API.Controllers
             return HandleResult(result);
         }
 
-        // Helper method to set an HTTP-only cookie with the JWT token
-        private void SetTokenCookie(string token,string refreshToken)
+        // Helper method to set HTTP-only cookies with the JWT token and refresh token
+        private void SetTokenCookie(string token, string refreshToken)
         {
-            var JwtTokenCookieOptions = new CookieOptions
+            var jwtTokenCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddMinutes(30), // Cookie duration
-                Secure = false, // Send only over HTTPS
-                SameSite = SameSiteMode.Strict // CSRF protection
+                Secure = true, // Send only over HTTPS
+                SameSite = SameSiteMode.Strict, // CSRF protection
+                IsEssential = true,
+                Path = "/"
             };
-            var RefreshTokenCookieOptions = new CookieOptions
+
+            var refreshTokenCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(7), // Cookie duration
-                Secure = false, // Send only over HTTPS
-                SameSite = SameSiteMode.Strict // CSRF protection
+                Path = "/api/auth/refresh-token", // Sadece refresh endpoint'inde kullanılabilir
+                Secure = true, // Send only over HTTPS
+                SameSite = SameSiteMode.Strict, // CSRF protection
+                IsEssential = true
             };
-            Response.Cookies.Append("jwt", token, JwtTokenCookieOptions);
 
-            Response.Cookies.Append("refreshToken", refreshToken, RefreshTokenCookieOptions);
+            Response.Cookies.Append("jwt", token, jwtTokenCookieOptions);
+            Response.Cookies.Append("refreshToken", refreshToken, refreshTokenCookieOptions);
         }
     }
 }

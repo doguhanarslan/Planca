@@ -6,6 +6,7 @@ export interface User {
   email: string;
   name?: string;
   firstName: string;
+  tenantId?: string;
   lastName: string;
   roles: string[];
   avatar?: string; // Kullanıcı avatarı için yeni alan

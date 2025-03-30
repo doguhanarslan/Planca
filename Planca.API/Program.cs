@@ -44,32 +44,78 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-        .AddJwtBearer(options =>
-        {
-            // Token validation parameters...
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])),
-                ValidateIssuer = true,
-                ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-                ValidateAudience = true,
-                ValidAudience = builder.Configuration["JwtSettings:Audience"],
-                ClockSkew = TimeSpan.Zero,
-                NameClaimType = JwtRegisteredClaimNames.Sub,   // ÖNEMLİ: Name claim tipini belirt
-                RoleClaimType = ClaimTypes.Role    // ÖNEMLİ: Role claim tipini belirt
-            };
+.AddJwtBearer(options =>
+{
+    // TokenService'deki aynı anahtar normalleştirme işlemini yapıyoruz
+    string encKeyString = builder.Configuration["JwtSettings:EncryptedKey"] ?? "default-encryption-key-32-bytes-len";
+    byte[] keyBytes = Encoding.UTF8.GetBytes(encKeyString);
+    byte[] normalizedKey = new byte[32];
 
-            // Cookie'den token okuma
-            options.Events = new JwtBearerEvents
+    // Anahtarı 32 byte'a normalize et
+    int bytesToCopy = Math.Min(keyBytes.Length, 32);
+    Array.Copy(keyBytes, normalizedKey, bytesToCopy);
+    if (bytesToCopy < 32)
+    {
+        for (int i = bytesToCopy; i < 32; i++)
+        {
+            normalizedKey[i] = (byte)(i & 0xFF);
+        }
+    }
+
+    var encryptionKey = new SymmetricSecurityKey(normalizedKey);
+
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])),
+        TokenDecryptionKey = encryptionKey, // Şifrelenmiş token için decryption key
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["JwtSettings:Audience"],
+        ClockSkew = TimeSpan.Zero,
+        NameClaimType = JwtRegisteredClaimNames.Sub,
+        RoleClaimType = ClaimTypes.Role
+    };
+
+    // Detaylı hata loglaması
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["jwt"];
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+            if (context.Exception.InnerException != null)
             {
-                OnMessageReceived = context =>
-                {
-                    context.Token = context.Request.Cookies["jwt"];
-                    return Task.CompletedTask;
-                }
-            };
-        });
+                Console.WriteLine($"Inner exception: {context.Exception.InnerException.Message}");
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
+
+static byte[] NormalizeKeyTo32Bytes(string keyString)
+{
+    byte[] normalizedKey = new byte[32];
+    byte[] keyBytes = Encoding.UTF8.GetBytes(keyString);
+    int bytesToCopy = Math.Min(keyBytes.Length, 32);
+    Array.Copy(keyBytes, normalizedKey, bytesToCopy);
+    if (bytesToCopy < 32)
+    {
+        for (int i = bytesToCopy; i < 32; i++)
+        {
+            normalizedKey[i] = (byte)(i & 0xFF);
+        }
+    }
+    return normalizedKey;
+}
+
+
 // Add OpenAPI/Swagger support
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

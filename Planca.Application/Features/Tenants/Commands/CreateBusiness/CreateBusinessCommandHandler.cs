@@ -39,7 +39,8 @@ namespace Planca.Application.Features.Tenants.Commands.CreateBusiness
         {
             try
             {
-
+                var tokenss = _tokenService.GetToken();
+                Console.WriteLine($"Token mevcut: {!string.IsNullOrEmpty(tokenss)}");
                 var allTenants = await _tenantRepository.ListAllAsync();
                 bool isSubdomainUnique = !allTenants.Any(t => t.Subdomain.ToLower() == request.Subdomain.ToLower());
                 if (!isSubdomainUnique)

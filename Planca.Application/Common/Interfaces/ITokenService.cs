@@ -12,14 +12,18 @@ namespace Planca.Application.Common.Interfaces
         /// <summary>
         /// Token formatının geçerli olup olmadığını doğrular
         /// </summary>
+        /// 
         bool ValidateToken(string token);
+        string GetUserIdFromToken(string token);
+
+        string GetTenantIdFromToken(string token);
 
         /// <summary>
         /// Token içerisinden kullanıcı ID'sini çıkarır
         /// </summary>
         /// <param name="token">JWT token</param>
         /// <returns>Kullanıcı ID'si veya token geçersizse boş string</returns>
-        string GetUserIdFromToken(string token);
+
         string GetToken();
         string GetRefreshToken();
         void StoreTokens(string token, string refreshToken, DateTime tokenExpiry, DateTime refreshTokenExpiry);

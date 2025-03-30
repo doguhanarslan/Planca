@@ -12,8 +12,8 @@ using Planca.Infrastructure.Persistence.Context;
 namespace Planca.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250309220032_MigrationName")]
-    partial class MigrationName
+    [Migration("20250323193631_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -11,7 +11,7 @@ const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types as they might contain non-serializable data
-        ignoredActions: ['auth/refreshToken/fulfilled', 'auth/refreshToken/rejected'],
+        
       },
     }),
 });

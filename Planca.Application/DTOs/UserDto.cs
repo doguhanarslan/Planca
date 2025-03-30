@@ -16,7 +16,7 @@ namespace Planca.Application.DTOs
         public string PhoneNumber { get; set; }
         public string[] Roles { get; set; }
 
-        public Guid? TenantId { get; set; }
+        public string TenantId { get; set; }
 
     }
 }
