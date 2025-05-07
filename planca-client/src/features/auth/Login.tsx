@@ -9,14 +9,7 @@ import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
 import Alert from '@/components/common/Alert';
 
-const loginValidationSchema = Yup.object({
-  email: Yup.string()
-    .email('Lütfen geçerli bir e-posta adresi girin')
-    .required('E-posta adresi zorunludur'),
-  password: Yup.string()
-    .required('Şifre zorunludur')
-    .min(8, 'Şifre en az 8 karakter olmalıdır')
-});
+
 
 const Login: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -84,7 +77,7 @@ const Login: React.FC = () => {
         <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-100 transition-all duration-300 hover:shadow-lg dark:bg-gray-800 dark:border-gray-700">
           <Formik
             initialValues={{ email: '', password: '', rememberMe: false }}
-            validationSchema={loginValidationSchema}
+            
             onSubmit={handleLogin}
           >
             {({ values, handleChange, handleBlur, errors, touched, isSubmitting, setFieldValue }) => (

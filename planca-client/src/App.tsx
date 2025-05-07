@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense } from 'react';
+import React, { useEffect, Suspense, useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -13,6 +13,10 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { AuthState } from '@/types';
 import '@/utils/constants';
 import '@/styles/designSystem'; 
+
+// Token yenileme ve kimlik doğrulama sistemi import
+import { setupAuthInterceptors } from '@/utils/axios';
+
 // Auth components
 import Login from '@/features/auth/Login';
 import Register from '@/features/auth/Register';
@@ -41,17 +45,55 @@ const LoadingScreen = () => (
   </div>
 );
 
+const AuthInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [authInitialized, setAuthInitialized] = useState(false);
+
+  useEffect(() => {
+    // Uygulama ilk yüklendiğinde auth interceptor'larını ve token kontrolünü başlat
+    const initializeAuth = async () => {
+      try {
+        console.log('Token kontrolü ve interceptor\'lar başlatılıyor...');
+        await setupAuthInterceptors(store);
+        console.log('Token kontrolü ve interceptor\'lar başarıyla kuruldu');
+      } catch (error) {
+        console.error('Auth başlatma hatası:', error);
+      } finally {
+        setAuthInitialized(true);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  if (!authInitialized) {
+    return <LoadingScreen />;
+  }
+
+  return <>{children}</>;
+};
+
 const AppContent: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { loading } = useAppSelector((state): AuthState => state.auth);
+  const { loading, isAuthenticated } = useAppSelector((state): AuthState => state.auth);
   const location = useLocation();
 
-  // Check user info when app starts
+  // Uygulama başladığında mevcut kullanıcı bilgilerini kontrol et
   useEffect(() => {
-    dispatch(fetchCurrentUser());
+    // JWT token yenileme işlemi setupAuthInterceptors tarafından yapıldıktan sonra
+    // kullanıcı bilgilerini al
+    const getCurrentUserInfo = async () => {
+      try {
+        console.log('Kullanıcı bilgileri alınıyor...');
+        await dispatch(fetchCurrentUser());
+      } catch (error) {
+        console.log('Kullanıcı giriş yapmamış veya oturum süresi dolmuş.');
+      }
+    };
+
+    getCurrentUserInfo();
   }, [dispatch]);
 
-  // Check if current route is public
+  // Şu anki rotanın public olup olmadığını kontrol et
   const isPublicRoute = 
     location.pathname === "/" || 
     location.pathname === "/login" || 
@@ -154,7 +196,9 @@ function App() {
     <Provider store={store}>
       <Router>
         <Suspense fallback={<LoadingScreen />}>
-          <AppContent />
+          <AuthInitializer>
+            <AppContent />
+          </AuthInitializer>
         </Suspense>
       </Router>
     </Provider>

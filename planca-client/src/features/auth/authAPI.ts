@@ -93,32 +93,19 @@ class AuthService {
    */
   static async refreshToken() {
     try {
+      console.log('Attempting to refresh token');
       const response = await axios.post<ApiResponse<AuthResponse>>(
-        this.ENDPOINTS.REFRESH_TOKEN,
-        {}, // Empty body since the token is in the cookie
+        this.ENDPOINTS.REFRESH_TOKEN, 
+        {}, // Boş body, HTTP-only cookie otomatik olarak gönderilecek
         { withCredentials: true }
       );
       
+      console.log('Token refresh response status:', response.status);
       return response;
     } catch (error) {
-      if (isAxiosError(error)) {
-        console.error('Token refresh failed:', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data
-        });
-        
-        // If the token is invalid/expired, we should clear local state
-        if (error.response?.status === 401 || error.response?.status === 400) {
-          console.warn('Authentication expired, redirecting to login...');
-          // Don't throw here - return a standardized error object
-          return {
-            data: {
-              succeeded: false,
-              message: 'Your session has expired. Please log in again.'
-            }
-          } as any;
-        }
+      console.error('Token refresh error:', error);
+      if (isAxiosError(error) && error.response?.status === 401) {
+        console.log('Refresh token is invalid or expired');
       }
       throw error;
     }

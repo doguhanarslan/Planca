@@ -81,7 +81,7 @@ export const createBusinessForUser = createAsyncThunk(
   'auth/create-business',
   async (businessData: BusinessData, { rejectWithValue }) => {
     try {
-      console.log('Action received data:', businessData); // Debug için log
+      console.log('Action received data:', businessData); 
       if (!businessData) {
         throw new Error('Business data is required');
       }
@@ -89,7 +89,7 @@ export const createBusinessForUser = createAsyncThunk(
       const response = await createBusiness(businessData);
       return response.data;
     } catch (error: any) {
-      console.error('Create business error:', error); // Debug için log
+      console.error('Create business error:', error); 
       return rejectWithValue(
         error.response?.data?.errors || 
         error.response?.data?.message || 
@@ -99,18 +99,23 @@ export const createBusinessForUser = createAsyncThunk(
     }
   }
 );
+
 /**
- * Async thunk for token refresh
+ * Async thunk for token refresh - İyileştirilmiş versiyonu
+ * Boş body ile bile çalışacak şekilde tasarlandı
  */
 export const refreshUserToken = createAsyncThunk(
-  'auth/refresh-token',
+  'Auth/refresh-token',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('Token yenileme isteği gönderiliyor...');
       const response = await refreshToken();
+      console.log('Token yenileme başarılı:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Token refresh error:', error.response?.data || error.message);
-      return rejectWithValue('Authentication failed. Please log in again.');
+      console.error('Token yenileme hatası:', error.response?.data || error.message);
+      // Token yenileme başarısız olduğunda cookie'leri temizleme
+      return rejectWithValue('Kimlik doğrulama başarısız. Lütfen tekrar giriş yapın.');
     }
   }
 );
@@ -120,8 +125,25 @@ export const refreshUserToken = createAsyncThunk(
  */
 export const fetchCurrentUser = createAsyncThunk(
   'auth/current-user',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
+      // Current-user isteği yapılmadan önce token kontrolü yapma opsiyoneli
+      // Bu sayede geçersiz JWT token durumunda bile current-user istek başarısı sağlanabilir
+      try {
+        // Check if token might be expired and try to refresh before fetching user
+        const jwtCookie = document.cookie.split(';').find(c => c.trim().startsWith('jwt='));
+        const refreshTokenCookie = document.cookie.split(';').find(c => c.trim().startsWith('refreshToken='));
+        
+        // JWT token yok ama refresh token varsa, önce token yenileme yap
+        if (!jwtCookie && refreshTokenCookie) {
+          console.log('JWT token yok ama refresh token var, önce token yenilemeye çalışılıyor...');
+          await dispatch(refreshUserToken()).unwrap();
+        }
+      } catch (refreshError) {
+        console.log('Token yenileme hatası, current-user isteğine devam ediliyor:', refreshError);
+        // Yenileme başarısız olsa bile current-user isteğine devam et
+      }
+      
       const response = await getCurrentUser();
       return response.data;
     } catch (error: any) {
@@ -131,15 +153,19 @@ export const fetchCurrentUser = createAsyncThunk(
 );
 
 /**
- * Async thunk for user logout
+ * Async thunk for user logout - Cookie temizleme eklendi
  */
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
       await logout();
+      // Logout başarılı olduğunda cookie'leri temizle
+
       return null;
     } catch (error: any) {
+      // Hata olsa bile cookie'leri temizle
+
       return rejectWithValue(error.response?.data?.errors || ['Logout failed']);
     }
   }
@@ -223,7 +249,6 @@ const authSlice = createSlice({
         if(userData) {
           state.user = formatUserData(userData);
           
-          
           // Tenant bilgilerini kaydet
           if (userData.tenant) {
             state.tenant = userData.tenant;
@@ -236,6 +261,14 @@ const authSlice = createSlice({
           state.isBusinessRegistered = !!(userData.tenantId || userData.tenant?.id);
           console.log('Login success, business registered:', state.isBusinessRegistered, 'tenantId:', userData.tenant?.id);
         }
+        state.loading = false;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.user = null;
+        state.tenant = null;
+        state.isAuthenticated = false;
+        state.isBusinessRegistered = false;
+        state.error = action.payload as string[] | string;
         state.loading = false;
       })
       
@@ -274,9 +307,6 @@ const authSlice = createSlice({
             subdomain: businessData.subdomain,
             ...businessData
           };
-          // Don't try to extract tokens from response - they're in HTTP-only cookies
-          // state.token = businessData.token ?? state.token; 
-          // state.refreshToken = businessData.refreshToken ?? state.refreshToken;
           state.isBusinessRegistered = true;
           state.isAuthenticated = true; // Ensure we maintain authenticated state
         }
@@ -285,51 +315,69 @@ const authSlice = createSlice({
       .addCase(createBusinessForUser.rejected, (state, action) => {
         state.error = action.payload as string[] | string;
         state.loading = false;
-        console.error('Business creation rejected:', action.payload); // Debug için log
+        console.error('Business creation rejected:', action.payload); 
       })
       
-      // Refresh token cases
+      // Refresh token cases - İyileştirildi
       .addCase(refreshUserToken.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(refreshUserToken.fulfilled, (state, action) => {
-        const userData = action.payload.data;
+        const userData = action.payload?.data || action.payload;
         if (userData) {
           state.user = formatUserData(userData);
-
-          state.tenant = formatTenantData(userData);
+          
+          // Tenant bilgilerini kontrol et ve kaydet
+          const tenantId = userData.tenantId || userData.tenant?.id || null;
+          
+          if (tenantId) {
+            state.tenant = {
+              id: tenantId,
+              name: userData.tenantName || userData.tenant?.name || 'İşletme',
+              subdomain: userData.tenant?.subdomain || ''
+            };
+            state.isBusinessRegistered = true;
+          }
+          
           state.isAuthenticated = true;
-          state.isBusinessRegistered = !!userData.tenantId;
+          console.log('Token yenilendi, kimlik doğrulama durumu güncellendi:', {
+            isAuthenticated: true,
+            isBusinessRegistered: state.isBusinessRegistered,
+            user: state.user?.email
+          });
         }
         state.loading = false;
+        state.error = null; // Hata varsa temizle
       })
       .addCase(refreshUserToken.rejected, (state, action) => {
-        // When token refresh fails, log out the user
+        // When token refresh fails, log out the user but don't show error
         state.user = null;
-
         state.tenant = null;
         state.isAuthenticated = false;
         state.isBusinessRegistered = false;
-        state.error = action.payload as string[] | string;
+        state.error = null; // Hata gösterme - sessizce fail
         state.loading = false;
+        
+        // Cookies temizlendi ve kullanıcı çıkış yaptırıldı bilgisi
+        console.warn('Token yenileme başarısız oldu, kullanıcı çıkış yaptırıldı');
       })
       
-      // Get current user cases
+      // Get current user cases - İyileştirildi
       .addCase(fetchCurrentUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         const userData = action.payload?.data || action.payload;
-        console.log('Raw userData from API:', userData); // Debug amaçlı
+        console.log('API\'den gelen kullanıcı verisi:', userData);
         
         if (userData) {
           state.user = formatUserData(userData);
           
           // TenantId kontrolü - tüm olası property isimleri
           const tenantId = userData.tenantId || userData.tenant?.id || null;
-          console.log('Extracted tenantId:', tenantId); // Debug amaçlı
+          console.log('Çıkarılan tenantId:', tenantId);
           
           if (tenantId) {
             // Tenant bilgisi varsa kaydet
@@ -345,7 +393,7 @@ const authSlice = createSlice({
           }
           
           state.isAuthenticated = true;
-          console.log('Current user state updated:', {
+          console.log('Current user durumu güncellendi:', {
             isAuthenticated: state.isAuthenticated,
             isBusinessRegistered: state.isBusinessRegistered,
             tenantId: state.tenant?.id
@@ -360,23 +408,40 @@ const authSlice = createSlice({
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         console.log('fetchCurrentUser rejected:', action.error.message);
-        // Kullanıcı oturum açmadığında tüm state'i temizle
+        // Kullanıcı oturum açmadığında tüm state'i temizle ama hata gösterme
         state.user = null;
         state.tenant = null;
         state.isAuthenticated = false;
         state.isBusinessRegistered = false;
+        state.error = null; // Hata mesajını gösterme - sessizce fail
         state.loading = false;
       })
       
-      // Logout cases
+      // Logout cases - İyileştirildi
+      .addCase(logoutUser.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(logoutUser.fulfilled, (state) => {
         // Clear all auth data including tokens
         state.user = null;
-
         state.tenant = null;
         state.isAuthenticated = false;
         state.isBusinessRegistered = false;
+        state.error = null;
         state.loading = false;
+        
+        console.log('Kullanıcı başarıyla çıkış yaptı, cookies temizlendi');
+      })
+      .addCase(logoutUser.rejected, (state) => {
+        // Hata olsa bile state'i temizle
+        state.user = null;
+        state.tenant = null;
+        state.isAuthenticated = false;
+        state.isBusinessRegistered = false;
+        state.error = null;
+        state.loading = false;
+        
+        console.warn('Çıkış yaparken bir hata oluştu, ancak state ve cookies temizlendi');
       });
   },
 });

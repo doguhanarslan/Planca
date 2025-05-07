@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Planca.Application.Common.Interfaces;
 using Planca.Application.Common.Models;
 using Planca.Infrastructure.Identity.Extensions;  // Extension method namespace'i eklendi
@@ -14,12 +16,13 @@ namespace Planca.Infrastructure.Identity.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-       
+        private readonly ILogger<IdentityService> _logger;
         public IdentityService(
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager, ILogger<IdentityService> logger)
         {
             _userManager = userManager;
+            _logger = logger;
             _roleManager = roleManager;
         }
 
@@ -41,6 +44,66 @@ namespace Planca.Infrastructure.Identity.Services
 
             var result = await _userManager.CreateAsync(user, userDto.Password);
             return (result.ToApplicationResult(), user.Id);
+        }
+        public async Task<Result<UserBasicData>> GetUserByRefreshTokenAsync(string refreshToken)
+        {
+            try
+            {
+                // Log refresh token'ı (debug amaçlı, production'da güvenlik nedeniyle silinebilir)
+                _logger.LogInformation("GetUserByRefreshTokenAsync called with refresh token length: {RefreshTokenLength}",
+                    refreshToken?.Length ?? 0);
+
+                // Mevcut kullanıcı modeline göre, RefreshToken doğrudan ApplicationUser üzerinde
+                // LINQ sorgusu ile veritabanında arama yap
+
+                var user = await _userManager.Users
+                    .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+
+                if (user == null)
+                {
+                    _logger.LogWarning("No user found with the provided refresh token");
+                    return Result<UserBasicData>.Failure("Invalid refresh token");
+                }
+
+                // Token'ın süresi dolmuş mu kontrol et
+                if (user.RefreshTokenExpiryTime < DateTime.UtcNow)
+                {
+                    _logger.LogWarning("Refresh token expired for user: {UserId}. Expiry: {ExpiryDate}, Current: {Now}",
+                        user.Id, user.RefreshTokenExpiryTime, DateTime.UtcNow);
+                    return Result<UserBasicData>.Failure("Refresh token expired");
+                }
+
+                // Kullanıcı aktif mi kontrol et (isteğe bağlı ek güvenlik kontrolü)
+                if (!user.IsActive)
+                {
+                    _logger.LogWarning("User account is not active: {UserId}", user.Id);
+                    return Result<UserBasicData>.Failure("User account is not active");
+                }
+
+                // Kullanıcının temel verilerini döndür
+                var roles = await _userManager.GetRolesAsync(user);
+                var userData = new UserBasicData
+                {
+                    Id = user.Id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    FirstName = user.FirstName ?? "",
+                    LastName = user.LastName ?? "",
+                    PhoneNumber = user.PhoneNumber,
+                    TenantId = user.TenantId,
+                    CreatedAt = user.CreatedAt,
+                    IsActive = user.IsActive,
+                    Roles = roles.ToArray()
+                };
+
+                _logger.LogInformation("User found by refresh token. UserId: {UserId}", user.Id);
+                return Result<UserBasicData>.Success(userData);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetUserByRefreshTokenAsync");
+                return Result<UserBasicData>.Failure($"Failed to get user by refresh token: {ex.Message}");
+            }
         }
 
         public async Task<Result> UpdateUserTenantAsync(string userId, Guid tenantId)

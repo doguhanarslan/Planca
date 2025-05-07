@@ -160,6 +160,8 @@ namespace Planca.Infrastructure.Identity.Services
             {
                 var httpContextAuth = _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
                 var hasToken = !string.IsNullOrEmpty(_tokenService.GetToken());
+                var hasRefreshToken = !string.IsNullOrEmpty(_tokenService.GetRefreshToken());
+                
                 Console.WriteLine($"IsAuthenticated: HttpContext={httpContextAuth}, HasToken={hasToken}");
                 return httpContextAuth || hasToken;
             }

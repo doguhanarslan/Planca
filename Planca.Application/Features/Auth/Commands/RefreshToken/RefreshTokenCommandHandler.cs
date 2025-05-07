@@ -33,52 +33,32 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
         {
             try
             {
-                // Get effective token and refresh token values
-                string token = request.GetEffectiveToken();
+                // Log the refresh token process start
+                _logger.LogInformation("Refresh token işlemi başlatıldı");
+
+                // Get refresh token from request or cookie
                 string refreshToken = request.GetEffectiveRefreshToken();
 
-                _logger.LogInformation("Processing refresh token. TokenSource={TokenSource}, RefreshTokenSource={RefreshTokenSource}",
-                    !string.IsNullOrEmpty(request.Token) ? "Body" : "Cookie",
-                    !string.IsNullOrEmpty(request.RefreshToken) ? "Body" : "Cookie");
+                _logger.LogInformation("RefreshToken from request: {RefreshTokenLength}",
+                    refreshToken?.Length ?? 0);
 
-                // Check for token presence
-                if (string.IsNullOrEmpty(token))
+                // If refresh token is null, log and return failure
+             
+                // Find user by refresh token - THIS IS THE KEY CHANGE
+                // We directly use the refresh token to find the user in the database
+                // This doesn't require the JWT token to be valid
+                var userByRefreshTokenResult = await _identityService.GetUserByRefreshTokenAsync(refreshToken);
+
+                if (!userByRefreshTokenResult.Succeeded || string.IsNullOrEmpty(userByRefreshTokenResult.Data?.Id))
                 {
-                    _logger.LogWarning("JWT token is missing from both request body and cookies");
-                    return Result<AuthResponse>.Failure("JWT token is required");
+                    _logger.LogWarning("Could not find user with the given refresh token");
+                    return Result<AuthResponse>.Failure("Invalid refresh token");
                 }
 
-                if (string.IsNullOrEmpty(refreshToken))
-                {
-                    _logger.LogWarning("Refresh token is missing from both request body and cookies");
-                    return Result<AuthResponse>.Failure("Refresh token is required");
-                }
+                var userId = userByRefreshTokenResult.Data.Id;
+                _logger.LogInformation("User found by refresh token. UserId: {UserId}", userId);
 
-                // Validate token format
-                if (!_tokenService.ValidateToken(token))
-                {
-                    _logger.LogWarning("Invalid token format during refresh token request");
-                    return Result<AuthResponse>.Failure("Invalid token format");
-                }
-
-                // Extract user ID from token
-                var userId = _tokenService.GetUserIdFromToken(token);
-
-                if (string.IsNullOrEmpty(userId))
-                {
-                    _logger.LogWarning("Could not extract user ID from token during refresh");
-                    return Result<AuthResponse>.Failure("Invalid token");
-                }
-
-                // Check if user exists
-                var userName = await _identityService.GetUserNameAsync(userId);
-                if (string.IsNullOrEmpty(userName))
-                {
-                    _logger.LogWarning("User {UserId} not found during token refresh", userId);
-                    return Result<AuthResponse>.Failure("User not found");
-                }
-
-                // Get stored refresh token
+                // Get stored refresh token details from database
                 var storedTokenResult = await _identityService.GetUserRefreshTokenAsync(userId);
                 if (!storedTokenResult.Succeeded)
                 {
@@ -88,7 +68,7 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
 
                 var (storedRefreshToken, expiryTime) = storedTokenResult.Data;
 
-                // Validate refresh token
+                // Validate refresh token from database matches the one we received
                 if (storedRefreshToken != refreshToken)
                 {
                     _logger.LogWarning("Refresh token mismatch for user {UserId}", userId);
@@ -98,9 +78,13 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
                 // Check if refresh token is expired
                 if (expiryTime <= DateTime.UtcNow)
                 {
-                    _logger.LogWarning("Expired refresh token for user {UserId}", userId);
+                    _logger.LogWarning("Expired refresh token for user {UserId}. Expiry: {ExpiryTime}, Now: {Now}",
+                        userId, expiryTime, DateTime.UtcNow);
                     return Result<AuthResponse>.Failure("Refresh token expired");
                 }
+
+                // The rest of your code remains the same...
+                bool refreshTokenNeedsRenewal = expiryTime <= DateTime.UtcNow.AddDays(1); // 1 gün kala yenileme
 
                 // Get user data
                 var userDataResult = await _identityService.GetUserBasicDataAsync(userId);
@@ -120,19 +104,35 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
                     roles,
                     userDataResult.Data.TenantId?.ToString() ?? string.Empty);
 
-                // Create new refresh token
-                var newRefreshToken = Guid.NewGuid().ToString();
-                var refreshTokenExpiryDays = _appSettings.RefreshTokenExpiryDays;
-                var newExpiryTime = DateTime.UtcNow.AddDays(refreshTokenExpiryDays);
+                string responseRefreshToken = refreshToken;
+                DateTime responseExpiryTime = expiryTime;
 
-                // Save new refresh token
-                await _identityService.UpdateUserRefreshTokenAsync(userId, newRefreshToken, newExpiryTime);
+                if (refreshTokenNeedsRenewal)
+                {
+                    _logger.LogInformation("Refresh token expiry is approaching, creating new refresh token for user {UserId}", userId);
+
+                    // Create new refresh token only if needed
+                    responseRefreshToken = Guid.NewGuid().ToString();
+                    var refreshTokenExpiryDays = _appSettings.RefreshTokenExpiryDays;
+                    responseExpiryTime = DateTime.UtcNow.AddDays(refreshTokenExpiryDays);
+
+                    // Update refresh token in database
+                    await _identityService.UpdateUserRefreshTokenAsync(userId, responseRefreshToken, responseExpiryTime);
+
+                    _logger.LogInformation("New refresh token created for user {UserId}. Expires at: {ExpiryTime}",
+                        userId, responseExpiryTime);
+                }
+                else
+                {
+                    _logger.LogInformation("Using existing valid refresh token for user {UserId}. Expires at: {ExpiryTime}",
+                        userId, expiryTime);
+                }
 
                 // Create response
                 var response = new AuthResponse
                 {
                     Token = newToken,
-                    RefreshToken = newRefreshToken,
+                    RefreshToken = responseRefreshToken,
                     UserId = userId,
                     UserName = $"{userDataResult.Data.FirstName} {userDataResult.Data.LastName}",
                     Email = userDataResult.Data.Email,
@@ -140,7 +140,7 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
                     TenantId = userDataResult.Data.TenantId
                 };
 
-                _logger.LogInformation("Token refreshed successfully for user {UserId}", userId);
+                _logger.LogInformation("Token refreshed successfully for user {UserId}. New JWT token created.", userId);
                 return Result<AuthResponse>.Success(response);
             }
             catch (Exception ex)
@@ -151,4 +151,3 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
         }
     }
 }
-

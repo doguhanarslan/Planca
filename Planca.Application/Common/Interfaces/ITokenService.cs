@@ -8,6 +8,7 @@ namespace Planca.Application.Common.Interfaces
         /// Kullanıcı bilgileri ve rolleri içeren bir JWT token oluşturur
         /// </summary>
         string CreateToken(string userId, string email, IList<string> roles, string tenantId = null);
+      
 
         /// <summary>
         /// Token formatının geçerli olup olmadığını doğrular
@@ -16,6 +17,7 @@ namespace Planca.Application.Common.Interfaces
         bool ValidateToken(string token);
         string GetUserIdFromToken(string token);
 
+        string GetUserIdFromRefreshToken(string refreshToken);
         string GetTenantIdFromToken(string token);
 
         /// <summary>

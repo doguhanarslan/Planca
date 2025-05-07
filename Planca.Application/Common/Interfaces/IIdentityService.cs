@@ -25,9 +25,13 @@ namespace Planca.Application.Common.Interfaces
         Task<string> GeneratePasswordResetTokenAsync(string userId);
         Task<Result> ResetPasswordAsync(string userId, string token, string newPassword);
 
+
         // Token management
         Task<Result> UpdateUserRefreshTokenAsync(string userId, string refreshToken, DateTime refreshTokenExpiryTime);
         Task<Result<(string RefreshToken, DateTime ExpiryTime)>> GetUserRefreshTokenAsync(string userId);
+        Task<Result<UserBasicData>> GetUserByRefreshTokenAsync(string refreshToken);
+
+
 
         // User data
         Task<Result<UserBasicData>> GetUserBasicDataAsync(string userId);

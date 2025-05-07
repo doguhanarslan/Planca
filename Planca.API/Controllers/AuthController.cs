@@ -40,7 +40,7 @@ namespace Planca.API.Controllers
                 Console.WriteLine($"Token length: {result.Data.Token?.Length ?? 0}");
 
                 // Set JWT as HTTP-only cookie
-                SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
+                SetTokenCookie(result.Data.Token);
 
                 // Get token from cookie to verify it was set properly
                 var tokenFromCookie = Request.Cookies["jwt"];
@@ -73,7 +73,7 @@ namespace Planca.API.Controllers
             if (result.Succeeded)
             {
                 // Set encrypted JWT as HTTP-only cookie
-                SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
+                SetTokenCookie(result.Data.Token);
 
                 return Ok(new
                 {
@@ -119,7 +119,7 @@ namespace Planca.API.Controllers
                 if (result.Succeeded)
                 {
                     // Set new token with TenantId as HTTP-only cookie
-                    SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
+                    SetTokenCookie(result.Data.Token);
 
                     // Return success response
                     return Ok(new
@@ -151,26 +151,34 @@ namespace Planca.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> RefreshToken([FromBody] RefreshTokenCommand command = null)
         {
+            Console.WriteLine("Refresh token endpoint called");
+
             // If body is empty, create a new command
             command ??= new RefreshTokenCommand();
 
-            // Read token and refresh token from cookies and add to command
+            // Read token and refresh token from cookies
             if (Request.Cookies.TryGetValue("jwt", out var jwtCookie))
             {
-                command.Token = jwtCookie;
+                Console.WriteLine($"JWT cookie found, length: {jwtCookie?.Length ?? 0}");
+                command.TokenFromCookie = jwtCookie;
+            }
+            else
+            {
+                Console.WriteLine("JWT cookie not found");
             }
 
-            if (Request.Cookies.TryGetValue("refreshToken", out var refreshCookie))
-            {
-                command.RefreshToken = refreshCookie;
-            }
+            command.RefreshToken = _tokenService.GetRefreshToken();
+
+          
 
             var result = await Mediator.Send(command);
 
             if (result.Succeeded)
             {
+                Console.WriteLine("Refresh token operation successful");
+
                 // Set new encrypted tokens as cookies
-                SetTokenCookie(result.Data.Token, result.Data.RefreshToken);
+                SetTokenCookie(result.Data.Token);
 
                 // Return user information without tokens in the response body
                 return Ok(new
@@ -182,10 +190,14 @@ namespace Planca.API.Controllers
                     isAuthenticated = true
                 });
             }
+            else
+            {
+                Console.WriteLine($"Refresh token operation failed: {string.Join(", ", result.Errors)}");
+            }
 
             // Token geçersizse çerezleri temizle
             Response.Cookies.Delete("jwt");
-            Response.Cookies.Delete("refreshToken");
+            
 
             return BadRequest(new { errors = result.Errors });
         }
@@ -206,8 +218,19 @@ namespace Planca.API.Controllers
                 Expires = DateTime.UtcNow.AddDays(-1) // Geçmiş bir tarih ayarlayarak cookie'yi siler
             };
 
-            Response.Cookies.Delete("jwt", options);
-            Response.Cookies.Delete("refreshToken", options);
+            Response.Cookies.Delete("jwt", new CookieOptions
+            {
+                Path = "/",
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+
+            Response.Cookies.Delete("refreshToken", new CookieOptions
+            {
+                Path = "/api/Auth",
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
 
             return Ok(new { message = "Logged out successfully" });
         }
@@ -238,8 +261,8 @@ namespace Planca.API.Controllers
                         userName = result.Data.UserName,
                         email = result.Data.Email,
                         roles = result.Data.Roles,
+                        tenantId = result.Data.TenantId,
                         // TenantId'yi direkt olarak service'den al
-                        tenantId = tenantId, // Küçük harf 'tenantId' kullan (JavaScript convention)
                         isAuthenticated = true
                     };
 
@@ -273,14 +296,14 @@ namespace Planca.API.Controllers
         }
 
         // Helper method to set HTTP-only cookies with the JWT token and refresh token
-        private void SetTokenCookie(string token, string refreshToken)
+        private void SetTokenCookie(string token)
         {
             var jwtTokenCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Expires = DateTime.UtcNow.AddMinutes(30), // Cookie duration
+                Expires = DateTime.UtcNow.AddSeconds(30), // Cookie duration
                 Secure = true, // Send only over HTTPS
-                SameSite = SameSiteMode.Strict, // CSRF protection
+                SameSite = SameSiteMode.None, // CSRF protection
                 IsEssential = true,
                 Path = "/"
             };
@@ -289,14 +312,14 @@ namespace Planca.API.Controllers
             {
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(7), // Cookie duration
-                Path = "/api/auth/refresh-token", // Sadece refresh endpoint'inde kullanılabilir
+                Path = "/api/Auth", // Sadece refresh endpoint'inde kullanılabilir
                 Secure = true, // Send only over HTTPS
-                SameSite = SameSiteMode.Strict, // CSRF protection
+                SameSite = SameSiteMode.None, // CSRF protection
                 IsEssential = true
             };
 
             Response.Cookies.Append("jwt", token, jwtTokenCookieOptions);
-            Response.Cookies.Append("refreshToken", refreshToken, refreshTokenCookieOptions);
+           
         }
     }
 }
