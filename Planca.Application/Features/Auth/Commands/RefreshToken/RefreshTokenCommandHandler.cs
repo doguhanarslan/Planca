@@ -113,13 +113,15 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
 
                     // Create new refresh token only if needed
                     responseRefreshToken = Guid.NewGuid().ToString();
-                    var refreshTokenExpiryDays = _appSettings.RefreshTokenExpiryDays;
-                    responseExpiryTime = DateTime.UtcNow.AddDays(refreshTokenExpiryDays);
+                    
+                    // ÖNEMLİ: Burada orijinal süreyi koruyoruz, yeniden süre belirlemiyoruz
+                    // Orijinal süreyi koruyarak güvenlik açığını kapatıyoruz
+                    responseExpiryTime = expiryTime; // Orijinal süreyi koru
 
                     // Update refresh token in database
                     await _identityService.UpdateUserRefreshTokenAsync(userId, responseRefreshToken, responseExpiryTime);
 
-                    _logger.LogInformation("New refresh token created for user {UserId}. Expires at: {ExpiryTime}",
+                    _logger.LogInformation("New refresh token created for user {UserId}. Expires at: {ExpiryTime} (original expiry preserved)",
                         userId, responseExpiryTime);
                 }
                 else
@@ -137,7 +139,8 @@ namespace Planca.Application.Features.Auth.Commands.RefreshToken
                     UserName = $"{userDataResult.Data.FirstName} {userDataResult.Data.LastName}",
                     Email = userDataResult.Data.Email,
                     Roles = roles.ToArray(),
-                    TenantId = userDataResult.Data.TenantId
+                    TenantId = userDataResult.Data.TenantId,
+                    RefreshTokenExpiryTime = responseExpiryTime
                 };
 
                 _logger.LogInformation("Token refreshed successfully for user {UserId}. New JWT token created.", userId);

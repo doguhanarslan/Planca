@@ -128,6 +128,8 @@ export interface AuthResponse {
   tenantName?: string;
   tenant?: Tenant;
   expiresAt?: string;
+  refreshToken?: string;
+  refreshTokenExpiryTime?: string;
 }
 
 // Stats Types

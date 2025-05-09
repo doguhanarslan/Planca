@@ -86,7 +86,8 @@ namespace Planca.Application.Features.Auth.Commands.Login
                     UserName = $"{userDataResult.Data.FirstName} {userDataResult.Data.LastName}",
                     Email = request.Email,
                     TenantId = userDataResult.Data.TenantId,
-                    Roles = roles.ToArray()
+                    Roles = roles.ToArray(),
+                    RefreshTokenExpiryTime = refreshTokenExpiryTime
                 };
 
                 _logger.LogInformation("User {Email} logged in successfully", request.Email);

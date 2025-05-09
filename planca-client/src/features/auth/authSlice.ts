@@ -110,7 +110,11 @@ export const refreshUserToken = createAsyncThunk(
     try {
       console.log('Token yenileme isteği gönderiliyor...');
       const response = await refreshToken();
+      
+      // Backend'den gelen refeshTokenExpiryTime'ı kullan
       console.log('Token yenileme başarılı:', response.data);
+      console.log('RefreshToken sona erme tarihi:', response.data.data?.refreshTokenExpiryTime);
+      
       return response.data;
     } catch (error: any) {
       console.error('Token yenileme hatası:', error.response?.data || error.message);
@@ -181,6 +185,7 @@ const initialState: AuthState = {
   isBusinessRegistered: false,
   loading: false,
   error: null,
+  refreshTokenExpiry: undefined
 };
 
 /**
@@ -235,6 +240,10 @@ const authSlice = createSlice({
       if (state.tenant) {
         state.tenant = { ...state.tenant, ...action.payload };
       }
+    },
+    updateRefreshTokenExpiry: (state, action: PayloadAction<Date>) => {
+      state.refreshTokenExpiry = action.payload;
+      console.log('Redux store refreshTokenExpiry güncellendi:', action.payload);
     }
   },
   extraReducers: (builder) => {
@@ -248,18 +257,16 @@ const authSlice = createSlice({
         const userData = action.payload?.data || action.payload;
         if(userData) {
           state.user = formatUserData(userData);
-          
-          // Tenant bilgilerini kaydet
-          if (userData.tenant) {
-            state.tenant = userData.tenant;
-          } else if (userData.tenantId) {
-            state.tenant = { id: userData.tenantId, name: userData.tenantName || 'İşletme', subdomain: '' };
-          }
-          
+          state.tenant = formatTenantData(userData);
           state.isAuthenticated = true;
           // İşletme kaydını doğru şekilde kontrol et
           state.isBusinessRegistered = !!(userData.tenantId || userData.tenant?.id);
           console.log('Login success, business registered:', state.isBusinessRegistered, 'tenantId:', userData.tenant?.id);
+          // RefreshTokenExpiryTime değerini kaydet - sadece ilk kez
+          if (userData.refreshTokenExpiryTime && !state.refreshTokenExpiry) {
+            state.refreshTokenExpiry = new Date(userData.refreshTokenExpiryTime);
+            console.log('Login: RefreshTokenExpiry ilk kez ayarlandı:', state.refreshTokenExpiry);
+          }
         }
         state.loading = false;
       })
@@ -327,25 +334,18 @@ const authSlice = createSlice({
         const userData = action.payload?.data || action.payload;
         if (userData) {
           state.user = formatUserData(userData);
-          
-          // Tenant bilgilerini kontrol et ve kaydet
-          const tenantId = userData.tenantId || userData.tenant?.id || null;
-          
-          if (tenantId) {
-            state.tenant = {
-              id: tenantId,
-              name: userData.tenantName || userData.tenant?.name || 'İşletme',
-              subdomain: userData.tenant?.subdomain || ''
-            };
-            state.isBusinessRegistered = true;
-          }
-          
+          state.tenant = formatTenantData(userData);
           state.isAuthenticated = true;
-          console.log('Token yenilendi, kimlik doğrulama durumu güncellendi:', {
-            isAuthenticated: true,
-            isBusinessRegistered: state.isBusinessRegistered,
-            user: state.user?.email
-          });
+          // İşletme kaydını doğru şekilde kontrol et
+          state.isBusinessRegistered = !!(userData.tenantId || userData.tenant?.id);
+          console.log('Login success, business registered:', state.isBusinessRegistered, 'tenantId:', userData.tenant?.id);
+          // RefreshTokenExpiryTime değerini kaydet - mevcut değeri koruyoruz
+          if (userData.refreshTokenExpiryTime && !state.refreshTokenExpiry) {
+            state.refreshTokenExpiry = new Date(userData.refreshTokenExpiryTime);
+            console.log('Redux store refreshTokenExpiry kaydedildi:', state.refreshTokenExpiry);
+          } else if (userData.refreshTokenExpiryTime) {
+            console.log('Mevcut RefreshTokenExpiry korunuyor:', state.refreshTokenExpiry);
+          }
         }
         state.loading = false;
         state.error = null; // Hata varsa temizle
@@ -446,6 +446,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, resetAuthState, updateUserProfile, updateTenantInfo } = authSlice.actions;
+export const { clearError, resetAuthState, updateUserProfile, updateTenantInfo, updateRefreshTokenExpiry } = authSlice.actions;
 
 export default authSlice.reducer;

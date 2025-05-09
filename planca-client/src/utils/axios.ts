@@ -4,7 +4,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { Store } from "@reduxjs/toolkit";
-import { refreshUserToken, logoutUser } from "@/features/auth/authSlice";
+import { refreshUserToken, logoutUser, updateRefreshTokenExpiry } from "@/features/auth/authSlice";
 import { AppDispatch } from "@/app/store";
 
 // API URL
@@ -48,7 +48,9 @@ const requestTracker = (() => {
       // Cache boyutunu sınırla
       if (retriedRequests.size > 100) {
         const firstItem = retriedRequests.values().next().value;
-        retriedRequests.delete(firstItem);
+        if (firstItem !== undefined) {
+          retriedRequests.delete(firstItem);
+        }
       }
     },
     
@@ -80,6 +82,7 @@ const addRefreshSubscriber = (callback: (success: boolean) => void) => {
 const refreshTokenDirectly = async (): Promise<boolean> => {
   // Halihazırda refresh işlemi yapılıyorsa, o işlemin sonucunu bekle
   if (isRefreshing) {
+    console.log('Token yenileme zaten devam ediyor, bu isteği kuyruğa alıyorum...');
     return new Promise((resolve) => {
       addRefreshSubscriber((success) => {
         resolve(success);
@@ -92,24 +95,66 @@ const refreshTokenDirectly = async (): Promise<boolean> => {
   try {
     console.log('401 hatası algılandı: JWT token yenileniyor...');
     
+    // Cookie'lerden RefreshToken'ı oku - debug için
+    document.cookie.split(';').forEach((cookie) => {
+      const trimmed = cookie.trim();
+      console.log(`Cookie found: ${trimmed.split('=')[0]}`);
+    });
+    
+    // XSRF token için cookie'den güvenli şekilde al
+    const xsrfToken = getCookieValue('XSRF-TOKEN');
+    
+    // RefreshToken'ın son kullanma tarihini Redux store'dan al
+    const state = store.getState();
+    const refreshTokenExpiry = state?.auth?.refreshTokenExpiry;
+    console.log('Redux store RefreshTokenExpiry:', refreshTokenExpiry);
+    
     // Temel axios instance'ını kullanmak yerine yeni bir istek oluştur
     // Bu sayede interceptor'lar tetiklenmez ve sonsuz döngü oluşmaz
     const refreshResponse = await axios({
       method: 'post',
       url: `${API_URL}/Auth/refresh-token`,
-      data: {}, // Boş body - cookie'deki refresh token kullanılacak
+      data: {
+        // Eğer redux store'da varsa refreshTokenExpiry'yi de gönder
+        refreshTokenExpiry: refreshTokenExpiry ? refreshTokenExpiry.toISOString() : undefined
+      }, 
       withCredentials: true, // Cookie kullanımı için gerekli
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        // Eğer xsrfToken varsa ve boş değilse headers'a ekle
+        ...(xsrfToken && xsrfToken.length > 0 ? { 'X-XSRF-TOKEN': xsrfToken } : {})
       }
     });
     
+    // Yanıtta refreshTokenExpiryTime varsa Redux store'a kaydet
+    if (refreshResponse.data?.data?.refreshTokenExpiryTime) {
+      const expiryTime = new Date(refreshResponse.data.data.refreshTokenExpiryTime);
+      console.log('Backend\'den gelen RefreshTokenExpiryTime:', expiryTime);
+      
+      // Sadece store'da bu değer yoksa güncelle, 
+      // böylece orijinal son kullanma tarihi korunur
+      if (!refreshTokenExpiry) {
+        store.dispatch(updateRefreshTokenExpiry(expiryTime));
+        console.log('İlk kez RefreshTokenExpiry store\'a kaydedildi:', expiryTime);
+      } else {
+        console.log('Mevcut RefreshTokenExpiry korunuyor:', refreshTokenExpiry);
+      }
+    }
+    
     console.log('Token yenileme başarılı:', refreshResponse.status);
+    console.log('Yeni JWT token alındı, oturum devam ediyor');
     onTokenRefreshed(true);
     return true;
   } catch (error) {
     console.error('Token yenileme hatası:', error);
+    
+    // Hata detaylarını logla
+    if (axios.isAxiosError(error)) {
+      console.error('Status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+    }
+    
     onTokenRefreshed(false);
     
     // Refresh token da geçersizse kullanıcıyı çıkış yaptır
@@ -118,6 +163,12 @@ const refreshTokenDirectly = async (): Promise<boolean> => {
   } finally {
     isRefreshing = false;
   }
+};
+
+// Cookie değerini okumak için yardımcı fonksiyon
+const getCookieValue = (name: string): string => {
+  const cookieMatch = document.cookie.match(new RegExp('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)'));
+  return cookieMatch ? cookieMatch.pop() || '' : '';
 };
 
 // Uygulama başlangıcında auth kontrolü
@@ -220,7 +271,7 @@ export const initializeAxios = (reduxStore: Store): void => {
   );
 };
 
-// Uygulama başlangıcında çağrılmalı
+// Uygulama başlangıcında çağrılmalı              // sadece uygulama başlangıcında olarak ayarlanacak
 export const setupAuthInterceptors = async (reduxStore: Store): Promise<void> => {
   initializeAxios(reduxStore);
   await checkAuthenticationOnStartup();

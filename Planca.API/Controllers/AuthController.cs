@@ -40,7 +40,7 @@ namespace Planca.API.Controllers
                 Console.WriteLine($"Token length: {result.Data.Token?.Length ?? 0}");
 
                 // Set JWT as HTTP-only cookie
-                SetTokenCookie(result.Data.Token);
+                SetTokenCookie(result.Data.Token, result.Data.RefreshToken, result.Data.RefreshTokenExpiryTime);
 
                 // Get token from cookie to verify it was set properly
                 var tokenFromCookie = Request.Cookies["jwt"];
@@ -73,7 +73,7 @@ namespace Planca.API.Controllers
             if (result.Succeeded)
             {
                 // Set encrypted JWT as HTTP-only cookie
-                SetTokenCookie(result.Data.Token);
+                SetTokenCookie(result.Data.Token, result.Data.RefreshToken, result.Data.RefreshTokenExpiryTime);
 
                 return Ok(new
                 {
@@ -119,7 +119,7 @@ namespace Planca.API.Controllers
                 if (result.Succeeded)
                 {
                     // Set new token with TenantId as HTTP-only cookie
-                    SetTokenCookie(result.Data.Token);
+                    SetTokenCookie(result.Data.Token, result.Data.RefreshToken, result.Data.RefreshTokenExpiryTime);
 
                     // Return success response
                     return Ok(new
@@ -167,9 +167,29 @@ namespace Planca.API.Controllers
                 Console.WriteLine("JWT cookie not found");
             }
 
-            command.RefreshToken = _tokenService.GetRefreshToken();
+            // Refresh token'ı hem doğrudan servisten hem de cookie'den al
+            if (Request.Cookies.TryGetValue("refreshToken", out var refreshCookie))
+            {
+                Console.WriteLine($"RefreshToken cookie found, length: {refreshCookie?.Length ?? 0}");
+                command.RefreshTokenFromCookie = refreshCookie;
+            }
+            else
+            {
+                Console.WriteLine("RefreshToken cookie not found");
+            }
 
-          
+            // Doğrudan servisten alma metodunu da dene
+            var refreshFromService = _tokenService.GetRefreshToken();
+            if (!string.IsNullOrEmpty(refreshFromService))
+            {
+                Console.WriteLine($"RefreshToken from service found, length: {refreshFromService.Length}");
+                command.RefreshToken = refreshFromService;
+            }
+            else if (!string.IsNullOrEmpty(command.RefreshTokenFromCookie))
+            {
+                // Cookie'de refresh token varsa, doğrudan onu kullan
+                command.RefreshToken = command.RefreshTokenFromCookie;
+            }
 
             var result = await Mediator.Send(command);
 
@@ -178,7 +198,7 @@ namespace Planca.API.Controllers
                 Console.WriteLine("Refresh token operation successful");
 
                 // Set new encrypted tokens as cookies
-                SetTokenCookie(result.Data.Token);
+                SetTokenCookie(result.Data.Token, result.Data.RefreshToken, result.Data.RefreshTokenExpiryTime);
 
                 // Return user information without tokens in the response body
                 return Ok(new
@@ -296,7 +316,7 @@ namespace Planca.API.Controllers
         }
 
         // Helper method to set HTTP-only cookies with the JWT token and refresh token
-        private void SetTokenCookie(string token)
+        private void SetTokenCookie(string token, string refreshToken = null, DateTime? refreshTokenExpiry = null)
         {
             var jwtTokenCookieOptions = new CookieOptions
             {
@@ -308,18 +328,37 @@ namespace Planca.API.Controllers
                 Path = "/"
             };
 
-            var refreshTokenCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(7), // Cookie duration
-                Path = "/api/Auth", // Sadece refresh endpoint'inde kullanılabilir
-                Secure = true, // Send only over HTTPS
-                SameSite = SameSiteMode.None, // CSRF protection
-                IsEssential = true
-            };
-
             Response.Cookies.Append("jwt", token, jwtTokenCookieOptions);
-           
+            
+            // Refresh token'ı cookie'ye ekle
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                // KONTROL: Eğer refreshTokenExpiry null ise, loglayalım ve fallback kullanmak yerine
+                // güvenlik nedeniyle daha kısa bir süre kullanılacak (1 gün)
+                if (refreshTokenExpiry == null)
+                {
+                    Console.WriteLine("UYARI: refreshTokenExpiry değeri null, bu bir güvenlik riski olabilir!");
+                    Console.WriteLine("İleriki geliştirmelerde RefreshTokenExpiryTime kontrolü ekleyin veya LoginCommandHandler.cs, RegisterCommandHandler.cs, " +
+                                    "ve diğer handler'larda bu değerin mutlaka ayarlanmasını sağlayın!");
+                    
+                    // Güvenlik nedeniyle kısa bir fallback süresi (1 gün)
+                    refreshTokenExpiry = DateTime.UtcNow.AddDays(1);
+                }
+                
+                var refreshTokenCookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    // Güvenlik için doğrulanmış süreci kullan
+                    Expires = refreshTokenExpiry.Value,
+                    Path = "/api/Auth", // Sadece refresh endpoint'inde kullanılabilir
+                    Secure = true, // Send only over HTTPS
+                    SameSite = SameSiteMode.None, // CSRF protection
+                    IsEssential = true
+                };
+                
+                Response.Cookies.Append("refreshToken", refreshToken, refreshTokenCookieOptions);
+                Console.WriteLine($"Refresh token added to cookies, length: {refreshToken.Length}, expires: {refreshTokenCookieOptions.Expires}");
+            }
         }
     }
 }

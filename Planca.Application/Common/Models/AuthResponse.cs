@@ -9,5 +9,6 @@
         public string Email { get; set; }
         public string[] Roles { get; set; }
         public Guid? TenantId { get; set; }
+        public DateTime RefreshTokenExpiryTime { get; set; }
     }
 }

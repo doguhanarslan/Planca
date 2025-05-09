@@ -20,6 +20,7 @@ namespace Planca.Application.DTOs
         // İşletme oluşturulduktan sonra yeni token için
         public string Token { get; set; }
         public string RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiryTime { get; set; }
     }
 
 

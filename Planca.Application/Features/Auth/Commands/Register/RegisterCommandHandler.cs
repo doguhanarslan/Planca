@@ -135,6 +135,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
                         UserName = $"{request.FirstName} {request.LastName}",
                         Email = request.Email,
                         Roles = roles.ToArray(),
+                        RefreshTokenExpiryTime = refreshTokenExpiryTime
                     };
 
                     _logger.LogInformation("User {Email} registered successfully with role {Role}", request.Email, request.Role);
