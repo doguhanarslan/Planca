@@ -11,5 +11,15 @@ namespace Planca.Domain.Common.Interfaces
         Task<IEnumerable<Service>> GetServicesByEmployeeIdAsync(Guid employeeId);
         Task<IEnumerable<Service>> GetActiveServicesAsync();
         Task<bool> IsServiceNameUniqueAsync(string name, Guid? excludeId = null);
+        
+        Task<(List<Service> Services, int TotalCount)> GetServicesByTenantIdAsync(
+            Guid tenantId,
+            string searchString = null,
+            bool? isActive = null,
+            decimal? maxPrice = null,
+            string sortBy = "Name",
+            bool sortAscending = true,
+            int pageSize = 10,
+            int skip = 0);
     }
 }

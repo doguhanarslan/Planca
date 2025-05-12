@@ -11,5 +11,10 @@ namespace Planca.Application.DTOs
         public int DurationMinutes { get; set; }
         public bool IsActive { get; set; }
         public string Color { get; set; }
+        public Guid TenantId { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string CreatedBy { get; set; }
+        public string LastModifiedBy { get; set; }
+        public DateTime? LastModifiedAt { get; set; }
     }
 }

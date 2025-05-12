@@ -76,7 +76,16 @@ namespace Planca.Infrastructure
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
-            services.AddScoped<IServiceRepository, ServiceRepository>();
+            
+            // Servis Repository'si için logger ekleyerek kayıt
+            services.AddScoped<IServiceRepository>(provider => 
+            {
+                var dbContext = provider.GetRequiredService<ApplicationDbContext>();
+                var tenantService = provider.GetRequiredService<ICurrentTenantService>();
+                var logger = provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ServiceRepository>>();
+                return new ServiceRepository(dbContext, tenantService, logger);
+            });
+            
             services.AddScoped<ITenantRepository, TenantRepository>();
 
             return services;

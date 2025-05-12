@@ -20,6 +20,6 @@ namespace Planca.Application.Features.Employees.Queries.GetEmployeesList
         public bool SortAscending { get; set; } = true;
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
-        public Guid? TenantId { get; set; }
+        public Guid TenantId { get; set; }
     }
 }

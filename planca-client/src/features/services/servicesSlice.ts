@@ -226,6 +226,7 @@ const servicesSlice = createSlice({
             const payload = action.payload as any;
             
             console.log('Raw payload structure:', JSON.stringify(payload).slice(0, 100) + '...');
+            console.log('Full payload totalCount:', payload.totalCount, 'items length:', payload.items?.length);
             
             // 1. API yanıtı ya direkt PaginatedList ya da ApiResponse<PaginatedList> formatında olabilir
             let responseData;
@@ -233,6 +234,7 @@ const servicesSlice = createSlice({
             if (payload.succeeded !== undefined && payload.data !== undefined) {
               // ApiResponse formatı
               console.log('Payload is ApiResponse format with data property');
+              console.log('ApiResponse data totalCount:', payload.data.totalCount, 'items length:', payload.data.items?.length);
               responseData = payload.data;
             } else if (payload.items !== undefined) {
               // Doğrudan PaginatedList formatı
@@ -244,19 +246,27 @@ const servicesSlice = createSlice({
             }
             
             console.log('Final responseData format:', responseData);
+            console.log('Final totalCount:', responseData.totalCount, 'items length:', responseData.items?.length);
             
             if (responseData && responseData.items && Array.isArray(responseData.items)) {
               // İşlenebilir veri yapısı
               console.log(`Found ${responseData.items.length} services in response`);
+              
               state.services = responseData.items;
               state.totalCount = responseData.totalCount || 0;
               state.pageNumber = responseData.pageNumber || 1;
               state.totalPages = responseData.totalPages || 1;
+              
+              console.log('Updated state values:', {
+                servicesLength: state.services.length,
+                totalCount: state.totalCount,
+                pageNumber: state.pageNumber,
+                totalPages: state.totalPages
+              });
             } else {
-              console.error('No valid items array found in response data:', responseData);
+              console.error('Invalid response data structure:', responseData);
               state.services = [];
               state.totalCount = 0;
-              state.pageNumber = 1;
               state.totalPages = 1;
             }
           } catch (error) {

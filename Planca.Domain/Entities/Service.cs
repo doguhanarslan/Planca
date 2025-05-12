@@ -15,5 +15,7 @@ namespace Planca.Domain.Entities
         public int DurationMinutes { get; set; }
         public bool IsActive { get; set; }
         public string Color { get; set; }
+
+        public Guid TenantId { get; set; }
     }
 }

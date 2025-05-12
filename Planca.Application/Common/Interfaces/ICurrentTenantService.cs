@@ -11,5 +11,6 @@ namespace Planca.Application.Common.Interfaces
         Guid GetTenantId();
         string GetTenantName();
         bool IsValid();
+        void SetCurrentTenantId(Guid tenantId);
     }
 }

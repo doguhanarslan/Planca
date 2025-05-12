@@ -45,6 +45,6 @@ namespace Planca.Application.Common.Behaviors
     // Interface to mark commands/queries that need tenant ID
     public interface ITenantRequest
     {
-        Guid? TenantId { get; set; }
+        Guid TenantId { get; set; }
     }
 }

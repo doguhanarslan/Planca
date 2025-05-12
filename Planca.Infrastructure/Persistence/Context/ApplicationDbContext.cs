@@ -125,10 +125,21 @@ namespace Planca.Infrastructure.Persistence.Context
                 if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType) &&
                     entityType.ClrType != typeof(Tenant)) // Skip Tenant entity itself
                 {
+                    // Create a dynamic filter expression that calls the CurrentTenantService at query time
                     var parameter = Expression.Parameter(entityType.ClrType, "e");
                     var tenantIdProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
-                    var currentTenantId = Expression.Constant(_currentTenantService.GetTenantId());
-                    var filter = Expression.Lambda(Expression.Equal(tenantIdProperty, currentTenantId), parameter);
+                    
+                    // Instead of using a constant with the current value, create a method call expression
+                    // that will be evaluated when the query is executed
+                    var currentTenantIdMethod = typeof(ICurrentTenantService)
+                        .GetMethod(nameof(ICurrentTenantService.GetTenantId));
+                    
+                    var currentTenantServiceProperty = Expression.Constant(_currentTenantService);
+                    var currentTenantIdCall = Expression.Call(currentTenantServiceProperty, currentTenantIdMethod);
+                    
+                    var filter = Expression.Lambda(
+                        Expression.Equal(tenantIdProperty, currentTenantIdCall), 
+                        parameter);
 
                     modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
                 }

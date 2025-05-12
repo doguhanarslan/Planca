@@ -237,238 +237,251 @@ const ServicesList: React.FC = () => {
             {isFiltered ? 'Filtrelere uygun hizmet bulunamadı.' : 'Henüz hizmet eklenmemiş.'}
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center">
-                    İsim
-                    {renderSortIcon('name')}
-                  </div>
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Açıklama
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('price')}
-                >
-                  <div className="flex items-center">
-                    Fiyat
-                    {renderSortIcon('price')}
-                  </div>
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('duration')}
-                >
-                  <div className="flex items-center">
-                    Süre
-                    {renderSortIcon('duration')}
-                  </div>
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Durum
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  İşlemler
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {services.map((service) => service && (
-                <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap">
+          <>
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('name')}
+                  >
                     <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full mr-3" style={{ backgroundColor: service.color }}></div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {service.name}
-                      </div>
+                      İsim
+                      {renderSortIcon('name')}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                      {service.description || 'Açıklama yok'}
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  >
+                    Açıklama
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('price')}
+                  >
+                    <div className="flex items-center">
+                      Fiyat
+                      {renderSortIcon('price')}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {service.price.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('duration')}
+                  >
+                    <div className="flex items-center">
+                      Süre
+                      {renderSortIcon('duration')}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {service.durationMinutes} dakika
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      service.isActive 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                    }`}>
-                      {service.isActive ? 'Aktif' : 'Pasif'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleEditClick(service)}
-                      className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3"
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(service.id)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  >
+                    Durum
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  >
+                    İşlemler
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {services.map((service) => service && (
+                  <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 rounded-full mr-3" style={{ backgroundColor: service.color }}></div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {service.name}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                        {service.description || 'Açıklama yok'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {service.price.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {service.durationMinutes} dakika
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        service.isActive 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      }`}>
+                        {service.isActive ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleEditClick(service)}
+                        className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(service.id)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      Toplam <span className="font-medium">{totalCount}</span> hizmetten{' '}
+                      <span className="font-medium">{(pageNumber - 1) * pageSize + 1}</span>-
+                      <span className="font-medium">
+                        {Math.min(pageNumber * pageSize, totalCount)}
+                      </span>{' '}
+                      arası gösteriliyor
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      {/* Previous Page */}
+                      <button
+                        onClick={() => handlePageChange(pageNumber - 1)}
+                        disabled={pageNumber === 1}
+                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border ${
+                          pageNumber === 1
+                            ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
+                            : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                        } border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-500 dark:text-gray-300`}
+                      >
+                        <span className="sr-only">Önceki Sayfa</span>
+                        <svg
+                          className="h-5 w-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+
+                      {/* Page Numbers */}
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        // Show pages around current page
+                        let pageToShow;
+                        if (totalPages <= 5) {
+                          // If 5 or fewer pages, show all
+                          pageToShow = i + 1;
+                        } else if (pageNumber <= 3) {
+                          // If near beginning, show first 5
+                          pageToShow = i + 1;
+                        } else if (pageNumber >= totalPages - 2) {
+                          // If near end, show last 5
+                          pageToShow = totalPages - 4 + i;
+                        } else {
+                          // Otherwise show 2 before and 2 after
+                          pageToShow = pageNumber - 2 + i;
+                        }
+
+                        return (
+                          <button
+                            key={pageToShow}
+                            onClick={() => handlePageChange(pageToShow)}
+                            className={`relative inline-flex items-center px-4 py-2 border ${
+                              pageNumber === pageToShow
+                                ? 'bg-primary-50 dark:bg-primary-900 border-primary-500 dark:border-primary-600 text-primary-600 dark:text-primary-200'
+                                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                            } text-sm font-medium`}
+                          >
+                            {pageToShow}
+                          </button>
+                        );
+                      })}
+
+                      {/* Next Page */}
+                      <button
+                        onClick={() => handlePageChange(pageNumber + 1)}
+                        disabled={pageNumber === totalPages}
+                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border ${
+                          pageNumber === totalPages
+                            ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
+                            : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                        } border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-500 dark:text-gray-300`}
+                      >
+                        <span className="sr-only">Sonraki Sayfa</span>
+                        <svg
+                          className="h-5 w-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center sm:hidden">
+                  <div className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    Sayfa {pageNumber} / {totalPages}
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => handlePageChange(pageNumber - 1)}
+                      disabled={pageNumber === 1}
+                      className={`px-3 py-1 rounded border ${
+                        pageNumber === 1
+                          ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
+                          : 'bg-white dark:bg-gray-700'
+                      } border-gray-300 dark:border-gray-600 text-sm`}
+                    >
+                      Önceki
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(pageNumber + 1)}
+                      disabled={pageNumber === totalPages}
+                      className={`px-3 py-1 rounded border ${
+                        pageNumber === totalPages
+                          ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
+                          : 'bg-white dark:bg-gray-700'
+                      } border-gray-300 dark:border-gray-600 text-sm`}
+                    >
+                      Sonraki
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
-      
-      {/* Pagination */}
-      {!loading && totalPages > 1 && (
-        <div className="px-4 py-3 flex items-center justify-between border-t dark:border-gray-700 sm:px-6">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button
-              onClick={() => handlePageChange(pageNumber - 1)}
-              disabled={pageNumber === 1}
-              className={`${
-                pageNumber === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
-              } relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md`}
-            >
-              Önceki
-            </button>
-            <button
-              onClick={() => handlePageChange(pageNumber + 1)}
-              disabled={pageNumber === totalPages}
-              className={`${
-                pageNumber === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
-              } ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md`}
-            >
-              Sonraki
-            </button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Toplam <span className="font-medium">{totalCount}</span> hizmetten{' '}
-                <span className="font-medium">{(pageNumber - 1) * pageSize + 1}</span>-
-                <span className="font-medium">
-                  {Math.min(pageNumber * pageSize, totalCount)}
-                </span>{' '}
-                arası gösteriliyor
-              </p>
-            </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <button
-                  onClick={() => handlePageChange(1)}
-                  disabled={pageNumber === 1}
-                  className={`${
-                    pageNumber === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'bg-white text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-                  } relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 text-sm font-medium`}
-                >
-                  <span className="sr-only">İlk Sayfa</span>
-                  <span>&laquo;</span>
-                </button>
-                <button
-                  onClick={() => handlePageChange(pageNumber - 1)}
-                  disabled={pageNumber === 1}
-                  className={`${
-                    pageNumber === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'bg-white text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-                  } relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium`}
-                >
-                  <span className="sr-only">Önceki</span>
-                  <span>&lsaquo;</span>
-                </button>
-                
-                {/* Page numbers */}
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  // Logic to show pages around current page
-                  let pageToShow;
-                  if (totalPages <= 5) {
-                    pageToShow = i + 1;
-                  } else if (pageNumber <= 3) {
-                    pageToShow = i + 1;
-                  } else if (pageNumber >= totalPages - 2) {
-                    pageToShow = totalPages - 4 + i;
-                  } else {
-                    pageToShow = pageNumber - 2 + i;
-                  }
-                  
-                  return (
-                    <button
-                      key={pageToShow}
-                      onClick={() => handlePageChange(pageToShow)}
-                      className={`${
-                        pageNumber === pageToShow
-                          ? 'z-10 bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900 dark:border-primary-500 dark:text-primary-200'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700'
-                      } relative inline-flex items-center px-4 py-2 border text-sm font-medium`}
-                    >
-                      {pageToShow}
-                    </button>
-                  );
-                })}
-                
-                <button
-                  onClick={() => handlePageChange(pageNumber + 1)}
-                  disabled={pageNumber === totalPages}
-                  className={`${
-                    pageNumber === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'bg-white text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-                  } relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium`}
-                >
-                  <span className="sr-only">Sonraki</span>
-                  <span>&rsaquo;</span>
-                </button>
-                <button
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={pageNumber === totalPages}
-                  className={`${
-                    pageNumber === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'bg-white text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-                  } relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 text-sm font-medium`}
-                >
-                  <span className="sr-only">Son Sayfa</span>
-                  <span>&raquo;</span>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
       
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (

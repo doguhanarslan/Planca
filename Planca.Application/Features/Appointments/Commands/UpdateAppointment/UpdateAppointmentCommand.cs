@@ -28,6 +28,6 @@ namespace Planca.Application.Features.Appointments.Commands.UpdateAppointment
         public string Notes { get; set; }
 
         // Tenant ID (TenantBehavior tarafından otomatik doldurulacak)
-        public Guid? TenantId { get; set; }
+        public Guid TenantId { get; set; }
     }
 }

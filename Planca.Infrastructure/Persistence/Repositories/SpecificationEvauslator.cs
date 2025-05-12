@@ -5,7 +5,7 @@ using Planca.Domain.Common.Interfaces;
 
 namespace Planca.Infrastructure.Persistence.Repositories
 {
-    public static class SpecificationEvaluator<T> where T : BaseEntity
+    public static class SpecificationEvauslator<T> where T : BaseEntity
     {
         public static IQueryable<T> GetQuery(IQueryable<T> inputQuery, ISpecification<T> specification)
         {

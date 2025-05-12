@@ -20,6 +20,6 @@ namespace Planca.Application.Features.Services.Commands.UpdateService
         public string Color { get; set; } = string.Empty;
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
-        public Guid? TenantId { get; set; }
+        public Guid TenantId { get; set; }
     }
 }
