@@ -12,6 +12,6 @@ namespace Planca.Application.Features.Services.Queries.GetServiceDetail
         public Guid Id { get; set; }
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
-        public Guid TenantId { get; set; }
+        public Guid? TenantId { get; set; }
     }
 }

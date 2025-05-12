@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Planca.Application.Common.Interfaces;
 using Planca.Domain.Common.Interfaces;
 using Planca.Domain.Entities;
 using Planca.Infrastructure.Persistence.Context;
@@ -11,9 +12,12 @@ namespace Planca.Infrastructure.Persistence.Repositories
 {
     public class ServiceRepository : BaseRepository<Service>, IServiceRepository
     {
-        public ServiceRepository(ApplicationDbContext dbContext)
+        private readonly ICurrentTenantService _currentTenantService;
+
+        public ServiceRepository(ApplicationDbContext dbContext, ICurrentTenantService currentTenantService)
             : base(dbContext)
         {
+            _currentTenantService = currentTenantService;
         }
 
         public async Task<IEnumerable<Service>> GetActiveServicesAsync()

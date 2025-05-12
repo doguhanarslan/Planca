@@ -249,3 +249,41 @@ export interface CardProps {
 export interface AppLayoutProps {
   children: React.ReactNode;
 }
+
+// Add these new interfaces to the types file
+
+// Service DTO representing a service in the system
+export interface ServiceDto {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  durationMinutes: number;
+  isActive: boolean;
+  color: string;
+  tenantId: string;
+  createdAt?: string;
+  createdBy?: string;
+  lastModifiedAt?: string;
+  lastModifiedBy?: string;
+}
+
+// Paginated response from the API
+export interface PaginatedList<T> {
+  items: T[];
+  pageNumber: number;
+  totalPages: number;
+  totalCount: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+// Only add this if it doesn't already exist in the file
+/* 
+export interface ApiResponse<T = any> {
+  succeeded: boolean;
+  message?: string;
+  errors?: string[];
+  data: T;
+}
+*/

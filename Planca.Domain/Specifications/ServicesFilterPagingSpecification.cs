@@ -3,17 +3,40 @@ using System;
 
 namespace Planca.Domain.Specifications
 {
-    public class ServicesFilterPagingSpecification : ServicesFilterSpecification
+    public class ServicesFilterPagingSpecification : BaseSpecification<Service>
     {
         public ServicesFilterPagingSpecification(
-            string? searchString = null,
-            bool? isActive = null,
-            decimal? maxPrice = null,
-            string? sortBy = null,
-            bool sortAscending = true,
-            int? take = null,
-            int? skip = null) : base(searchString, isActive, maxPrice)
+        string searchString,
+        bool? isActive,
+        decimal? maxPrice,
+        string sortBy,
+        bool sortAscending,
+        int take,
+        int skip,
+        Guid? tenantId)
         {
+            // Tenant filtresi
+            Criteria = x => x.TenantId == tenantId;
+
+            // Arama filtresi
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                AndCriteria(x => x.Name.Contains(searchString) || 
+                    (x.Description != null && x.Description.Contains(searchString)));
+            }
+
+            // Aktiflik filtresi
+            if (isActive.HasValue)
+            {
+                AndCriteria(x => x.IsActive == isActive.Value);
+            }
+
+            // Maksimum fiyat filtresi
+            if (maxPrice.HasValue)
+            {
+                AndCriteria(x => x.Price <= maxPrice.Value);
+            }
+
             // Sıralama
             if (!string.IsNullOrEmpty(sortBy))
             {
@@ -58,10 +81,7 @@ namespace Planca.Domain.Specifications
             }
 
             // Sayfalama
-            if (take.HasValue && skip.HasValue)
-            {
-                ApplyPaging(skip.Value, take.Value);
-            }
+            ApplyPaging(skip, take);
         }
     }
 }

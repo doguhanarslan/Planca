@@ -173,18 +173,22 @@ const getCookieValue = (name: string): string => {
 
 // Uygulama başlangıcında auth kontrolü
 export const checkAuthenticationOnStartup = async (): Promise<void> => {
-  console.log('Kimlik doğrulama kontrolü yapılıyor...');
-  
   try {
     // Redux state'indeki auth durumunu kontrol et
     const state = store.getState();
     const isAuthenticated = state?.auth?.isAuthenticated || false;
     
-    // Eğer state'de auth yoksa token yenilemeyi deneme
-    // Kullanıcı giriş yapmadıysa veya önceden giriş yapmışsa direkt current-user
-    // API'sini çağıracağız. Eğer JWT süresi dolduysa, 401 mekanizması çalışacak.
+    // Eğer state'de auth yoksa, yine de cookies veya localStorage'da token olabilir
+    // Bu otomatik olarak current-user isteği yapıldığında kontrol edilecek
     if (!isAuthenticated) {
-      console.log('Kullanıcı oturum açmamış veya uygulama yeni başlatıldı');
+      // JWT veya refresh token cookie'si var mı diye kontrol et
+      const jwtCookie = document.cookie.split(';').find(c => c.trim().startsWith('jwt='));
+      const refreshTokenCookie = document.cookie.split(';').find(c => c.trim().startsWith('refreshToken='));
+      
+      // Cookie'lerden biri varsa, kullanıcının oturumu devam edebilir
+      if (jwtCookie || refreshTokenCookie) {
+        console.log('Sayfa yenilendi, token cookie bulundu. Oturum devam edecek.');
+      }
     }
   } catch (error) {
     console.error('Auth başlangıç kontrolü hatası:', error);

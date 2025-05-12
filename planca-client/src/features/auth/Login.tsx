@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Formik, Form, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
@@ -15,17 +15,28 @@ const Login: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, isBusinessRegistered, loading, error } = useAppSelector((state) => state.auth);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // If already authenticated, redirect to appropriate page
   useEffect(() => {
-    if (isAuthenticated) {
+    // Set a short delay to detect if this is the initial app load or a user-initiated navigation
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // If authenticated and not initial page load, redirect
+    if (isAuthenticated && !loading && !isInitialLoad) {
       if (isBusinessRegistered) {
         navigate('/dashboard'); // Dashboard for businesses
       } else {
         navigate('/create-business'); // Business registration for new users
       }
     }
-  }, [isAuthenticated, isBusinessRegistered, navigate]);
+  }, [isAuthenticated, isBusinessRegistered, navigate, loading, isInitialLoad]);
 
   const handleLogin = async (
     values: { email: string; password: string; rememberMe: boolean }, 
@@ -39,6 +50,8 @@ const Login: React.FC = () => {
     };
     await dispatch(loginUser(credentials));
     await dispatch(fetchCurrentUser());
+    // Set isInitialLoad to false to allow navigation after login
+    setIsInitialLoad(false);
     setSubmitting(false);
   };
 

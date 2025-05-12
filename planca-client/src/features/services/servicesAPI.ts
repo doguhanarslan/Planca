@@ -1,0 +1,263 @@
+import axios from '@/utils/axios';
+import { ApiResponse, PaginatedList, ServiceDto } from '@/types';
+
+/**
+ * Services API endpoints and methods
+ */
+class ServicesAPI {
+  private static readonly ENDPOINT = '/Services';
+
+  /**
+   * Get a paginated list of services with optional filtering
+   */
+  static async getServices(params: {
+    pageNumber?: number;
+    pageSize?: number;
+    searchString?: string;
+    isActive?: boolean;
+    maxPrice?: number;
+    sortBy?: string;
+    sortAscending?: boolean;
+    tenantId?: string;
+  }) {
+    try {
+      console.log('Fetching services with params:', params);
+      
+      // Make sure we have the tenant ID
+      if (!params.tenantId) {
+        console.warn('No tenantId provided for services fetch, this may cause empty results');
+      }
+      
+      // Convert params to match API's expected PascalCase naming
+      const apiParams: Record<string, any> = {
+        PageNumber: params.pageNumber,
+        PageSize: params.pageSize,
+        SortBy: params.sortBy,
+        SortAscending: params.sortAscending,
+        TenantId: params.tenantId
+      };
+      
+      // Only add search parameters if they have actual values
+      if (params.searchString && params.searchString.trim() !== '') {
+        apiParams['SearchString'] = params.searchString;
+      }
+      
+      if (params.isActive !== undefined) {
+        apiParams['IsActive'] = params.isActive;
+      }
+      
+      if (params.maxPrice !== undefined) {
+        apiParams['MaxPrice'] = params.maxPrice;
+      }
+      
+      console.log('Sending API request with formatted params:', apiParams);
+      
+      const response = await axios.get<ApiResponse<PaginatedList<ServiceDto>>>(
+        ServicesAPI.ENDPOINT,
+        { params: apiParams, withCredentials: true }
+      );
+      
+      console.log('Services API raw response:', response);
+      console.log('Services API response data:', response.data);
+      
+      // Check if we got an empty response
+      if (!response.data) {
+        console.error('Services API returned completely empty response');
+        return { data: { items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasNextPage: false, hasPreviousPage: false } };
+      }
+      
+      // API yanıtının yapısına göre işlem yapma
+      const responseData = response.data as any; // Tür kontrolü için 'any' kullanıyoruz
+      
+      // Doğrudan listeyi içeren bir yanıt mı?
+      if (responseData.items && Array.isArray(responseData.items)) {
+        console.log('API yanıtı doğrudan PaginatedList yapısında:', responseData);
+        // API doğrudan items içeren bir yapı döndürdü
+        return { 
+          succeeded: true,
+          data: responseData 
+        };
+      }
+      
+      // ApiResponse<PaginatedList> formatında bir yanıt mı?
+      if (responseData.data && responseData.data.items && Array.isArray(responseData.data.items)) {
+        console.log('API yanıtı ApiResponse<PaginatedList> yapısında:', responseData.data);
+        
+        // DurationMinutes alanını düzelt
+        responseData.data.items = responseData.data.items.map((service: any) => ({
+          ...service,
+          durationMinutes: service.durationMinutes || service.durationminutes
+        }));
+        
+        return responseData;
+      }
+      
+      // Beklenmeyen bir yanıt durumunda boş yanıt döndür
+      console.error('API unexpected response format:', responseData);
+      return { 
+        succeeded: true, 
+        data: { 
+          items: [], 
+          pageNumber: 1, 
+          totalPages: 0, 
+          totalCount: 0, 
+          hasNextPage: false, 
+          hasPreviousPage: false 
+        } 
+      };
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single service by ID
+   */
+  static async getServiceById(id: string, tenantId?: string) {
+    try {
+      // If tenantId is provided, add it as a query parameter
+      const params = tenantId ? { TenantId: tenantId } : {};
+      
+      const response = await axios.get<ApiResponse<ServiceDto>>(
+        `${ServicesAPI.ENDPOINT}/${id}`,
+        { params, withCredentials: true }
+      );
+      
+      // Process the data to ensure durationMinutes matches durationminutes from CSV
+      if (response.data.data) {
+        response.data.data = {
+          ...response.data.data,
+          durationMinutes: response.data.data.durationMinutes || (response.data.data as any).durationminutes
+        };
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching service ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new service
+   */
+  static async createService(serviceData: Omit<ServiceDto, 'id'>) {
+    try {
+      console.log('createService called with:', serviceData);
+      
+      // TenantId kontrolü
+      if (!serviceData.tenantId) {
+        console.warn('Creating service without tenantId! This may cause the service to not appear.');
+      }
+      
+      // Create a clean object with ONLY PascalCase properties
+      // This prevents duplicates like both tenantId and TenantId
+      const transformedData = {
+        Name: serviceData.name,
+        Description: serviceData.description,
+        Color: serviceData.color,
+        Price: serviceData.price,
+        DurationMinutes: serviceData.durationMinutes,
+        IsActive: serviceData.isActive,
+        TenantId: serviceData.tenantId
+      };
+      
+      console.log('Sending transformed data to API:', transformedData);
+      console.log('IMPORTANT: Check if only PascalCase properties exist:', Object.keys(transformedData));
+      
+      const response = await axios.post<ApiResponse<ServiceDto>>(
+        ServicesAPI.ENDPOINT,
+        transformedData,
+        { withCredentials: true }
+      );
+      
+      console.log('Service creation raw response:', response);
+      
+      if (!response.data) {
+        console.error('Empty response from create service API');
+        return { succeeded: true, data: {} as ServiceDto };
+      }
+      
+      const createdService = response.data;
+      console.log('Service created successfully:', createdService);
+      
+      // Tutarlı bir dönüş formatı sağla
+      if (createdService.data === undefined && createdService.succeeded === undefined) {
+        // API doğrudan ServiceDto döndürmüş
+        return {
+          succeeded: true,
+          data: createdService as any
+        };
+      }
+      
+      return createdService;
+    } catch (error) {
+      console.error('Error creating service:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing service
+   */
+  static async updateService(id: string, serviceData: ServiceDto) {
+    try {
+      // Create a clean object with ONLY PascalCase properties
+      // This prevents duplicates like both tenantId and TenantId
+      const transformedData = {
+        Id: serviceData.id,
+        Name: serviceData.name,
+        Description: serviceData.description,
+        Color: serviceData.color,
+        Price: serviceData.price,
+        DurationMinutes: serviceData.durationMinutes,
+        IsActive: serviceData.isActive,
+        TenantId: serviceData.tenantId
+      };
+      
+      console.log('Updating service with data:', transformedData);
+      console.log('IMPORTANT: Check if only PascalCase properties exist:', Object.keys(transformedData));
+      
+      const response = await axios.put<ApiResponse<ServiceDto>>(
+        `${ServicesAPI.ENDPOINT}/${id}`,
+        transformedData,
+        { withCredentials: true }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating service ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a service
+   */
+  static async deleteService(id: string, tenantId?: string) {
+    try {
+      // If tenantId is provided, add it as a query parameter
+      const params = tenantId ? { TenantId: tenantId } : {};
+      
+      const response = await axios.delete<ApiResponse<boolean>>(
+        `${ServicesAPI.ENDPOINT}/${id}`,
+        { params, withCredentials: true }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting service ${id}:`, error);
+      throw error;
+    }
+  }
+}
+
+// Export functions that correctly maintain the class context
+export const getServices = ServicesAPI.getServices.bind(ServicesAPI);
+export const getServiceById = ServicesAPI.getServiceById.bind(ServicesAPI);
+export const createService = ServicesAPI.createService.bind(ServicesAPI);
+export const updateService = ServicesAPI.updateService.bind(ServicesAPI);
+export const deleteService = ServicesAPI.deleteService.bind(ServicesAPI);
+
+export default ServicesAPI; 

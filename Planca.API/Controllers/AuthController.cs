@@ -8,6 +8,7 @@ using Planca.Application.Features.Auth.Commands.ChangePassword;
 using Planca.Application.Features.Auth.Commands.Login;
 using Planca.Application.Features.Auth.Commands.RefreshToken;
 using Planca.Application.Features.Auth.Commands.Register;
+using Planca.Application.Features.Auth.Commands.RevokeRefreshToken;
 using Planca.Application.Features.Auth.Queries.GetCurrentUser;
 using Planca.Application.Features.Tenants.Commands.CreateBusiness;
 using System;
@@ -227,32 +228,79 @@ namespace Planca.API.Controllers
         /// </summary>
         [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult Logout()
+        public async Task<ActionResult> Logout()
         {
-            // Clear the JWT and refresh token cookies with secure options
-            var options = new CookieOptions
+            try 
             {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(-1) // Geçmiş bir tarih ayarlayarak cookie'yi siler
-            };
+                // 1. Mevcut kullanıcı kimliğini al
+                var userId = _currentUserService.UserId;
+                
+                // 2. Veritabanında refresh token'ı iptal et
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    try
+                    {
+                        // RevokeRefreshTokenCommand kullanarak veritabanından token'ı sil
+                        var revokeCommand = new Planca.Application.Features.Auth.Commands.RevokeRefreshToken.RevokeRefreshTokenCommand { UserId = userId };
+                        var result = await Mediator.Send(revokeCommand);
+                        
+                        if (!result.Succeeded)
+                        {
+                            Console.WriteLine($"Kullanıcı {userId} için refresh token silinirken bir hata oluştu: {string.Join(", ", result.Errors)}");
+                            // Hatayı logla ama işleme devam et
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Kullanıcı {userId} için refresh token veritabanından silindi");
+                        }
+                    }
+                    catch (Exception tokenEx)
+                    {
+                        Console.WriteLine($"Refresh token silme işlemi sırasında hata: {tokenEx.Message}");
+                        // Hatayı logla ama yine de işleme devam et
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Çıkış yapılırken kullanıcı ID'si bulunamadı!");
+                }
 
-            Response.Cookies.Delete("jwt", new CookieOptions
+                // 3. Cookie'leri temizle - her durumda deneyelim
+                try
+                {
+                    Response.Cookies.Delete("jwt", new CookieOptions
+                    {
+                        Path = "/",
+                        Secure = true,
+                        SameSite = SameSiteMode.None
+                    });
+
+                    Response.Cookies.Delete("refreshToken", new CookieOptions
+                    {
+                        Path = "/api/Auth",
+                        Secure = true,
+                        SameSite = SameSiteMode.None
+                    });
+                    
+                    Console.WriteLine("Kullanıcı çıkış yaptı, cookie'ler temizlendi");
+                }
+                catch (Exception cookieEx)
+                {
+                    Console.WriteLine($"Cookie'leri silerken hata: {cookieEx.Message}");
+                    // Hatayı logla ama devam et
+                }
+
+                return Ok(new { message = "Logged out successfully" });
+            }
+            catch (Exception ex)
             {
-                Path = "/",
-                Secure = true,
-                SameSite = SameSiteMode.None
-            });
-
-            Response.Cookies.Delete("refreshToken", new CookieOptions
-            {
-                Path = "/api/Auth",
-                Secure = true,
-                SameSite = SameSiteMode.None
-            });
-
-            return Ok(new { message = "Logged out successfully" });
+                Console.WriteLine($"Logout error: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                return StatusCode(500, new { error = "Çıkış yapılırken bir hata oluştu" });
+            }
         }
 
         /// <summary>
@@ -346,16 +394,16 @@ namespace Planca.API.Controllers
                 }
                 
                 var refreshTokenCookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
+            {
+                HttpOnly = true,
                     // Güvenlik için doğrulanmış süreci kullan
                     Expires = refreshTokenExpiry.Value,
-                    Path = "/api/Auth", // Sadece refresh endpoint'inde kullanılabilir
-                    Secure = true, // Send only over HTTPS
-                    SameSite = SameSiteMode.None, // CSRF protection
-                    IsEssential = true
-                };
-                
+                Path = "/api/Auth", // Sadece refresh endpoint'inde kullanılabilir
+                Secure = true, // Send only over HTTPS
+                SameSite = SameSiteMode.None, // CSRF protection
+                IsEssential = true
+            };
+
                 Response.Cookies.Append("refreshToken", refreshToken, refreshTokenCookieOptions);
                 Console.WriteLine($"Refresh token added to cookies, length: {refreshToken.Length}, expires: {refreshTokenCookieOptions.Expires}");
             }

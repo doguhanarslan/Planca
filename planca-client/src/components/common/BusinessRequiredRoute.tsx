@@ -34,15 +34,18 @@ const BusinessRequiredRoute: React.FC = () => {
       </div>
     );
   }
+
+  // IMPORTANT: Only redirect if not loading and authentication check is complete
+  
   // Redirect to login if not authenticated
-  if (!isBusinessRegistered) {
-    return <Navigate to="/create-business" state={{ from: location }} replace />;
-  }
-  if (!isAuthenticated) {
+  if (!loading && !isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-
-  // Redirect to business registration if authenticated but no business
+  
+  // Redirect to business registration only if the user is authenticated but has no business
+  if (!loading && isAuthenticated && !isBusinessRegistered) {
+    return <Navigate to="/create-business" state={{ from: location }} replace />;
+  }
 
   // Render child routes
   return <Outlet />;

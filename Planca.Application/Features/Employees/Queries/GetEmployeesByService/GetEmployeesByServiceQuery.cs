@@ -16,6 +16,6 @@ namespace Planca.Application.Features.Employees.Queries.GetEmployeesByService
         public bool ActiveOnly { get; set; } = true;
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
-        public Guid TenantId { get; set; }
+        public Guid? TenantId { get; set; }
     }
 }

@@ -27,6 +27,6 @@ namespace Planca.Application.Features.Employees.Commands.UpdateEmployee
         public List<WorkingHoursDto> WorkingHours { get; set; } = new List<WorkingHoursDto>();
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
-        public Guid TenantId { get; set; }
+        public Guid? TenantId { get; set; }
     }
 }

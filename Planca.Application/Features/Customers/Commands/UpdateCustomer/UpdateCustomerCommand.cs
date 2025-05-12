@@ -23,6 +23,6 @@ namespace Planca.Application.Features.Customers.Commands.UpdateCustomer
         public string Notes { get; set; }
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
-        public Guid TenantId { get; set; }
+        public Guid? TenantId { get; set; }
     }
 }

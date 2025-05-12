@@ -7,43 +7,39 @@ namespace Planca.Domain.Specifications
 {
     public class ServicesFilterSpecification : BaseSpecification<Service>
     {
-        public ServicesFilterSpecification(string? searchString = null, bool? isActive = null, decimal? maxPrice = null)
-            : base(CreateSearchCriteria(searchString, isActive, maxPrice))
+        public ServicesFilterSpecification(string? searchString = null, bool? isActive = null, decimal? maxPrice = null, Guid? tenantId = null)
         {
-            // Constructor boş kalabilir çünkü criteria base constructor'a aktarıldı
-        }
-
-        private static Expression<Func<Service, bool>>? CreateSearchCriteria(string? searchString, bool? isActive, decimal? maxPrice)
-        {
-            // Başlangıçta kriterimiz yok, bütün filtreleri AND işlemi ile birleştireceğiz
-            Expression<Func<Service, bool>>? criteria = null;
+            // Başlangıçta bir kriter belirle
+            if (tenantId.HasValue && tenantId.Value != Guid.Empty)
+            {
+                // Tenant filtresi (her zaman uygulanmalı)
+                Criteria = s => s.TenantId == tenantId.Value;
+            }
+            else
+            {
+                // Tenant filtresi yoksa (olmamalı), hata durumuna düşmemek için boş kriter
+                Criteria = s => true;
+            }
 
             // Arama kriteri
             if (!string.IsNullOrEmpty(searchString))
             {
                 searchString = searchString.ToLower();
-                Expression<Func<Service, bool>> searchFilter = s =>
-                    s.Name.ToLower().Contains(searchString) ||
-                    (s.Description != null && s.Description.ToLower().Contains(searchString));
-
-                criteria = searchFilter;
+                AndCriteria(s => s.Name.ToLower().Contains(searchString) ||
+                    (s.Description != null && s.Description.ToLower().Contains(searchString)));
             }
 
             // Aktif/Pasif filtresi
             if (isActive.HasValue)
             {
-                Expression<Func<Service, bool>> activeFilter = s => s.IsActive == isActive.Value;
-                criteria = criteria == null ? activeFilter : CombineWithAnd(criteria, activeFilter);
+                AndCriteria(s => s.IsActive == isActive.Value);
             }
 
             // Maksimum fiyat filtresi
             if (maxPrice.HasValue)
             {
-                Expression<Func<Service, bool>> priceFilter = s => s.Price <= maxPrice.Value;
-                criteria = criteria == null ? priceFilter : CombineWithAnd(criteria, priceFilter);
+                AndCriteria(s => s.Price <= maxPrice.Value);
             }
-
-            return criteria;
         }
 
         // İki kriteri AND işlemi ile birleştirmek için yardımcı metod

@@ -33,6 +33,9 @@ import BusinessRequiredRoute from '@/components/common/BusinessRequiredRoute';
 // Layout component
 import AppLayout from '@/components/layouts/AppLayout';
 
+// Import Services component
+import Services from '@/features/services/Services';
+
 // Loading component
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-secondary-900">
@@ -74,8 +77,9 @@ const AuthInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
 const AppContent: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { loading, isAuthenticated } = useAppSelector((state): AuthState => state.auth);
+  const { isAuthenticated } = useAppSelector((state): AuthState => state.auth);
   const location = useLocation();
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   // Uygulama başladığında mevcut kullanıcı bilgilerini kontrol et
   useEffect(() => {
@@ -85,13 +89,19 @@ const AppContent: React.FC = () => {
       try {
         console.log('Kullanıcı bilgileri alınıyor...');
         await dispatch(fetchCurrentUser());
+        console.log('Kullanıcı bilgileri başarıyla alındı.');
       } catch (error) {
         console.log('Kullanıcı giriş yapmamış veya oturum süresi dolmuş.');
+      } finally {
+        // Mark auth check as completed regardless of the result
+        setAuthInitialized(true);
       }
     };
 
-    getCurrentUserInfo();
-  }, [dispatch]);
+    if (!authInitialized) {
+      getCurrentUserInfo();
+    }
+  }, [dispatch, authInitialized]);
 
   // Şu anki rotanın public olup olmadığını kontrol et
   const isPublicRoute = 
@@ -99,7 +109,8 @@ const AppContent: React.FC = () => {
     location.pathname === "/login" || 
     location.pathname === "/register";
 
-  if (loading && !isPublicRoute) {
+  // During the initial loading and on protected routes, show loading screen
+  if (!authInitialized && !isPublicRoute) {
     return <LoadingScreen />;
   }
 
@@ -118,6 +129,9 @@ const AppContent: React.FC = () => {
       {/* Business required routes - require authentication and a registered business */}
       <Route element={<BusinessRequiredRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Services route */}
+        <Route path="/services" element={<Services />} />
 
         {/* Placeholder routes for future development */}
         <Route
@@ -143,22 +157,6 @@ const AppContent: React.FC = () => {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4 dark:text-white">
                   Müşteriler
-                </h1>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Bu sayfa geliştirme aşamasındadır.
-                </p>
-              </div>
-            </AppLayout>
-          }
-        />
-
-        <Route
-          path="/services"
-          element={
-            <AppLayout>
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4 dark:text-white">
-                  Hizmetler
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300">
                   Bu sayfa geliştirme aşamasındadır.
