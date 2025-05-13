@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { logoutUser } from '@/features/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { AppLayoutProps, NavigationItem } from '@/types';
-import ThemeToggle from '@/components/common/ThemeToggle';
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const dispatch = useAppDispatch();
@@ -79,11 +78,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="h-screen flex overflow-hidden bg-white text-gray-800">
+    <div className="h-screen flex overflow-hidden bg-white text-black">
       {/* Mobile sidebar backdrop with improved transition */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 backdrop-blur-sm transition-opacity md:hidden"
+          className="fixed inset-0 z-40 bg-black bg-opacity-25 backdrop-blur-sm transition-opacity md:hidden"
           onClick={() => setSidebarOpen(false)}
         ></div>
       )}
@@ -93,8 +92,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition ease-in-out duration-300 transform md:hidden
           ${sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}`}
       >
-        <div className="h-full flex flex-col bg-gradient-to-br from-primary-600 to-primary-700 text-white">
-          <div className="flex items-center justify-between px-4 py-5 border-b border-primary-500">
+        <div className="h-full flex flex-col  text-white">
+          <div className="flex items-center justify-between px-4 py-5 border-b border-red-500">
             <div className="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
               <div className="flex-shrink-0 flex items-center">
                 <span className="text-white font-bold text-xl">Planca</span>
@@ -118,11 +117,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   to={item.href}
                   className={`group flex items-center px-2 py-2 text-base font-medium rounded-md transition duration-200 ${
                     location.pathname === item.href
-                      ? 'bg-primary-700 text-white'
-                      : 'text-white hover:bg-primary-500 hover:bg-opacity-75'
+                      ? 'bg-red-900 text-white'
+                      : 'text-white hover:bg-red-900 hover:bg-opacity-75'
                   }`}
                 >
-                  <div className="mr-4 flex-shrink-0 h-6 w-6 text-primary-300">
+                  <div className="mr-4 flex-shrink-0 h-6 w-6 text-white">
                     {item.icon}
                   </div>
                   {item.name}
@@ -130,14 +129,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               ))}
             </nav>
           </div>
-          <div className="p-4 border-t border-primary-500">
+          <div className="p-4 border-t border-red-500">
             <div className="flex items-center">
               <div>
-                <img className="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=John+Doe&background=0D8ABC&color=fff" alt="User avatar" />
+                <img className="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=John+Doe&background=990000&color=fff" alt="User avatar" />
               </div>
               <div className="ml-3">
                 <p className="text-base font-medium text-white">{user?.name || 'User'}</p>
-                <Link to="/settings" className="text-sm font-medium text-primary-300 hover:text-white transition duration-200">
+                <Link to="/settings" className="text-sm font-medium text-white hover:text-gray-200 transition duration-200">
                   View Settings
                 </Link>
               </div>
@@ -149,10 +148,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       {/* Static sidebar for desktop */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-72">
-          <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-primary-600 to-primary-700">
+          <div className="flex-1 flex flex-col min-h-0 bg-red-900">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center flex-shrink-0 px-6 mb-6">
-                <span className="text-white font-bold text-lg">Planca</span>
+                <span className="text-gray-100 font-bold text-lg">Planca</span>
               </div>
               <nav className="flex-1 px-4 space-y-2">
                 {navigation.map((item) => (
@@ -161,11 +160,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     to={item.href}
                     className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition duration-200 ${
                       location.pathname === item.href
-                        ? 'bg-primary-700 text-white'
-                        : 'text-white hover:bg-primary-500 hover:bg-opacity-75'
+                        ? 'bg-white text-black'
+                        : 'text-white hover:bg-white hover:bg-opacity-75'
                     }`}
                   >
-                    <div className="mr-3 flex-shrink-0 h-5 w-5 text-primary-300">
+                    <div className="mr-3 flex-shrink-0 h-5 w-5 text-black">
                       {item.icon}
                     </div>
                     {item.name}
@@ -173,15 +172,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 ))}
               </nav>
             </div>
-            <div className="flex-shrink-0 flex border-t border-primary-500 p-4">
+            <div className="flex-shrink-0 flex border-t border-red-500 p-4">
               <div className="flex-shrink-0 w-full group block">
                 <div className="flex items-center">
                   <div>
-                    <img className="inline-block h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=John+Doe&background=0D8ABC&color=fff" alt="User avatar" />
+                    <img className="inline-block h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=John+Doe&background=990000&color=fff" alt="User avatar" />
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
-                    <Link to="/settings" className="text-xs font-medium text-primary-300 hover:text-white transition duration-200">
+                    <Link to="/settings" className="text-xs font-medium text-white hover:text-gray-200 transition duration-200">
                       View settings
                     </Link>
                   </div>
@@ -196,7 +195,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow-sm border-b border-gray-200">
           <button
             type="button"
-            className="md:hidden px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+            className="md:hidden px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"
             onClick={() => setSidebarOpen(true)}
           >
             <span className="sr-only">Open sidebar</span>
@@ -219,7 +218,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   <input
                     id="search"
                     name="search"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md leading-5 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition duration-150 ease-in-out"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md leading-5 bg-white text-black placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm transition duration-150 ease-in-out"
                     placeholder="Search"
                     type="search"
                   />
@@ -230,7 +229,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <div className="ml-4 flex items-center md:ml-6 space-x-3">
               <button
                 type="button"
-                className="p-1.5 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition duration-150"
+                className="p-1.5 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-100 transition duration-150"
               >
                 <span className="sr-only">View notifications</span>
                 <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,7 +240,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               <div className="relative">
                 <button
                   type="button"
-                  className="p-1.5 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition duration-150"
+                  className="p-1.5 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-100 transition duration-150"
                   onClick={() => setShowUserMenu(!showUserMenu)}
                 >
                   <span className="sr-only">Open user menu</span>
@@ -250,36 +249,30 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   </svg>
                 </button>
                 
-                {/* User dropdown with animation */}
-                <div
-                  className={`${
-                    showUserMenu ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'
-                  } origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200 transition transform duration-100 ease-out z-50`}
-                >
-                  <div className="py-1">
-                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">
-                      Your Profile
-                    </Link>
-                    <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">
-                      Settings
-                    </Link>
-                  </div>
-                  <div className="py-1">
+                {showUserMenu && (
+                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm text-gray-700">Signed in as</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{user?.email || 'user@example.com'}</p>
+                    </div>
+                    
+                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Your Profile</Link>
+                    <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</Link>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150"
+                      className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
-                      Logout
+                      Sign out
                     </button>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-
-        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-gray-50">
-          <div className="py-6">
+        
+        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-white">
+          <div className="py-6 px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>

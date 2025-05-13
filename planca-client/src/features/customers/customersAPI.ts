@@ -6,6 +6,74 @@ import { ApiResponse, PaginatedList, CustomerDto, AppointmentDto } from '@/types
  */
 class CustomersAPI {
   private static readonly ENDPOINT = '/Customers';
+  
+  // Cache mekanizması
+  private static customerCache: Map<string, { 
+    data: PaginatedList<CustomerDto>;
+    timestamp: number; 
+  }> = new Map();
+  
+  // En son kullanılan tenantId
+  private static lastTenantId: string | null = null;
+  
+  // Cache süresi (ms) - 2 dakika
+  private static readonly CACHE_DURATION = 2 * 60 * 1000;
+
+  /**
+   * Önbelleği tamamen temizle ve son tenantId'yi sıfırla
+   * Bu metod auth işlemleri veya tenant değişikliklerinde çağrılabilir
+   */
+  public static clearCache(): void {
+    console.log('Customer cache tamamen temizleniyor');
+    CustomersAPI.customerCache.clear();
+    CustomersAPI.lastTenantId = null;
+  }
+
+  /**
+   * Önbellekte bu sorgu sonucu var mı kontrol et
+   */
+  private static getCachedCustomers(cacheKey: string): PaginatedList<CustomerDto> | null {
+    const cached = this.customerCache.get(cacheKey);
+    if (!cached) return null;
+    
+    // Cache süresini kontrol et
+    const now = Date.now();
+    if (now - cached.timestamp > this.CACHE_DURATION) {
+      // Cache süresi dolmuş, temizle
+      this.customerCache.delete(cacheKey);
+      return null;
+    }
+    
+    return cached.data;
+  }
+  
+  /**
+   * Sorgu sonucunu önbelleğe kaydet
+   */
+  private static cacheCustomers(cacheKey: string, data: PaginatedList<CustomerDto>): void {
+    // Basit cache boyut kontrolü - cache çok büyürse en eskiyi sil
+    if (this.customerCache.size > 20) {
+      const oldestKey = this.customerCache.keys().next().value;
+      if (oldestKey) {
+        this.customerCache.delete(oldestKey);
+      }
+    }
+    
+    this.customerCache.set(cacheKey, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+  
+  /**
+   * Cache için benzersiz anahtar oluştur
+   */
+  private static createCacheKey(params: Record<string, any>): string {
+    return Object.entries(params)
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .map(([key, value]) => `${key}:${value}`)
+      .join('|');
+  }
 
   /**
    * Get a paginated list of customers with optional filtering
@@ -17,15 +85,20 @@ class CustomersAPI {
     sortBy?: string;
     sortAscending?: boolean;
     tenantId?: string;
+    skipCache?: boolean;
+    forceRefresh?: boolean;
   }) {
     try {
+      // TenantId izlemesini kaldırıyoruz - Redux bu işi yapacak
+      // Sadece mevcut TenantId'yi kaydediyoruz
+      this.lastTenantId = params.tenantId || null;
+      
       // Convert params to match API's expected PascalCase naming
       const apiParams: Record<string, any> = {
         PageNumber: params.pageNumber || 1,
         PageSize: params.pageSize || 10,
         SortBy: params.sortBy || 'LastName',
-        SortAscending: params.sortAscending !== false,
-        _t: new Date().getTime() // Timestamp to prevent caching
+        SortAscending: params.sortAscending !== false
       };
       
       // Only add search parameter if it has an actual value
@@ -33,12 +106,28 @@ class CustomersAPI {
         apiParams['SearchString'] = params.searchString;
       }
       
+      // Cache anahtarı oluştur
+      const cacheKey = this.createCacheKey(apiParams);
+      
+      // Cache'i kontrol et (skipCache false ise)
+      if (!params.skipCache) {
+        const cachedData = this.getCachedCustomers(cacheKey);
+        if (cachedData) {
+          console.log('>> CACHE HIT: Customers verileri önbellekten alınıyor, API isteği yapılmayacak. [TenantId:', params.tenantId, ']');
+          return cachedData;
+        }
+      }
+      
+      // Gerçek API isteği yapılacaksa timestamp ekle
+      apiParams['_t'] = new Date().getTime(); // Timestamp to prevent caching
+      
       // Set up headers
       const headers: Record<string, string> = {};
       if (params.tenantId) {
         headers['X-TenantId'] = params.tenantId;
       }
       
+      console.log('>> API CALL: Customers verileri API\'den getiriliyor... [TenantId:', params.tenantId, ']');
       const response = await axios.get<PaginatedList<CustomerDto>>(
         CustomersAPI.ENDPOINT,
         { 
@@ -49,16 +138,6 @@ class CustomersAPI {
       );
       
       console.log('API Response from getCustomers:', response.data);
-      console.log('API Response Structure:', {
-        hasItems: !!response.data.items,
-        isItemsArray: response.data.items && Array.isArray(response.data.items),
-        itemsLength: response.data.items ? response.data.items.length : 0,
-        pageInfo: {
-          pageNumber: response.data.pageNumber,
-          totalPages: response.data.totalPages,
-          totalCount: response.data.totalCount
-        }
-      });
       
       // The API response is already the PaginatedList, no need to check for succeeded
       // Just verify we have a valid response with items property
@@ -102,13 +181,47 @@ class CustomersAPI {
       // Add additional logging to see what we're returning
       const result = response.data;
       
-      console.log('Final API result to be returned to Redux:', result);
+      // Sonucu önbelleğe kaydet
+      this.cacheCustomers(cacheKey, result);
       
-      // Return the data directly since it's already in the correct format
       return result;
     } catch (error) {
       console.error('Error fetching customers:', error);
-      throw error;
+      
+      // Return a reasonable fallback structure instead of throwing an error
+      // This helps the UI recover gracefully from errors
+      if (params.forceRefresh !== true) {
+        // Try to get any cached data as a fallback
+        const apiParams: Record<string, any> = {
+          PageNumber: params.pageNumber || 1,
+          PageSize: params.pageSize || 10,
+          SortBy: params.sortBy || 'LastName',
+          SortAscending: params.sortAscending !== false
+        };
+        
+        if (params.searchString && params.searchString.trim() !== '') {
+          apiParams['SearchString'] = params.searchString;
+        }
+        
+        const cacheKey = this.createCacheKey(apiParams);
+        const cachedData = this.getCachedCustomers(cacheKey);
+        
+        if (cachedData) {
+          console.log('Using cached data as fallback after API error');
+          return cachedData;
+        }
+      }
+      
+      // If no cache or cache is being forcibly bypassed, return empty result structure
+      console.log('Returning empty fallback structure after API error');
+      return {
+        items: [],
+        pageNumber: params.pageNumber || 1,
+        totalPages: 0,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPreviousPage: false
+      };
     }
   }
 
@@ -184,6 +297,9 @@ class CustomersAPI {
         { withCredentials: true }
       );
       
+      // Yeni bir müşteri oluşturulduğunda cache'i temizle
+      this.customerCache.clear();
+      
       // The response is already the customer data
       return response.data;
     } catch (error) {
@@ -214,6 +330,9 @@ class CustomersAPI {
         { withCredentials: true }
       );
       
+      // Müşteri güncellendiğinde cache'i temizle
+      this.customerCache.clear();
+      
       // The response is already the updated customer
       return response.data;
     } catch (error) {
@@ -231,6 +350,9 @@ class CustomersAPI {
         `${CustomersAPI.ENDPOINT}/${id}`,
         { withCredentials: true }
       );
+      
+      // Müşteri silindiğinde cache'i temizle
+      this.customerCache.clear();
       
       // Just return success status
       return response.status === 200 || response.status === 204;
@@ -253,36 +375,34 @@ class CustomersAPI {
     tenantId?: string;
   } = {}) {
     try {
-      // Convert params to match API's expected PascalCase naming
+      // Gerçek API isteği
       const apiParams: Record<string, any> = {
-        CustomerId: customerId,
-        SortAscending: params.sortAscending !== false,
-        _t: new Date().getTime() // Timestamp to prevent caching
+        _t: new Date().getTime()
       };
       
-      // Add optional parameters
-      if (params.startDate) apiParams['StartDate'] = params.startDate;
-      if (params.endDate) apiParams['EndDate'] = params.endDate;
-      if (params.status) apiParams['Status'] = params.status;
-      if (params.futureOnly) apiParams['FutureOnly'] = params.futureOnly;
-      if (params.pastOnly) apiParams['PastOnly'] = params.pastOnly;
+      // İsteğe bağlı parametreleri ekle
+      if (params.startDate) apiParams.startDate = params.startDate;
+      if (params.endDate) apiParams.endDate = params.endDate;
+      if (params.status) apiParams.status = params.status;
+      if (params.futureOnly) apiParams.futureOnly = params.futureOnly;
+      if (params.pastOnly) apiParams.pastOnly = params.pastOnly;
+      if (params.sortAscending !== undefined) apiParams.sortAscending = params.sortAscending;
       
-      // Set up headers
       const headers: Record<string, string> = {};
       if (params.tenantId) {
         headers['X-TenantId'] = params.tenantId;
       }
       
       const response = await axios.get<AppointmentDto[]>(
-        `/Appointments/customer/${customerId}`,
+        `${CustomersAPI.ENDPOINT}/${customerId}/appointments`,
         { 
-          params: apiParams, 
+          params: apiParams,
           withCredentials: true,
           headers
         }
       );
       
-      // The response is already the appointments array
+      // İstemci beklentilerine uygun formata dönüştür
       return response.data;
     } catch (error) {
       console.error(`Error fetching appointments for customer ${customerId}:`, error);

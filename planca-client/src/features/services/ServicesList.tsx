@@ -120,13 +120,13 @@ const ServicesList: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-secondary-800 rounded-lg shadow-md overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden">
       {/* Header with filters and actions */}
-      <div className="p-4 border-b dark:border-gray-700 flex flex-wrap justify-between items-center gap-2">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+      <div className="p-4 border-b border-gray-200 flex flex-wrap justify-between items-center gap-2">
+        <h2 className="text-xl font-semibold text-black">
           Hizmetler
           {isFiltered && (
-            <span className="ml-2 text-xs bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300 py-1 px-2 rounded-full">
+            <span className="ml-2 text-xs bg-red-100 text-red-800 py-1 px-2 rounded-full">
               Filtreli
             </span>
           )}
@@ -135,7 +135,7 @@ const ServicesList: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md shadow-sm hover:bg-gray-200 transition-colors"
           >
             <FaFilter className="mr-1" />
             {showFilters ? 'Filtreleri Gizle' : 'Filtrele'}
@@ -143,7 +143,7 @@ const ServicesList: React.FC = () => {
           
           <button
             onClick={handleNewServiceClick}
-            className="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white rounded-md shadow-sm hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded-md shadow-sm hover:bg-red-700 transition-colors"
           >
             <FaPlus className="mr-1" />
             Yeni Hizmet
@@ -153,10 +153,10 @@ const ServicesList: React.FC = () => {
       
       {/* Filters */}
       {showFilters && (
-        <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
+        <div className="p-4 bg-gray-50 border-b border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700">
                 Ara
               </label>
               <input
@@ -165,19 +165,19 @@ const ServicesList: React.FC = () => {
                 value={filters.searchString || ''}
                 onChange={handleSearchChange}
                 placeholder="Hizmet adı veya açıklama"
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
               />
             </div>
             
             <div>
-              <label htmlFor="isActive" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="isActive" className="block text-sm font-medium text-gray-700">
                 Durum
               </label>
               <select
                 id="isActive"
                 value={filters.isActive === undefined ? 'all' : filters.isActive.toString()}
                 onChange={handleActiveFilterChange}
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
               >
                 <option value="all">Tümü</option>
                 <option value="true">Aktif</option>
@@ -186,7 +186,7 @@ const ServicesList: React.FC = () => {
             </div>
             
             <div>
-              <label htmlFor="maxPrice" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="maxPrice" className="block text-sm font-medium text-gray-700">
                 Maksimum Fiyat
               </label>
               <input
@@ -197,7 +197,7 @@ const ServicesList: React.FC = () => {
                 value={filters.maxPrice || ''}
                 onChange={handleMaxPriceChange}
                 placeholder="Maksimum fiyat"
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
               />
             </div>
           </div>
@@ -205,7 +205,7 @@ const ServicesList: React.FC = () => {
           <div className="mt-4 flex justify-end space-x-2">
             <button
               onClick={handleResetFilters}
-              className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-md shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md shadow-sm hover:bg-gray-100 transition-colors"
             >
               <FaUndo className="mr-1" />
               Sıfırla
@@ -213,7 +213,7 @@ const ServicesList: React.FC = () => {
             
             <button
               onClick={applyFilters}
-              className="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white rounded-md shadow-sm hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded-md shadow-sm hover:bg-red-700 transition-colors"
             >
               Uygula
             </button>
@@ -230,20 +230,20 @@ const ServicesList: React.FC = () => {
       <div className="overflow-x-auto">
         {loading ? (
           <div className="p-8 flex justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
           </div>
         ) : !services || services.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="p-8 text-center text-gray-500">
             {isFiltered ? 'Filtrelere uygun hizmet bulunamadı.' : 'Henüz hizmet eklenmemiş.'}
           </div>
         ) : (
           <>
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center">
@@ -253,13 +253,13 @@ const ServicesList: React.FC = () => {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Açıklama
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('price')}
                   >
                     <div className="flex items-center">
@@ -269,7 +269,7 @@ const ServicesList: React.FC = () => {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('duration')}
                   >
                     <div className="flex items-center">
@@ -279,65 +279,67 @@ const ServicesList: React.FC = () => {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Durum
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     İşlemler
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {services.map((service) => service && (
-                  <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <tbody className="bg-white divide-y divide-gray-200">
+                {services.map((service: ServiceDto) => service && (
+                  <tr key={service.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-8 w-8 rounded-full mr-3" style={{ backgroundColor: service.color }}></div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="text-sm font-medium text-black">
                           {service.name}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                      <div className="text-sm text-gray-500 truncate max-w-xs">
                         {service.description || 'Açıklama yok'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
+                      <div className="text-sm text-black">
                         {service.price.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
+                      <div className="text-sm text-black">
                         {service.durationMinutes} dakika
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        service.isActive 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}>
+                      <span 
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          service.isActive 
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                        }`}
+                      >
                         {service.isActive ? 'Aktif' : 'Pasif'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleEditClick(service)}
-                        className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3"
+                        className="text-red-600 hover:text-red-900 mr-3"
                       >
-                        <FaEdit />
+                        <FaEdit size={18} />
                       </button>
                       <button
                         onClick={() => handleDeleteClick(service.id)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        className="text-red-600 hover:text-red-900"
                       >
-                        <FaTrash />
+                        <FaTrash size={18} />
                       </button>
                     </td>
                   </tr>
@@ -345,140 +347,43 @@ const ServicesList: React.FC = () => {
               </tbody>
             </table>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      Toplam <span className="font-medium">{totalCount}</span> hizmetten{' '}
-                      <span className="font-medium">{(pageNumber - 1) * pageSize + 1}</span>-
-                      <span className="font-medium">
-                        {Math.min(pageNumber * pageSize, totalCount)}
-                      </span>{' '}
-                      arası gösteriliyor
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      {/* Previous Page */}
-                      <button
-                        onClick={() => handlePageChange(pageNumber - 1)}
-                        disabled={pageNumber === 1}
-                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border ${
-                          pageNumber === 1
-                            ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                            : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                        } border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-500 dark:text-gray-300`}
-                      >
-                        <span className="sr-only">Önceki Sayfa</span>
-                        <svg
-                          className="h-5 w-5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          aria-hidden="true"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-
-                      {/* Page Numbers */}
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        // Show pages around current page
-                        let pageToShow;
-                        if (totalPages <= 5) {
-                          // If 5 or fewer pages, show all
-                          pageToShow = i + 1;
-                        } else if (pageNumber <= 3) {
-                          // If near beginning, show first 5
-                          pageToShow = i + 1;
-                        } else if (pageNumber >= totalPages - 2) {
-                          // If near end, show last 5
-                          pageToShow = totalPages - 4 + i;
-                        } else {
-                          // Otherwise show 2 before and 2 after
-                          pageToShow = pageNumber - 2 + i;
-                        }
-
-                        return (
-                          <button
-                            key={pageToShow}
-                            onClick={() => handlePageChange(pageToShow)}
-                            className={`relative inline-flex items-center px-4 py-2 border ${
-                              pageNumber === pageToShow
-                                ? 'bg-primary-50 dark:bg-primary-900 border-primary-500 dark:border-primary-600 text-primary-600 dark:text-primary-200'
-                                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
-                            } text-sm font-medium`}
-                          >
-                            {pageToShow}
-                          </button>
-                        );
-                      })}
-
-                      {/* Next Page */}
-                      <button
-                        onClick={() => handlePageChange(pageNumber + 1)}
-                        disabled={pageNumber === totalPages}
-                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border ${
-                          pageNumber === totalPages
-                            ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                            : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                        } border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-500 dark:text-gray-300`}
-                      >
-                        <span className="sr-only">Sonraki Sayfa</span>
-                        <svg
-                          className="h-5 w-5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          aria-hidden="true"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                    </nav>
-                  </div>
+            {/* Pagination */}
+            <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Toplam <span className="font-medium">{totalCount}</span> hizmet
+                    {totalPages > 1 && (
+                      <span> (Sayfa <span className="font-medium">{pageNumber}</span> / <span className="font-medium">{totalPages}</span>)</span>
+                    )}
+                  </p>
                 </div>
-                <div className="flex flex-col items-center sm:hidden">
-                  <div className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    Sayfa {pageNumber} / {totalPages}
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => handlePageChange(pageNumber - 1)}
-                      disabled={pageNumber === 1}
-                      className={`px-3 py-1 rounded border ${
-                        pageNumber === 1
-                          ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                          : 'bg-white dark:bg-gray-700'
-                      } border-gray-300 dark:border-gray-600 text-sm`}
-                    >
-                      Önceki
-                    </button>
-                    <button
-                      onClick={() => handlePageChange(pageNumber + 1)}
-                      disabled={pageNumber === totalPages}
-                      className={`px-3 py-1 rounded border ${
-                        pageNumber === totalPages
-                          ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                          : 'bg-white dark:bg-gray-700'
-                      } border-gray-300 dark:border-gray-600 text-sm`}
-                    >
-                      Sonraki
-                    </button>
-                  </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handlePageChange(pageNumber - 1)}
+                    disabled={pageNumber <= 1}
+                    className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                      pageNumber <= 1
+                      ? 'bg-gray-100 cursor-not-allowed'
+                      : 'bg-white hover:bg-gray-50'
+                    } border-gray-300 text-sm font-medium text-gray-500`}
+                  >
+                    Önceki
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pageNumber + 1)}
+                    disabled={pageNumber === totalPages}
+                    className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                      pageNumber === totalPages
+                      ? 'bg-gray-100 cursor-not-allowed'
+                      : 'bg-white hover:bg-gray-50'
+                    } border-gray-300 text-sm font-medium text-gray-500`}
+                  >
+                    Sonraki
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
           </>
         )}
       </div>
@@ -486,15 +391,15 @@ const ServicesList: React.FC = () => {
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Hizmeti Sil</h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Hizmeti Sil</h3>
+            <p className="text-gray-600 mb-6">
               Bu hizmeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteConfirm(null)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 İptal
               </button>

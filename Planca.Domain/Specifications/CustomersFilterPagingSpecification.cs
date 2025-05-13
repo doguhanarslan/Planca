@@ -13,7 +13,8 @@ namespace Planca.Domain.Specifications
             string sortBy = null,
             bool sortAscending = true,
             int? take = null,
-            int? skip = null) : base(searchString)
+            int? skip = null,
+            Guid tenantId = default) : base(searchString, tenantId)
         {
             // Sıralama
             if (!string.IsNullOrEmpty(sortBy))

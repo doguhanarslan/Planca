@@ -161,15 +161,20 @@ export const fetchCurrentUser = createAsyncThunk(
  */
 export const logoutUser = createAsyncThunk(
   'auth/logout',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
+      // Diğer state'leri resetlemek için action'ları dispatch et
+      // Bu dispatch, müşterilerle ilgili tüm state'i temizleyecek
+      dispatch({ type: 'customers/resetCustomers' });
+      
+      // Logout API çağrısı
       await logout();
-      // Logout başarılı olduğunda cookie'leri temizle
-
+      
       return null;
     } catch (error: any) {
-      // Hata olsa bile cookie'leri temizle
-
+      // Hata olsa bile state'i temizlemeye çalış
+      dispatch({ type: 'customers/resetCustomers' });
+      
       return rejectWithValue(error.response?.data?.errors || ['Logout failed']);
     }
   }

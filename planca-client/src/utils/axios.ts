@@ -24,6 +24,7 @@ const instance: AxiosInstance = axios.create({
 let isRefreshing = false;
 let refreshSubscribers: Array<(success: boolean) => void> = [];
 let store: Store<any, any> & { dispatch: AppDispatch };
+let isShowing401Error = false; // Flag to track if we're showing a 401 error
 
 // İsteği izleyen fonksiyonlar
 const requestTracker = (() => {
@@ -220,57 +221,67 @@ export const initializeAxios = (reduxStore: Store): void => {
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
-      // 401 hatası olmayan veya config'i olmayan hataları doğrudan reddet
-      if (error.response?.status !== 401 || !error.config) {
-        return Promise.reject(error);
-      }
-      
-      // İstek bilgilerini al
-      const originalRequest = error.config;
-      const isRefreshRequest = originalRequest.url?.includes('refresh-token');
-      const isLoginRequest = originalRequest.url?.includes('login');
-      
-      console.log(`401 hatası alındı: ${originalRequest.url}`, {
-        isRefreshRequest,
-        isLoginRequest,
-        isRetried: requestTracker.isRetried(originalRequest)
-      });
-      
-      // Refresh token veya login istekleri için yeniden deneme yapma
-      // Ayrıca daha önce yenilenmiş istekler için de yeniden deneme yapma
-      if (isRefreshRequest || isLoginRequest || requestTracker.isRetried(originalRequest)) {
-        // Refresh token endpointi bile 401 dönüyorsa, kullanıcıyı çıkış yaptır
-        if (isRefreshRequest) {
-          console.error('Refresh token isteği 401 döndü - oturum tamamen geçersiz');
+      // If this is a 401 error that we can potentially handle with token refresh
+      if (error.response?.status === 401 && error.config) {
+        // İstek bilgilerini al
+        const originalRequest = error.config;
+        const isRefreshRequest = originalRequest.url?.includes('refresh-token');
+        const isLoginRequest = originalRequest.url?.includes('login');
+        
+        console.log(`401 hatası alındı: ${originalRequest.url}`, {
+          isRefreshRequest,
+          isLoginRequest,
+          isRetried: requestTracker.isRetried(originalRequest)
+        });
+        
+        // Refresh token veya login istekleri için yeniden deneme yapma
+        // Ayrıca daha önce yenilenmiş istekler için de yeniden deneme yapma
+        if (isRefreshRequest || isLoginRequest || requestTracker.isRetried(originalRequest)) {
+          // Refresh token endpointi bile 401 dönüyorsa, kullanıcıyı çıkış yaptır
+          if (isRefreshRequest) {
+            console.error('Refresh token isteği 401 döndü - oturum tamamen geçersiz');
+            store.dispatch(logoutUser());
+          }
+          return Promise.reject(error);
+        }
+        
+        // İsteği yenilenmiş olarak işaretle
+        requestTracker.markAsRetried(originalRequest);
+        
+        try {
+          console.log(`401 hatası sonrası token yenileniyor...`);
+          
+          // Set flag to true - we're handling a 401 error
+          isShowing401Error = true;
+          
+          // JWT token süresi dolmuş, refresh token ile yenileme yap
+          const success = await refreshTokenDirectly();
+          
+          // Reset flag - we're done with this 401 error
+          isShowing401Error = false;
+          
+          if (success) {
+            console.log('Token yenilendi, orijinal istek tekrarlanıyor');
+            // Yeni token ile isteği tekrar gönder
+            return instance(originalRequest);
+          }
+          
+          // Token yenileme başarısız
+          console.error('Token yenileme başarısız, kullanıcı çıkış yapıyor');
           store.dispatch(logoutUser());
+          return Promise.reject(new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.'));
+        } catch (refreshError) {
+          // Reset flag - we're done with this 401 error
+          isShowing401Error = false;
+          
+          console.error('401 sonrası token yenileme hatası:', refreshError);
+          store.dispatch(logoutUser());
+          return Promise.reject(refreshError);
         }
-        return Promise.reject(error);
       }
       
-      // İsteği yenilenmiş olarak işaretle
-      requestTracker.markAsRetried(originalRequest);
-      
-      try {
-        console.log(`401 hatası sonrası token yenileniyor...`);
-        
-        // JWT token süresi dolmuş, refresh token ile yenileme yap
-        const success = await refreshTokenDirectly();
-        
-        if (success) {
-          console.log('Token yenilendi, orijinal istek tekrarlanıyor');
-          // Yeni token ile isteği tekrar gönder
-          return instance(originalRequest);
-        }
-        
-        // Token yenileme başarısız
-        console.error('Token yenileme başarısız, kullanıcı çıkış yapıyor');
-        store.dispatch(logoutUser());
-        return Promise.reject(new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.'));
-      } catch (refreshError) {
-        console.error('401 sonrası token yenileme hatası:', refreshError);
-        store.dispatch(logoutUser());
-        return Promise.reject(refreshError);
-      }
+      // For all other errors, just reject as normal
+      return Promise.reject(error);
     }
   );
 };
@@ -279,6 +290,11 @@ export const initializeAxios = (reduxStore: Store): void => {
 export const setupAuthInterceptors = async (reduxStore: Store): Promise<void> => {
   initializeAxios(reduxStore);
   await checkAuthenticationOnStartup();
+};
+
+// Export a function to check if we're currently handling a 401 error
+export const isHandling401Error = (): boolean => {
+  return isShowing401Error;
 };
 
 export default instance;

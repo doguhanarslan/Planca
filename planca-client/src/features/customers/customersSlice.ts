@@ -2,7 +2,14 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { CustomerDto, AppointmentDto, PaginatedList } from '@/types';
 import CustomersAPI from './customersAPI';
 import { RootState } from '@/app/store';
+import { isHandling401Error } from '@/utils/axios';
 
+// Son istek zamanını takip etmek için değişken
+let lastFetchTime = 0;
+// Debounce süresi (ms) - 300ms
+const DEBOUNCE_TIME = 300;
+
+// Silentrefresh için type tanımı güncellemesi
 interface CustomersState {
   customersList: {
     items: CustomerDto[];
@@ -20,6 +27,12 @@ interface CustomersState {
   searchString: string;
   sortBy: string;
   sortAscending: boolean;
+}
+
+// Sessiz yenileme için interface ekliyoruz
+interface CustomersResponseWithSilentRefresh extends PaginatedList<CustomerDto> {
+  silentRefresh?: boolean;
+  error?: string;
 }
 
 const initialState: CustomersState = {
@@ -42,36 +55,86 @@ const initialState: CustomersState = {
 };
 
 // Async thunks
-export const fetchCustomers = createAsyncThunk(
-  'customers/fetchCustomers',
-  async (params: {
+export const fetchCustomers = createAsyncThunk<
+  CustomersResponseWithSilentRefresh,
+  {
     pageNumber?: number;
     pageSize?: number;
     searchString?: string;
     sortBy?: string;
     sortAscending?: boolean;
-  }, { getState }) => {
+    forceRefresh?: boolean;
+    silentRefresh?: boolean;
+    suppressErrors?: boolean;
+  },
+  {state: RootState}
+>(
+  'customers/fetchCustomers',
+  async (params, { getState }) => {
     const state = getState() as RootState;
     const tenantId = state.auth.tenant?.id;
     
     try {
-      console.log('Starting fetchCustomers with params:', params);
-      const response = await CustomersAPI.getCustomers({
+      // Debounce kontrolü - art arda çağrıları sınırla
+      const now = Date.now();
+      if (!params.forceRefresh && now - lastFetchTime < DEBOUNCE_TIME) {
+        console.log('Debouncing fetchCustomers call');
+        const response = {
+          ...state.customers.customersList
+        } as CustomersResponseWithSilentRefresh;
+        
+        if (params.silentRefresh) {
+          response.silentRefresh = true;
+        }
+        
+        return response; // Mevcut listeyi kullan
+      }
+      
+      // Son istek zamanını güncelle
+      lastFetchTime = now;
+      
+      // forceRefresh parametresini skipCache olarak aktarıyoruz
+      const skipCache = params.forceRefresh === true;
+      
+      console.log('Starting fetchCustomers with params:', {...params, skipCache});
+      const apiResponse = await CustomersAPI.getCustomers({
         ...params,
-        tenantId
+        tenantId,
+        skipCache,
+        forceRefresh: params.forceRefresh
       });
       
-      console.log('Raw API response from fetchCustomers:', response);
-      console.log('Response type:', typeof response);
-      console.log('Has items property:', response && 'items' in response);
-      console.log('Items is array:', response && response.items && Array.isArray(response.items));
-      console.log('Items count:', response?.items?.length || 0);
+      console.log('API response received from fetchCustomers');
+      
+      // API'den gelen yanıtı CustomersResponseWithSilentRefresh tipine dönüştür
+      const response = {
+        ...apiResponse
+      } as CustomersResponseWithSilentRefresh;
+      
+      // Sessiz yenileme için ek alan
+      if (params.silentRefresh) {
+        response.silentRefresh = true;
+      }
       
       // Data is now already normalized by the API class
       return response;
     } catch (error) {
       console.error('Error in fetchCustomers thunk:', error);
-      throw error;
+      // If silentRefresh or suppressErrors, handle error quietly
+      if (params.silentRefresh || params.suppressErrors) {
+        return {
+          silentRefresh: true,
+          error: error instanceof Error ? error.message : 'Bilinmeyen hata',
+          items: [],
+          pageNumber: 1,
+          totalPages: 0,
+          totalCount: 0,
+          hasNextPage: false,
+          hasPreviousPage: false
+        } as CustomersResponseWithSilentRefresh;
+      }
+      // Convert to a rejected result
+      return Promise.reject(error);
     }
   }
 );
@@ -200,17 +263,33 @@ const customersSlice = createSlice({
     },
     setPageSize: (state, action: PayloadAction<number>) => {
       state.pageSize = action.payload;
+    },
+    // Kullanıcı oturumu kapandığında veya tenant değiştiğinde tüm state'i temizle
+    resetCustomers: () => {
+      // API cache'i de temizle
+      CustomersAPI.clearCache();
+      // Tamamen yeni bir state döndür
+      return initialState;
     }
   },
   extraReducers: (builder) => {
     // Handle fetchCustomers
-    builder.addCase(fetchCustomers.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-      console.log('fetchCustomers.pending - Loading state set to true');
+    builder.addCase(fetchCustomers.pending, (state, action) => {
+      // Eğer sessiz yenileme değilse loading durumunu değiştir
+      if (!action.meta.arg.silentRefresh) {
+        state.loading = true;
+        state.error = null;
+        console.log('fetchCustomers.pending - Loading state set to true');
+      }
     });
     builder.addCase(fetchCustomers.fulfilled, (state, action) => {
-      state.loading = false;
+      // Sessiz yenileme ise sadece veriyi güncelle, loading durumunu değiştirme
+      if ((action.payload as any).silentRefresh) {
+        console.log('Silent refresh completed, updating data without changing loading state');
+      } else {
+        state.loading = false;
+      }
+      
       console.log('fetchCustomers.fulfilled - payload:', action.payload);
       console.log('Payload type:', typeof action.payload);
       console.log('Has items:', action.payload && 'items' in action.payload);
@@ -226,7 +305,7 @@ const customersSlice = createSlice({
       console.log('Building customersList from payload');
       try {
         state.customersList = {
-          items: action.payload.items?.map(item => {
+          items: action.payload.items?.map((item: any) => {
             console.log('Processing item:', item);
             return normalizeCustomerData(item);
           }).filter(Boolean) || [],
@@ -244,8 +323,18 @@ const customersSlice = createSlice({
       }
     });
     builder.addCase(fetchCustomers.rejected, (state, action) => {
+      // Sessiz yenileme ise hatayı gösterme
+      if (action.meta.arg.silentRefresh) {
+        console.log('Silent refresh error, not updating state');
+        return;
+      }
+      
       state.loading = false;
-      state.error = action.error.message || 'Failed to fetch customers';
+      
+      // Only set error if we're not handling a 401 error with auto-refresh
+      if (!isHandling401Error()) {
+        state.error = action.error.message || 'Failed to fetch customers';
+      }
     });
     
     // Handle fetchCustomerById
@@ -264,7 +353,10 @@ const customersSlice = createSlice({
     });
     builder.addCase(fetchCustomerById.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.error.message || 'Failed to fetch customer details';
+      // Only set error if we're not handling a 401 error with auto-refresh
+      if (!isHandling401Error()) {
+        state.error = action.error.message || 'Failed to fetch customer details';
+      }
     });
     
     // Handle createCustomer
@@ -304,7 +396,10 @@ const customersSlice = createSlice({
     });
     builder.addCase(createCustomer.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.error.message || 'Failed to create customer';
+      // Only set error if we're not handling a 401 error with auto-refresh
+      if (!isHandling401Error()) {
+        state.error = action.error.message || 'Failed to create customer';
+      }
     });
     
     // Handle updateCustomer
@@ -339,7 +434,10 @@ const customersSlice = createSlice({
     });
     builder.addCase(updateCustomer.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.error.message || 'Failed to update customer';
+      // Only set error if we're not handling a 401 error with auto-refresh
+      if (!isHandling401Error()) {
+        state.error = action.error.message || 'Failed to update customer';
+      }
     });
     
     // Handle deleteCustomer
@@ -367,7 +465,10 @@ const customersSlice = createSlice({
     });
     builder.addCase(deleteCustomer.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.error.message || 'Failed to delete customer';
+      // Only set error if we're not handling a 401 error with auto-refresh
+      if (!isHandling401Error()) {
+        state.error = action.error.message || 'Failed to delete customer';
+      }
     });
     
     // Handle fetchCustomerAppointments
@@ -381,7 +482,10 @@ const customersSlice = createSlice({
     });
     builder.addCase(fetchCustomerAppointments.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.error.message || 'Failed to fetch customer appointments';
+      // Hata göstermek yerine boş bir array atıyoruz
+      state.customerAppointments = [];
+      // Error durumunu değiştirmiyoruz, böylece diğer hataları göstermeye devam ediyoruz
+      // state.error = action.error.message || 'Failed to fetch customer appointments';
     });
   }
 });
@@ -391,7 +495,8 @@ export const {
   setSearchString, 
   setSortBy, 
   setSortDirection,
-  setPageSize 
+  setPageSize,
+  resetCustomers
 } = customersSlice.actions;
 
 export default customersSlice.reducer; 

@@ -68,12 +68,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
       <div className="px-4 py-5 sm:p-6">
-        <h3 className="text-lg font-medium leading-6 text-gray-900">
-          {initialData?.id ? 'Edit Customer' : 'Add New Customer'}
+        <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+          {initialData?.id ? 'Müşteriyi Düzenle' : 'Yeni Müşteri Ekle'}
         </h3>
         
         {error && (
-          <div className="mt-4 bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="mt-4 mb-6 bg-red-50 border-l-4 border-red-400 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -87,14 +87,14 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="mt-5 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             {/* First name */}
             <div className="sm:col-span-3">
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                First name*
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                Adı*
               </label>
-              <div className="mt-1">
+              <div>
                 <input
                   type="text"
                   name="firstName"
@@ -102,17 +102,18 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
                   value={formData.firstName}
                   onChange={handleChange}
                   required
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full px-4 py-3 border-gray-300 rounded-md text-base"
+                  placeholder="Adı"
                 />
               </div>
             </div>
             
             {/* Last name */}
             <div className="sm:col-span-3">
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                Last name*
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                Soyadı*
               </label>
-              <div className="mt-1">
+              <div>
                 <input
                   type="text"
                   name="lastName"
@@ -120,17 +121,18 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
                   value={formData.lastName}
                   onChange={handleChange}
                   required
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full px-4 py-3 border-gray-300 rounded-md text-base"
+                  placeholder="Soyadı"
                 />
               </div>
             </div>
             
             {/* Email */}
             <div className="sm:col-span-3">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address*
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                E-posta adresi*
               </label>
-              <div className="mt-1">
+              <div>
                 <input
                   type="email"
                   name="email"
@@ -138,62 +140,65 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full px-4 py-3 border-gray-300 rounded-md text-base"
+                  placeholder="örnek@email.com"
                 />
               </div>
             </div>
             
             {/* Phone */}
             <div className="sm:col-span-3">
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
-                Phone number
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                Telefon numarası
               </label>
-              <div className="mt-1">
+              <div>
                 <input
                   type="tel"
                   name="phoneNumber"
                   id="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full px-4 py-3 border-gray-300 rounded-md text-base"
+                  placeholder="(___) ___ __ __"
                 />
               </div>
             </div>
             
             {/* Notes */}
             <div className="sm:col-span-6">
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                Notes
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                Notlar
               </label>
-              <div className="mt-1">
+              <div>
                 <textarea
                   id="notes"
                   name="notes"
-                  rows={3}
+                  rows={4}
                   value={formData.notes}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full px-4 py-3 border-gray-300 rounded-md text-base"
+                  placeholder="Müşteri hakkında notlar..."
                 />
               </div>
-              <p className="mt-2 text-sm text-gray-500">Add any additional information about the customer.</p>
+              <p className="mt-2 text-sm text-gray-500">Müşteri hakkında ek bilgileri buraya ekleyebilirsiniz.</p>
             </div>
           </div>
           
           <div className="pt-5">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={onCancel}
-                className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="bg-white py-3 hover:cursor-pointer px-6 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
-                Cancel
+                Vazgeç
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm transition-all duration-300 text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-900 hover:cursor-pointer  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Saving...' : 'Save'}
+                {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
               </button>
             </div>
           </div>

@@ -16,5 +16,8 @@ namespace Planca.Domain.Common.Interfaces
         Task DeleteAsync(T entity);
         Task<int> CountAsync(ISpecification<T> spec);
         Task<T> FirstOrDefaultAsync(ISpecification<T> spec);
+        
+        // Performans optimizasyonu için IQueryable<T> döndüren metot
+        IQueryable<T> GetQuery(ISpecification<T> spec);
     }
 }

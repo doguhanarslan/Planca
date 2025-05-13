@@ -1,23 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchCustomerAppointments } from './customersSlice';
 import { CustomerDto, AppointmentDto } from '@/types';
 import { format, parseISO } from 'date-fns';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiClock, FiInfo, FiPlus } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiClock, FiInfo, FiPlus, FiX } from 'react-icons/fi';
 
 interface CustomerDetailProps {
   onCreateAppointment: (customerId: string) => void;
+  onClose?: () => void;
 }
 
-const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) => {
+const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment, onClose }) => {
   const dispatch = useAppDispatch();
   const { selectedCustomer, customerAppointments, loading } = useAppSelector(state => state.customers);
   
   // Local state for appointments filter
   const [filterFutureOnly, setFilterFutureOnly] = useState(true);
   
-  // Fetch customer appointments when customer is selected
-  useEffect(() => {
+  // Fetch customer appointments when customer is selected - useCallback ile optimize edildi
+  const fetchAppointments = useCallback(() => {
     if (selectedCustomer) {
       dispatch(fetchCustomerAppointments({
         customerId: selectedCustomer.id,
@@ -28,6 +29,11 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
       }));
     }
   }, [dispatch, selectedCustomer, filterFutureOnly]);
+  
+  // Fetch customer appointments when customer or filter changes
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
   
   if (!selectedCustomer) {
     return (
@@ -83,6 +89,20 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
   
   return (
     <div className="bg-white shadow rounded-lg">
+      {/* Mobile view close header - only visible on small screens when showing detail view */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
+        <h2 className="text-lg font-semibold text-gray-900">Müşteri Detayları</h2>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="inline-flex items-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <span className="sr-only">Kapat</span>
+            <FiX className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
       {/* Customer info header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-start justify-between">
@@ -104,13 +124,24 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
               )}
             </div>
           </div>
-          <button
-            onClick={handleCreateAppointment}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <FiPlus className="mr-2 -ml-1 h-4 w-4" />
-            New Appointment
-          </button>
+          <div className="flex space-x-2">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="hidden lg:inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <FiX className="mr-2 -ml-1 h-4 w-4" />
+                Kapat
+              </button>
+            )}
+            <button
+              onClick={handleCreateAppointment}
+              className="inline-flex items-center hover:cursor-pointer px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              <FiPlus className="mr-2 -ml-1 h-4 w-4" />
+              Yeni Randevu
+            </button>
+          </div>
         </div>
         
         {/* Notes section */}
@@ -127,7 +158,7 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
       {/* Appointments section */}
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Appointments</h3>
+          <h3 className="text-lg font-medium text-gray-900">Randevular</h3>
           <div>
             <button
               onClick={toggleFilter}
@@ -137,7 +168,7 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
                   : 'bg-gray-100 text-gray-800'
               }`}
             >
-              {filterFutureOnly ? 'Upcoming Only' : 'All Appointments'}
+              {filterFutureOnly ? 'Yalnızca Gelecek' : 'Tüm Randevular'}
             </button>
           </div>
         </div>
@@ -149,11 +180,11 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
         ) : customerAppointments.length === 0 ? (
           <div className="text-center py-8">
             <FiCalendar className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No appointments</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Randevu bulunamadı</h3>
             <p className="mt-1 text-sm text-gray-500">
               {filterFutureOnly
-                ? 'No upcoming appointments for this customer.'
-                : 'No appointments found for this customer.'}
+                ? 'Bu müşteri için gelecekte randevu bulunmuyor.'
+                : 'Bu müşteri için herhangi bir randevu bulunmuyor.'}
             </p>
             <div className="mt-6">
               <button
@@ -161,14 +192,14 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
                 <FiPlus className="mr-2 -ml-1 h-5 w-5" />
-                Schedule an appointment
+                Randevu oluştur
               </button>
             </div>
           </div>
         ) : (
           <div className="overflow-hidden bg-white rounded-md border border-gray-200">
             <ul className="divide-y divide-gray-200">
-              {customerAppointments.map((appointment) => {
+              {customerAppointments.map((appointment: AppointmentDto) => {
                 const { date, time } = formatAppointmentTime(appointment);
                 return (
                   <li key={appointment.id} className="p-4 hover:bg-gray-50">

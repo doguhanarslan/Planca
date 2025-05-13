@@ -12,7 +12,7 @@ import { fetchCurrentUser } from '@/features/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { AuthState } from '@/types';
 import '@/utils/constants';
-import '@/styles/designSystem'; 
+import '@/styles/designSystem';
 
 // Token yenileme ve kimlik doğrulama sistemi import
 import { setupAuthInterceptors } from '@/utils/axios';
@@ -41,12 +41,12 @@ import Customers from '@/features/customers/Customers';
 
 // Loading component
 const LoadingScreen = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+  <div className="min-h-screen flex items-center justify-center bg-white">
     <div className="max-w-md w-full p-6 text-center">
       <div className="flex justify-center">
-        <div className="animate-spin rounded-full h-14 w-14 border-t-3 border-b-3 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-14 w-14 border-t-3 border-b-3 border-red-600"></div>
       </div>
-      <p className="text-center mt-4 text-gray-600 font-medium">Yükleniyor...</p>
+      <p className="text-center mt-4 text-black font-medium">Yükleniyor...</p>
     </div>
   </div>
 );
@@ -83,6 +83,9 @@ const AppContent: React.FC = () => {
   const { isAuthenticated } = useAppSelector((state): AuthState => state.auth);
   const location = useLocation();
   const [authInitialized, setAuthInitialized] = useState(false);
+  
+  // NOT: Redux store'daki abonelik zaten tenant değişikliklerini izliyor
+  // Bu nedenle buraya ek izleme kodu eklemiyoruz, böylece sonsuz döngüleri önlüyoruz
 
   // Uygulama başladığında mevcut kullanıcı bilgilerini kontrol et
   useEffect(() => {
@@ -146,10 +149,10 @@ const AppContent: React.FC = () => {
           element={
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                <h1 className="text-2xl font-bold text-black mb-4">
                   Randevular
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-black">
                   Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>
@@ -163,10 +166,10 @@ const AppContent: React.FC = () => {
           element={
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                <h1 className="text-2xl font-bold text-black mb-4">
                   Create Appointment
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-black">
                   This page for creating appointments is under development.
                 </p>
               </div>
@@ -179,10 +182,10 @@ const AppContent: React.FC = () => {
           element={
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                <h1 className="text-2xl font-bold text-black mb-4">
                   Ayarlar
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-black">
                   Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>

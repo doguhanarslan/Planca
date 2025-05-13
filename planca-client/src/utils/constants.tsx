@@ -250,8 +250,6 @@ export const STORAGE = {
 // Tema Modu Tipleri
 export const THEME_MODES = {
   LIGHT: 'light',
-  DARK: 'dark',
-  SYSTEM: 'system',
 } as const;
 
 // HTTP İstek Durumları

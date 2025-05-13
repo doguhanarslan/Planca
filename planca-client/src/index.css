@@ -7,18 +7,19 @@
   --animation-timing: 200ms;
   --animation-easing: cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* New Blue-Based Color Palette */
-  --color-primary-50: 239, 246, 255;
-  --color-primary-100: 219, 234, 254;
-  --color-primary-200: 191, 219, 254;
-  --color-primary-300: 147, 197, 253;
-  --color-primary-400: 96, 165, 250;
-  --color-primary-500: 59, 130, 246;
-  --color-primary-600: 37, 99, 235;
-  --color-primary-700: 29, 78, 216;
-  --color-primary-800: 30, 64, 175;
-  --color-primary-900: 30, 58, 138;
+  /* Red-Based Color Palette */
+  --color-primary-50: 255, 241, 241;
+  --color-primary-100: 255, 225, 225;
+  --color-primary-200: 255, 199, 199;
+  --color-primary-300: 255, 158, 158;
+  --color-primary-400: 255, 107, 107;
+  --color-primary-500: 255, 58, 58;
+  --color-primary-600: 255, 0, 0;
+  --color-primary-700: 204, 0, 0;
+  --color-primary-800: 153, 0, 0;
+  --color-primary-900: 122, 0, 0;
   
+  /* Black/White/Gray Color Palette */
   --color-secondary-50: 249, 250, 251;
   --color-secondary-100: 243, 244, 246;
   --color-secondary-200: 229, 231, 235;
@@ -31,11 +32,9 @@
   --color-secondary-900: 17, 24, 39;
 }
 
-
-
 body {
-  background-color: rgb(var(--color-secondary-900));
-  color: rgb(var(--color-secondary-100));
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
 }
 
 /* Modern scroll bar styling */
@@ -45,18 +44,18 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(var(--color-secondary-800), 0.5);
+  background: rgba(229, 231, 235, 0.5);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(var(--color-secondary-600), 0.5);
+  background: rgba(107, 114, 128, 0.5);
   border-radius: 8px;
   transition: background var(--animation-timing) var(--animation-easing);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--color-secondary-500), 0.8);
+  background: rgba(75, 85, 99, 0.8);
 }
 
 /* Temel stil ayarları */
@@ -123,9 +122,9 @@ body {
 .skeleton-loading {
   background: linear-gradient(
     90deg,
-    rgba(var(--color-secondary-700), 0.1) 25%,
-    rgba(var(--color-secondary-600), 0.2) 50%,
-    rgba(var(--color-secondary-700), 0.1) 75%
+    rgba(229, 231, 235, 0.1) 25%,
+    rgba(209, 213, 219, 0.2) 50%,
+    rgba(229, 231, 235, 0.1) 75%
   );
   background-size: 200% 100%;
   animation: skeleton-wave 1.5s infinite;
@@ -138,13 +137,13 @@ body {
 
 /* Modern focus stilleri */
 :focus-visible {
-  outline: 2px solid rgba(var(--color-primary-500), 0.7);
+  outline: 2px solid rgba(255, 0, 0, 0.7);
   outline-offset: 2px;
 }
 
 /* Klavye kullanıcıları için erişilebilirlik iyileştirmeleri */
 .focus-ring:focus-visible {
-  box-shadow: 0 0 0 2px rgba(var(--color-secondary-900), 1), 0 0 0 4px rgba(var(--color-primary-500), 0.7);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 1), 0 0 0 4px rgba(255, 0, 0, 0.7);
 }
 
 /* Basit grid sistemleri */
@@ -166,6 +165,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   margin-top: 0;
   margin-bottom: 0.5em;
+  color: rgb(0, 0, 0);
 }
 
 p {
@@ -179,7 +179,40 @@ a {
 }
 
 a:hover {
-  color: rgb(var(--color-primary-300));
+  color: black;
+}
+
+/* Button effects */
+.btn-primary {
+  background-color: rgb(255, 0, 0);
+  color: white;
+  transition: background-color var(--animation-timing) var(--animation-easing);
+}
+
+.btn-primary:hover {
+  background-color: rgb(204, 0, 0);
+}
+
+.btn-secondary {
+  background-color: rgb(31, 41, 55);
+  color: white;
+  transition: background-color var(--animation-timing) var(--animation-easing);
+}
+
+.btn-secondary:hover {
+  background-color: rgb(17, 24, 39);
+}
+
+.btn-white {
+  background-color: white;
+  color: rgb(0, 0, 0);
+  border: 1px solid rgb(229, 231, 235);
+  transition: all var(--animation-timing) var(--animation-easing);
+}
+
+.btn-white:hover {
+  background-color: rgb(249, 250, 251);
+  border-color: rgb(209, 213, 219);
 }
 
 /* Glass effect styling */

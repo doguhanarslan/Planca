@@ -9,7 +9,7 @@ using Planca.Infrastructure.Persistence.Context;
 
 namespace Planca.Infrastructure.Persistence.Repositories
 {
-    public class BaseRepository<T> : IRepository<T> where T : BaseEntity
+    public class BaseRepository<T> : IRepository<T> where T : BaseEntity, ITenantEntity
     {
         protected readonly ApplicationDbContext _dbContext;
 
@@ -59,6 +59,11 @@ namespace Planca.Infrastructure.Persistence.Repositories
         public async Task<T> FirstOrDefaultAsync(ISpecification<T> spec)
         {
             return await ApplySpecification(spec).FirstOrDefaultAsync();
+        }
+
+        public IQueryable<T> GetQuery(ISpecification<T> spec)
+        {
+            return ApplySpecification(spec);
         }
 
         protected IQueryable<T> ApplySpecification(ISpecification<T> spec)
