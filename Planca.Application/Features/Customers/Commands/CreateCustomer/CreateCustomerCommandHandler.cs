@@ -5,7 +5,6 @@ using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
 using Planca.Domain.Common.Interfaces;
 using Planca.Domain.Entities;
-using Planca.Domain.ValueObjects;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,24 +51,11 @@ namespace Planca.Application.Features.Customers.Commands.CreateCustomer
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
                 Notes = request.Notes,
-                UserId = request.UserId,
+                UserId = request.UserId ?? Guid.NewGuid().ToString(),
                 TenantId = request.TenantId,
                 CreatedBy = _currentUserService.UserId ?? "System",
                 CreatedAt = DateTime.UtcNow
             };
-
-            // Set address if provided
-            if (request.Address != null)
-            {
-                customer.Address = new Address
-                {
-                    Street = request.Address.Street,
-                    City = request.Address.City,
-                    State = request.Address.State,
-                    ZipCode = request.Address.ZipCode,
-                    Country = request.Address.Country
-                };
-            }
 
             // Add to repository
             await _customerRepository.AddAsync(customer);

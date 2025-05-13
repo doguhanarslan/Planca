@@ -15,6 +15,17 @@ const Customers: React.FC = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   
+  // Load customer list on first render
+  useEffect(() => {
+    console.log('Customers component mounted, fetching customer list');
+    dispatch(fetchCustomers({
+      pageNumber: 1,
+      pageSize: 10,
+      sortBy: 'LastName',
+      sortAscending: true
+    }));
+  }, [dispatch]);
+  
   // Load customer from URL parameter if available
   useEffect(() => {
     if (customerId) {

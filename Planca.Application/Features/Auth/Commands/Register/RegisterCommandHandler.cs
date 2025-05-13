@@ -85,11 +85,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
                     }
 
                     // Create domain entity based on role
-                    if (request.Role == UserRoles.Customer)
-                    {
-                        await CreateCustomerEntity(userId, request);
-                    }
-                    else if (request.Role == UserRoles.Employee)
+                    if (request.Role == UserRoles.Employee)
                     {
                         await CreateEmployeeEntity(userId, request);
                     }
@@ -165,7 +161,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
             }
         }
 
-        private async Task CreateCustomerEntity(string userId, RegisterCommand request)
+        /* private async Task CreateCustomerEntity(string userId, RegisterCommand request)
         {
             var customer = new Customer
             {
@@ -177,20 +173,12 @@ namespace Planca.Application.Features.Auth.Commands.Register
                 Notes = "",  // Initialize with empty string
                 TenantId = request.TenantId ?? Guid.Empty,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System",
-                // Initialize Address with an empty object instead of leaving it null
-                Address = new Address
-                {
-                    Street = "",
-                    City = "",
-                    State = "",
-                    ZipCode = "",
-                    Country = ""
-                }
+                CreatedBy = "System"
             };
 
             await _customerRepository.AddAsync(customer);
         }
+        */
 
         private async Task CreateEmployeeEntity(string userId, RegisterCommand request)
         {

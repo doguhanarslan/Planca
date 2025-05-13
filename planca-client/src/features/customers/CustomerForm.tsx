@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useAppDispatch } from '@/app/hooks';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { createCustomer } from './customersSlice';
-import { CustomerDto, AddressDto } from '@/types';
+import { CustomerDto } from '@/types';
 
 interface CustomerFormProps {
   onSuccess?: (customer: CustomerDto) => void;
@@ -11,6 +11,7 @@ interface CustomerFormProps {
 
 const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initialData }) => {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector(state => state.auth);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -21,33 +22,15 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
     email: initialData?.email || '',
     phoneNumber: initialData?.phoneNumber || '',
     notes: initialData?.notes || '',
-    address: initialData?.address || {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: ''
-    }
+    userId: initialData?.userId || user?.id
   });
   
-  // Handle basic field changes
+  // Handle field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }));
-  };
-  
-  // Handle address field changes
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        [name]: value
-      }
     }));
   };
   
@@ -174,97 +157,6 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
                   onChange={handleChange}
                   className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
                 />
-              </div>
-            </div>
-            
-            {/* Address section */}
-            <div className="sm:col-span-6">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Address Information</h4>
-              <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
-                {/* Street */}
-                <div className="sm:col-span-6">
-                  <label htmlFor="street" className="block text-sm font-medium text-gray-700">
-                    Street
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="street"
-                      id="street"
-                      value={formData.address?.street}
-                      onChange={handleAddressChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    />
-                  </div>
-                </div>
-                
-                {/* City */}
-                <div className="sm:col-span-2">
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                    City
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="city"
-                      id="city"
-                      value={formData.address?.city}
-                      onChange={handleAddressChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    />
-                  </div>
-                </div>
-                
-                {/* State */}
-                <div className="sm:col-span-2">
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                    State / Province
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="state"
-                      id="state"
-                      value={formData.address?.state}
-                      onChange={handleAddressChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    />
-                  </div>
-                </div>
-                
-                {/* Zip code */}
-                <div className="sm:col-span-2">
-                  <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
-                    ZIP / Postal code
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="zipCode"
-                      id="zipCode"
-                      value={formData.address?.zipCode}
-                      onChange={handleAddressChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    />
-                  </div>
-                </div>
-                
-                {/* Country */}
-                <div className="sm:col-span-3">
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-                    Country
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      name="country"
-                      id="country"
-                      value={formData.address?.country}
-                      onChange={handleAddressChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    />
-                  </div>
-                </div>
               </div>
             </div>
             

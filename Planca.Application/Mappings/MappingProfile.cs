@@ -41,8 +41,7 @@ namespace Planca.Application.Mappings
 
             // Customer mappings
             CreateMap<Customer, CustomerDto>()
-                .ForMember(d => d.FullName, opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}"))
-                .ForMember(d => d.FullAddress, opt => opt.MapFrom(s => s.Address.FullAddress));
+                .ForMember(d => d.FullName, opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}"));
 
             // Tenant mappings
             CreateMap<Tenant, TenantDto>();

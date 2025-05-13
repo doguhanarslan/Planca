@@ -57,17 +57,17 @@ namespace Planca.Application.Features.Customers.Commands.UpdateCustomer
             customer.LastModifiedAt = DateTime.UtcNow;
 
             // 4. Adres bilgisini güncelle
-            if (request.Address != null)
-            {
-                customer.Address = new Address
-                {
-                    Street = request.Address.Street,
-                    City = request.Address.City,
-                    State = request.Address.State,
-                    ZipCode = request.Address.ZipCode,
-                    Country = request.Address.Country
-                };
-            }
+            //if (request.Address != null)
+            //{
+            //    customer.Address = new Address
+            //    {
+            //        Street = request.Address.Street,
+            //        City = request.Address.City,
+            //        State = request.Address.State,
+            //        ZipCode = request.Address.ZipCode,
+            //        Country = request.Address.Country
+            //    };
+            //}
 
             // 5. Repository'de güncelle
             await _customerRepository.UpdateAsync(customer);

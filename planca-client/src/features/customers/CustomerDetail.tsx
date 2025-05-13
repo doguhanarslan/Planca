@@ -41,15 +41,6 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
     );
   }
   
-  const formatAddress = (customer: CustomerDto) => {
-    if (!customer.address) return 'No address provided';
-    
-    const { street, city, state, zipCode, country } = customer.address;
-    const parts = [street, city, state, zipCode, country].filter(Boolean);
-    
-    return parts.join(', ');
-  };
-  
   const formatAppointmentTime = (appointment: AppointmentDto) => {
     try {
       const start = parseISO(appointment.startTime);
@@ -121,14 +112,6 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment }) 
             New Appointment
           </button>
         </div>
-        
-        {/* Address section */}
-        {selectedCustomer.address && (
-          <div className="mt-4 flex items-center text-sm text-gray-500">
-            <FiMapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-            <span>{formatAddress(selectedCustomer)}</span>
-          </div>
-        )}
         
         {/* Notes section */}
         {selectedCustomer.notes && (

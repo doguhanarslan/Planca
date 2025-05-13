@@ -54,14 +54,58 @@ export const fetchCustomers = createAsyncThunk(
     const state = getState() as RootState;
     const tenantId = state.auth.tenant?.id;
     
-    const response = await CustomersAPI.getCustomers({
-      ...params,
-      tenantId
-    });
-    
-    return response.data;
+    try {
+      console.log('Starting fetchCustomers with params:', params);
+      const response = await CustomersAPI.getCustomers({
+        ...params,
+        tenantId
+      });
+      
+      console.log('Raw API response from fetchCustomers:', response);
+      console.log('Response type:', typeof response);
+      console.log('Has items property:', response && 'items' in response);
+      console.log('Items is array:', response && response.items && Array.isArray(response.items));
+      console.log('Items count:', response?.items?.length || 0);
+      
+      // Data is now already normalized by the API class
+      return response;
+    } catch (error) {
+      console.error('Error in fetchCustomers thunk:', error);
+      throw error;
+    }
   }
 );
+
+// Helper function to normalize customer data from backend format to frontend
+const normalizeCustomerData = (customer: any): CustomerDto => {
+  // Check if customer is null or undefined
+  if (!customer) {
+    console.warn('Null or undefined customer data received in normalizeCustomerData');
+    return null as any;
+  }
+  
+  try {
+    // Use type assertion to handle different casing
+    const customerAny = customer as any;
+    
+    // Convert PascalCase properties to camelCase if needed
+    return {
+      id: customer.id || customerAny.Id || '',
+      userId: customer.userId || customerAny.UserId || null,
+      firstName: customer.firstName || customerAny.FirstName || '',
+      lastName: customer.lastName || customerAny.LastName || '',
+      fullName: customer.fullName || customerAny.FullName || 
+               `${customer.firstName || customerAny.FirstName || ''} ${customer.lastName || customerAny.LastName || ''}`,
+      email: customer.email || customerAny.Email || '',
+      phoneNumber: customer.phoneNumber || customerAny.PhoneNumber || '',
+      notes: customer.notes || customerAny.Notes || '',
+      tenantId: customer.tenantId || customerAny.TenantId || null
+    };
+  } catch (error) {
+    console.error('Error normalizing customer data:', error, customer);
+    return null as any;
+  }
+};
 
 export const fetchCustomerById = createAsyncThunk(
   'customers/fetchCustomerById',
@@ -70,7 +114,10 @@ export const fetchCustomerById = createAsyncThunk(
     const tenantId = state.auth.tenant?.id;
     
     const response = await CustomersAPI.getCustomerById(customerId, tenantId);
-    return response.data;
+    console.log('Raw API response from fetchCustomerById:', response);
+    
+    // Data is now already normalized by the API class
+    return response;
   }
 );
 
@@ -85,7 +132,7 @@ export const createCustomer = createAsyncThunk(
       tenantId
     });
     
-    return response.data;
+    return response;
   }
 );
 
@@ -93,15 +140,18 @@ export const updateCustomer = createAsyncThunk(
   'customers/updateCustomer',
   async ({ id, customerData }: { id: string; customerData: CustomerDto }) => {
     const response = await CustomersAPI.updateCustomer(id, customerData);
-    return response.data;
+    return response;
   }
 );
 
 export const deleteCustomer = createAsyncThunk(
   'customers/deleteCustomer',
   async (customerId: string) => {
-    await CustomersAPI.deleteCustomer(customerId);
-    return customerId;
+    const success = await CustomersAPI.deleteCustomer(customerId);
+    if (success) {
+      return customerId;
+    }
+    throw new Error('Failed to delete customer');
   }
 );
 
@@ -126,7 +176,7 @@ export const fetchCustomerAppointments = createAsyncThunk(
       tenantId
     });
     
-    return response.data;
+    return response;
   }
 );
 
@@ -157,10 +207,41 @@ const customersSlice = createSlice({
     builder.addCase(fetchCustomers.pending, (state) => {
       state.loading = true;
       state.error = null;
+      console.log('fetchCustomers.pending - Loading state set to true');
     });
     builder.addCase(fetchCustomers.fulfilled, (state, action) => {
       state.loading = false;
-      state.customersList = action.payload;
+      console.log('fetchCustomers.fulfilled - payload:', action.payload);
+      console.log('Payload type:', typeof action.payload);
+      console.log('Has items:', action.payload && 'items' in action.payload);
+      
+      // Ensure we handle empty or invalid responses
+      if (!action.payload) {
+        console.log('No payload received, using initialState');
+        state.customersList = initialState.customersList;
+        return;
+      }
+      
+      // Make sure items are properly initialized even if the API returns null
+      console.log('Building customersList from payload');
+      try {
+        state.customersList = {
+          items: action.payload.items?.map(item => {
+            console.log('Processing item:', item);
+            return normalizeCustomerData(item);
+          }).filter(Boolean) || [],
+          pageNumber: action.payload.pageNumber || 1,
+          totalPages: action.payload.totalPages || 0,
+          totalCount: action.payload.totalCount || 0,
+          hasNextPage: action.payload.hasNextPage || false,
+          hasPreviousPage: action.payload.hasPreviousPage || false
+        };
+        console.log('Final customersList state:', state.customersList);
+      } catch (error) {
+        console.error('Error processing customers data:', error);
+        state.error = 'Failed to process customers data';
+        state.customersList = initialState.customersList;
+      }
     });
     builder.addCase(fetchCustomers.rejected, (state, action) => {
       state.loading = false;
@@ -174,7 +255,12 @@ const customersSlice = createSlice({
     });
     builder.addCase(fetchCustomerById.fulfilled, (state, action) => {
       state.loading = false;
-      state.selectedCustomer = action.payload;
+      console.log('fetchCustomerById.fulfilled, normalized data:', action.payload);
+      if (action.payload) {
+        state.selectedCustomer = action.payload;
+      } else {
+        state.error = 'Failed to retrieve customer details';
+      }
     });
     builder.addCase(fetchCustomerById.rejected, (state, action) => {
       state.loading = false;
@@ -188,8 +274,33 @@ const customersSlice = createSlice({
     });
     builder.addCase(createCustomer.fulfilled, (state, action) => {
       state.loading = false;
+      
+      // Only proceed if we have valid customer data
+      if (!action.payload) {
+        state.error = 'Failed to create customer: No data returned';
+        return;
+      }
+      
+      // Ensure customersList is initialized
+      if (!state.customersList) {
+        state.customersList = {
+          items: [],
+          pageNumber: 1,
+          totalPages: 1,
+          totalCount: 0,
+          hasNextPage: false,
+          hasPreviousPage: false
+        };
+      }
+      
+      // Make sure items array exists
+      if (!state.customersList.items) {
+        state.customersList.items = [];
+      }
+      
+      // Add new customer to items array
       state.customersList.items.push(action.payload);
-      state.customersList.totalCount += 1;
+      state.customersList.totalCount = (state.customersList.totalCount || 0) + 1;
     });
     builder.addCase(createCustomer.rejected, (state, action) => {
       state.loading = false;
@@ -203,12 +314,27 @@ const customersSlice = createSlice({
     });
     builder.addCase(updateCustomer.fulfilled, (state, action) => {
       state.loading = false;
-      const index = state.customersList.items.findIndex(customer => customer.id === action.payload.id);
-      if (index !== -1) {
-        state.customersList.items[index] = action.payload;
+      
+      // Only proceed if we have valid customer data
+      if (!action.payload) {
+        state.error = 'Failed to update customer: No data returned';
+        return;
       }
-      if (state.selectedCustomer && state.selectedCustomer.id === action.payload.id) {
-        state.selectedCustomer = action.payload;
+      
+      // Ensure customersList is initialized
+      if (!state.customersList || !state.customersList.items) {
+        return;
+      }
+      
+      // At this point we've validated that action.payload is not null
+      const customer = action.payload;
+      
+      const index = state.customersList.items.findIndex(item => item && item.id === customer.id);
+      if (index !== -1) {
+        state.customersList.items[index] = customer;
+      }
+      if (state.selectedCustomer && state.selectedCustomer.id === customer.id) {
+        state.selectedCustomer = customer;
       }
     });
     builder.addCase(updateCustomer.rejected, (state, action) => {
@@ -223,10 +349,18 @@ const customersSlice = createSlice({
     });
     builder.addCase(deleteCustomer.fulfilled, (state, action) => {
       state.loading = false;
+      
+      // Ensure customersList is initialized
+      if (!state.customersList || !state.customersList.items) {
+        return;
+      }
+      
       state.customersList.items = state.customersList.items.filter(
         customer => customer.id !== action.payload
       );
-      state.customersList.totalCount -= 1;
+      if (state.customersList.totalCount !== undefined) {
+        state.customersList.totalCount -= 1;
+      }
       if (state.selectedCustomer && state.selectedCustomer.id === action.payload) {
         state.selectedCustomer = null;
       }

@@ -39,7 +39,7 @@ class CustomersAPI {
         headers['X-TenantId'] = params.tenantId;
       }
       
-      const response = await axios.get<ApiResponse<PaginatedList<CustomerDto>>>(
+      const response = await axios.get<PaginatedList<CustomerDto>>(
         CustomersAPI.ENDPOINT,
         { 
           params: apiParams, 
@@ -48,7 +48,64 @@ class CustomersAPI {
         }
       );
       
-      return response.data;
+      console.log('API Response from getCustomers:', response.data);
+      console.log('API Response Structure:', {
+        hasItems: !!response.data.items,
+        isItemsArray: response.data.items && Array.isArray(response.data.items),
+        itemsLength: response.data.items ? response.data.items.length : 0,
+        pageInfo: {
+          pageNumber: response.data.pageNumber,
+          totalPages: response.data.totalPages,
+          totalCount: response.data.totalCount
+        }
+      });
+      
+      // The API response is already the PaginatedList, no need to check for succeeded
+      // Just verify we have a valid response with items property
+      if (!response.data || !response.data.items) {
+        console.warn('API response missing items array');
+        // Return empty result with valid structure
+        return {
+          items: [],
+          pageNumber: 1,
+          totalPages: 0,
+          totalCount: 0,
+          hasNextPage: false,
+          hasPreviousPage: false
+        };
+      }
+      
+      // Transform data here if needed
+      if (response.data.items) {
+        // Handle possible PascalCase property names from the backend
+        response.data.items = response.data.items.map(customer => {
+          if (!customer) return null;
+          
+          // Use type assertion to handle different casing
+          const customerAny = customer as any;
+          
+          return {
+            id: customer.id || customerAny.Id || '',
+            userId: customer.userId || customerAny.UserId || null,
+            firstName: customer.firstName || customerAny.FirstName || '',
+            lastName: customer.lastName || customerAny.LastName || '',
+            fullName: customer.fullName || customerAny.FullName || 
+                     `${customer.firstName || customerAny.FirstName || ''} ${customer.lastName || customerAny.LastName || ''}`,
+            email: customer.email || customerAny.Email || '',
+            phoneNumber: customer.phoneNumber || customerAny.PhoneNumber || '',
+            notes: customer.notes || customerAny.Notes || '',
+            tenantId: customer.tenantId || customerAny.TenantId || null
+          };
+        }).filter(Boolean) as CustomerDto[];
+      }
+      
+      // Add additional logging to see what we're returning
+      const result = response.data;
+      
+      console.log('Final API result to be returned to Redux:', result);
+      
+      // Return the data directly since it's already in the correct format
+      return result;
     } catch (error) {
       console.error('Error fetching customers:', error);
       throw error;
@@ -65,7 +122,7 @@ class CustomersAPI {
         headers['X-TenantId'] = tenantId;
       }
       
-      const response = await axios.get<ApiResponse<CustomerDto>>(
+      const response = await axios.get<CustomerDto>(
         `${CustomersAPI.ENDPOINT}/${id}`,
         { 
           withCredentials: true,
@@ -73,7 +130,32 @@ class CustomersAPI {
         }
       );
       
-      return response.data;
+      console.log('API Response from getCustomerById:', response.data);
+      
+      // Transform data if needed
+      if (response.data) {
+        // Use type assertion to handle different casing
+        const customerAny = response.data as any;
+        
+        // Handle possible PascalCase property names from the backend
+        const normalizedCustomer = {
+          id: response.data.id || customerAny.Id || '',
+          userId: response.data.userId || customerAny.UserId || null,
+          firstName: response.data.firstName || customerAny.FirstName || '',
+          lastName: response.data.lastName || customerAny.LastName || '',
+          fullName: response.data.fullName || customerAny.FullName || 
+                   `${response.data.firstName || customerAny.FirstName || ''} ${response.data.lastName || customerAny.LastName || ''}`,
+          email: response.data.email || customerAny.Email || '',
+          phoneNumber: response.data.phoneNumber || customerAny.PhoneNumber || '',
+          notes: response.data.notes || customerAny.Notes || '',
+          tenantId: response.data.tenantId || customerAny.TenantId || null
+        };
+        
+        return normalizedCustomer;
+      }
+      
+      // Return null if we don't have valid customer data
+      return null;
     } catch (error) {
       console.error(`Error fetching customer ${id}:`, error);
       throw error;
@@ -92,22 +174,17 @@ class CustomersAPI {
         Email: customerData.email,
         PhoneNumber: customerData.phoneNumber,
         Notes: customerData.notes,
-        TenantId: customerData.tenantId,
-        Address: customerData.address ? {
-          Street: customerData.address.street,
-          City: customerData.address.city,
-          State: customerData.address.state,
-          ZipCode: customerData.address.zipCode,
-          Country: customerData.address.country
-        } : null
+        UserId: customerData.userId,
+        TenantId: customerData.tenantId
       };
       
-      const response = await axios.post<ApiResponse<CustomerDto>>(
+      const response = await axios.post<CustomerDto>(
         CustomersAPI.ENDPOINT,
         transformedData,
         { withCredentials: true }
       );
       
+      // The response is already the customer data
       return response.data;
     } catch (error) {
       console.error('Error creating customer:', error);
@@ -128,21 +205,16 @@ class CustomersAPI {
         Email: customerData.email,
         PhoneNumber: customerData.phoneNumber,
         Notes: customerData.notes,
-        Address: customerData.address ? {
-          Street: customerData.address.street,
-          City: customerData.address.city,
-          State: customerData.address.state,
-          ZipCode: customerData.address.zipCode,
-          Country: customerData.address.country
-        } : null
+        UserId: customerData.userId
       };
       
-      const response = await axios.put<ApiResponse<CustomerDto>>(
+      const response = await axios.put<CustomerDto>(
         `${CustomersAPI.ENDPOINT}/${id}`,
         transformedData,
         { withCredentials: true }
       );
       
+      // The response is already the updated customer
       return response.data;
     } catch (error) {
       console.error(`Error updating customer ${id}:`, error);
@@ -155,12 +227,13 @@ class CustomersAPI {
    */
   static async deleteCustomer(id: string) {
     try {
-      const response = await axios.delete<ApiResponse<void>>(
+      const response = await axios.delete(
         `${CustomersAPI.ENDPOINT}/${id}`,
         { withCredentials: true }
       );
       
-      return response.data;
+      // Just return success status
+      return response.status === 200 || response.status === 204;
     } catch (error) {
       console.error(`Error deleting customer ${id}:`, error);
       throw error;
@@ -200,7 +273,7 @@ class CustomersAPI {
         headers['X-TenantId'] = params.tenantId;
       }
       
-      const response = await axios.get<ApiResponse<AppointmentDto[]>>(
+      const response = await axios.get<AppointmentDto[]>(
         `/Appointments/customer/${customerId}`,
         { 
           params: apiParams, 
@@ -209,6 +282,7 @@ class CustomersAPI {
         }
       );
       
+      // The response is already the appointments array
       return response.data;
     } catch (error) {
       console.error(`Error fetching appointments for customer ${customerId}:`, error);

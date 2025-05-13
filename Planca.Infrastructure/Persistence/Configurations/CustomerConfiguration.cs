@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Planca.Domain.Entities;
-using Planca.Domain.ValueObjects;
 using System.Text.Json;
 
 namespace Planca.Infrastructure.Persistence.Configurations
@@ -35,13 +34,6 @@ namespace Planca.Infrastructure.Persistence.Configurations
 
             builder.Property(c => c.UserId)
                 .HasMaxLength(36);
-
-            // Store Address as a JSON object in PostgreSQL
-            builder.Property(c => c.Address)
-                .HasColumnType("jsonb")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
-                    v => JsonSerializer.Deserialize<Address>(v, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
 
             // Create an index for faster email searches
             builder.HasIndex(c => c.Email);

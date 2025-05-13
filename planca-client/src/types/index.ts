@@ -269,24 +269,24 @@ export interface CustomerDto {
   fullName: string;
   email: string;
   phoneNumber?: string;
-  address?: AddressDto;
-  fullAddress?: string;
   notes?: string;
   tenantId?: string;
 }
 
-// AddressDto interface matching backend model
-export interface AddressDto {
-  street?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-}
-
+// AddressDto interface can be deleted
 // AppointmentDto interface for appointments
 export interface AppointmentDto {
-  // ... existing code ...
+  id: string;
+  customerId: string;
+  customerName: string;
+  employeeId: string;
+  employeeName: string;
+  serviceId: string;
+  serviceName: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  notes?: string;
 }
 
 // Paginated response from the API

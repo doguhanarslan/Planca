@@ -11,7 +11,7 @@ public class RegisterCommand : IRequest<Result<AuthResponse>>
     public string PhoneNumber { get; set; }
 
     // Default olarak Customer rolü
-    public string Role { get; set; } = "Customer";
+    public string Role { get; set; } = "Admin";
 
     // Opsiyonel TenantId - işletme kurma adımında doldurulacak
     public Guid? TenantId { get; set; }

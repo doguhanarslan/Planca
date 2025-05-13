@@ -14,9 +14,6 @@ namespace Planca.Application.Features.Customers.Commands.CreateCustomer
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
 
-        // Address information
-        public AddressDto Address { get; set; }
-
         // Notes
         public string Notes { get; set; }
 

@@ -14,7 +14,6 @@ namespace Planca.API.Controllers
     public class CustomersController : BaseApiController
     {
         [HttpGet]
-        [Authorize(Roles = "Admin,Employee")]
         public async Task<ActionResult> GetCustomers([FromQuery] GetCustomersListQuery query)
         {
             var result = await Mediator.Send(query);
@@ -46,7 +45,6 @@ namespace Planca.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteCustomer(Guid id)
         {
             var result = await Mediator.Send(new DeleteCustomerCommand { Id = id });

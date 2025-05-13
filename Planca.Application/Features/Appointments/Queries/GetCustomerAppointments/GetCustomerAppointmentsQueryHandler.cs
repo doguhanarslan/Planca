@@ -36,7 +36,8 @@ namespace Planca.Application.Features.Appointments.Queries.GetCustomerAppointmen
             var customer = await _customerRepository.GetByIdAsync(request.CustomerId);
             if (customer == null)
             {
-                throw new NotFoundException(nameof(Customer), request.CustomerId);
+                Console.WriteLine("Customer değişkeni: " + customer);
+                return Result<List<AppointmentDto>>.Failure($"Customer with ID {request.CustomerId} was not found.");
             }
 
             if (customer.TenantId != request.TenantId)

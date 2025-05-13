@@ -20,17 +20,27 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
     loading, 
     error, 
     searchString,
-
     sortBy, 
     sortAscending, 
     pageSize 
   } = useAppSelector(state => state.customers);
+  
+  console.log('Redux state - customersList:', customersList);
+  console.log('Redux state - loading:', loading);
   
   // Local state for current page
   const [currentPage, setCurrentPage] = useState(1);
   
   // Load customers on component mount and when search/sort/page changes
   useEffect(() => {
+    console.log('Fetching customers with:', {
+      pageNumber: currentPage,
+      pageSize,
+      searchString,
+      sortBy,
+      sortAscending
+    });
+    
     dispatch(fetchCustomers({
       pageNumber: currentPage,
       pageSize,
@@ -39,6 +49,13 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
       sortAscending
     }));
   }, [dispatch, currentPage, pageSize, searchString, sortBy, sortAscending]);
+  
+  // Enhanced debugging
+  useEffect(() => {
+    if (customersList?.items?.length > 0) {
+      console.log('First customer object structure:', JSON.stringify(customersList.items[0], null, 2));
+    }
+  }, [customersList]);
   
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,14 +96,17 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
   };
   
   // Ensure customersList is initialized with default values if undefined
-  const safeCustomersList = customersList ?? {
-    items: [],
-    pageNumber: 1,
-    totalPages: 0,
-    totalCount: 0,
-    hasNextPage: false,
-    hasPreviousPage: false
+  const safeCustomersList = {
+    items: customersList?.items?.filter(Boolean) || [],
+    pageNumber: customersList?.pageNumber || 1,
+    totalPages: customersList?.totalPages || 0,
+    totalCount: customersList?.totalCount || 0,
+    hasNextPage: customersList?.hasNextPage || false,
+    hasPreviousPage: customersList?.hasPreviousPage || false
   };
+  
+  console.log('Safe customers list:', safeCustomersList);
+  console.log('Items count:', safeCustomersList.items.length);
   
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -158,38 +178,52 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {safeCustomersList.items.map((customer) => (
-                <tr 
-                  key={customer.id} 
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleSelectCustomer(customer)}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                        <FiUser className="h-5 w-5 text-gray-500" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {customer.fullName}
+              {safeCustomersList.items.filter(customer => customer !== undefined && customer !== null).map((customer) => {
+                console.log('Rendering customer:', customer);
+                // Use type assertion to handle potential casing differences
+                const customerAny = customer as any;
+                
+                // Check for casing issues in properties
+                const displayName = customer.fullName || 
+                  customerAny.FullName || 
+                  `${customer.firstName || customerAny.FirstName || ''} ${customer.lastName || customerAny.LastName || ''}`;
+                
+                const displayEmail = customer.email || customerAny.Email || '';
+                const displayPhone = customer.phoneNumber || customerAny.PhoneNumber || 'N/A';
+                
+                return (
+                  <tr 
+                    key={customer.id} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => handleSelectCustomer(customer)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                          <FiUser className="h-5 w-5 text-gray-500" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {displayName}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <FiMail className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">{customer.email}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <FiPhone className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-500">{customer.phoneNumber || 'N/A'}</span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FiMail className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-sm text-gray-900">{displayEmail}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FiPhone className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-sm text-gray-500">{displayPhone}</span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -223,9 +257,9 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
               <p className="text-sm text-gray-700">
                 Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
                 <span className="font-medium">
-                  {Math.min(currentPage * pageSize, safeCustomersList.totalCount)}
+                  {Math.min(currentPage * pageSize, safeCustomersList.totalCount || 0)}
                 </span>{' '}
-                of <span className="font-medium">{safeCustomersList.totalCount}</span> results
+                of <span className="font-medium">{safeCustomersList.totalCount || 0}</span> results
               </p>
             </div>
             <div>
@@ -243,12 +277,12 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
                   </svg>
                 </button>
                 
-                {Array.from({ length: safeCustomersList.totalPages }, (_, i) => i + 1)
+                {Array.from({ length: safeCustomersList.totalPages || 0 }, (_, i) => i + 1)
                   .filter(page => {
                     // Show first page, last page, current page, and pages around current page
                     return (
                       page === 1 || 
-                      page === safeCustomersList.totalPages || 
+                      page === (safeCustomersList.totalPages || 0) || 
                       (page >= currentPage - 2 && page <= currentPage + 2)
                     );
                   })
