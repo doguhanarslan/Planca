@@ -28,7 +28,7 @@ namespace Planca.Infrastructure.Persistence.Repositories
             return await _dbContext.Set<T>().ToListAsync();
         }
 
-        public async Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec)
+        public virtual async Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec)
         {
             return await ApplySpecification(spec).ToListAsync();
         }
@@ -61,7 +61,7 @@ namespace Planca.Infrastructure.Persistence.Repositories
             return await ApplySpecification(spec).FirstOrDefaultAsync();
         }
 
-        private IQueryable<T> ApplySpecification(ISpecification<T> spec)
+        protected IQueryable<T> ApplySpecification(ISpecification<T> spec)
         {
             return SpecificationEvaluator<T>.GetQuery(_dbContext.Set<T>().AsQueryable(), spec);
         }

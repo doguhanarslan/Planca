@@ -7,30 +7,30 @@
 // Color Palette (matches Tailwind config with enhanced variations)
 export const colors = {
   primary: {
-    50: '#fff1f1',
-    100: '#ffe1e1', 
-    200: '#ffc7c7',
-    300: '#ff9e9e', 
-    400: '#ff6b6b',
-    500: '#ff3a3a',
-    600: '#ff0000', // Main brand red
-    700: '#cc0000', // Darker red for hover states
-    800: '#990000',
-    900: '#7a0000',
-    950: '#4b0000',
+    50: '#fff1f2',
+    100: '#ffe4e6', 
+    200: '#fecdd3',
+    300: '#fda4af', 
+    400: '#fb7185',
+    500: '#f43f5e',
+    600: '#e11d48', // Main brand red
+    700: '#be123c', // Darker red for hover states
+    800: '#9f1239',
+    900: '#881337',
+    950: '#4c0519',
   },
   secondary: {
-    50: '#f0f0f0',
-    100: '#d6d6d6',
-    200: '#bdbdbd',
-    300: '#9e9e9e', 
-    400: '#757575',
-    500: '#595959',
-    600: '#3d3d3d',
-    700: '#282828',
-    800: '#181818',
-    900: '#0c0c0c', // Main dark background
-    950: '#050505',
+    50: '#f9fafb',
+    100: '#f3f4f6',
+    200: '#e5e7eb',
+    300: '#d1d5db', 
+    400: '#9ca3af',
+    500: '#6b7280',
+    600: '#4b5563',
+    700: '#374151',
+    800: '#1f2937',
+    900: '#111827', // Main dark background
+    950: '#030712',
   },
   // Enhanced semantic colors for better contrast and accessibility
   success: {
@@ -192,15 +192,11 @@ lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
 xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
 '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
 'inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
-'red': '0 4px 14px rgba(255, 0, 0, 0.25)',
-'red-lg': '0 8px 20px rgba(255, 0, 0, 0.3)',
-'primary': '0 4px 14px rgba(255, 0, 0, 0.25)',
-'primary-lg': '0 8px 20px rgba(255, 0, 0, 0.3)',
+'red': '0 4px 14px rgba(225, 29, 72, 0.25)',
+'red-lg': '0 8px 20px rgba(225, 29, 72, 0.3)',
+'primary': '0 4px 14px rgba(225, 29, 72, 0.25)',
+'primary-lg': '0 8px 20px rgba(225, 29, 72, 0.3)',
 'none': 'none',
-// Dark mode shadows
-'dark-sm': '0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2)',
-'dark-md': '0 6px 10px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
-'dark-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)',
 };
 
 // Z-index Scale
@@ -265,66 +261,80 @@ bounce: {
 }
 };
 
-// Component-specific theme configurations with dark mode support
+// Component-specific theme configurations
 export const componentThemes = {
 button: {
   variants: {
     primary: {
-      base: 'bg-primary-600 text-white dark:bg-primary-700',
-      hover: 'hover:bg-primary-700 dark:hover:bg-primary-600',
-      active: 'active:bg-primary-800 dark:active:bg-primary-500',
-      focus: 'focus:ring-primary-500 dark:focus:ring-primary-400',
+      base: 'bg-primary-600 text-white',
+      hover: 'hover:bg-primary-700',
+      active: 'active:bg-primary-800',
+      focus: 'focus:ring-primary-500',
       disabled: 'opacity-60 cursor-not-allowed',
     },
     secondary: {
-      base: 'bg-emerald-600 text-white dark:bg-emerald-700',
-      hover: 'hover:bg-emerald-700 dark:hover:bg-emerald-600',
-      active: 'active:bg-emerald-800 dark:active:bg-emerald-500',
-      focus: 'focus:ring-emerald-500 dark:focus:ring-emerald-400',
+      base: 'bg-emerald-600 text-white',
+      hover: 'hover:bg-emerald-700',
+      active: 'active:bg-emerald-800',
+      focus: 'focus:ring-emerald-500',
       disabled: 'opacity-60 cursor-not-allowed',
     },
     outline: {
-      base: 'border border-gray-300 text-gray-700 bg-white dark:border-gray-600 dark:text-gray-200 dark:bg-secondary-800',
-      hover: 'hover:bg-gray-50 dark:hover:bg-secondary-700 hover:border-primary-300 dark:hover:border-primary-700',
-      active: 'active:bg-gray-100 dark:active:bg-secondary-600',
-      focus: 'focus:ring-primary-500 dark:focus:ring-primary-400',
+      base: 'border border-gray-300 text-gray-800 bg-white',
+      hover: 'hover:bg-gray-50 hover:border-primary-400 hover:text-primary-600',
+      active: 'active:bg-gray-100',
+      focus: 'focus:ring-primary-500',
       disabled: 'opacity-60 cursor-not-allowed',
     },
     danger: {
-      base: 'bg-red-600 text-white dark:bg-red-700',
-      hover: 'hover:bg-red-700 dark:hover:bg-red-600',
-      active: 'active:bg-red-800 dark:active:bg-red-500',
-      focus: 'focus:ring-red-500 dark:focus:ring-red-400',
+      base: 'bg-red-600 text-white',
+      hover: 'hover:bg-red-700',
+      active: 'active:bg-red-800',
+      focus: 'focus:ring-red-500',
       disabled: 'opacity-60 cursor-not-allowed',
     },
     success: {
-      base: 'bg-green-600 text-white dark:bg-green-700',
-      hover: 'hover:bg-green-700 dark:hover:bg-green-600',
-      active: 'active:bg-green-800 dark:active:bg-green-500',
-      focus: 'focus:ring-green-500 dark:focus:ring-green-400',
+      base: 'bg-green-600 text-white',
+      hover: 'hover:bg-green-700',
+      active: 'active:bg-green-800',
+      focus: 'focus:ring-green-500',
       disabled: 'opacity-60 cursor-not-allowed',
     },
     warning: {
-      base: 'bg-yellow-500 text-white dark:bg-yellow-600',
-      hover: 'hover:bg-yellow-600 dark:hover:bg-yellow-500',
-      active: 'active:bg-yellow-700 dark:active:bg-yellow-400',
-      focus: 'focus:ring-yellow-500 dark:focus:ring-yellow-400',
+      base: 'bg-yellow-500 text-white',
+      hover: 'hover:bg-yellow-600',
+      active: 'active:bg-yellow-700',
+      focus: 'focus:ring-yellow-500',
       disabled: 'opacity-60 cursor-not-allowed',
     },
     ghost: {
-      base: 'text-gray-700 dark:text-gray-300',
-      hover: 'hover:bg-gray-100 dark:hover:bg-secondary-700',
-      active: 'active:bg-gray-200 dark:active:bg-secondary-600',
-      focus: 'focus:ring-gray-500 dark:focus:ring-gray-400',
+      base: 'text-gray-800 bg-transparent',
+      hover: 'hover:bg-gray-100',
+      active: 'active:bg-gray-200',
+      focus: 'focus:ring-gray-500',
       disabled: 'opacity-60 cursor-not-allowed',
     },
     link: {
-      base: 'text-primary-600 dark:text-primary-400 underline',
-      hover: 'hover:text-primary-800 dark:hover:text-primary-300',
-      active: 'active:text-primary-900 dark:active:text-primary-200',
-      focus: 'focus:ring-primary-500 dark:focus:ring-primary-400',
+      base: 'text-primary-600 underline bg-transparent',
+      hover: 'hover:text-primary-800',
+      active: 'active:text-primary-900',
+      focus: 'focus:ring-primary-500',
       disabled: 'opacity-60 cursor-not-allowed',
     },
+    glass: {
+      base: 'bg-white/10 backdrop-blur-md text-white border border-white/20',
+      hover: 'hover:bg-white/20',
+      active: 'active:bg-white/30',
+      focus: 'focus:ring-white/30',
+      disabled: 'opacity-60 cursor-not-allowed',
+    },
+    red:{
+      base: 'bg-red-500 text-white',
+      hover: 'hover:bg-red-900',
+      active: 'active:bg-red-900',
+      focus: 'focus:ring-red-500',
+      disabled: 'opacity-60 cursor-not-allowed',
+    }
   },
   sizes: {
     xs: 'px-2.5 py-1.5 text-xs',
@@ -347,14 +357,14 @@ button: {
 },
 
 card: {
-  base: 'bg-white dark:bg-secondary-800 border dark:border-gray-700',
+  base: 'bg-white border',
   shadow: {
     none: '',
-    sm: 'shadow-sm dark:shadow-dark-sm',
-    md: 'shadow dark:shadow-dark-md',
-    lg: 'shadow-lg dark:shadow-dark-lg',
-    xl: 'shadow-xl dark:shadow-gray-900/30',
-    '2xl': 'shadow-2xl dark:shadow-gray-900/40',
+    sm: 'shadow-sm',
+    md: 'shadow',
+    lg: 'shadow-lg',
+    xl: 'shadow-xl',
+    '2xl': 'shadow-2xl',
   },
   rounded: {
     none: 'rounded-none',
@@ -373,41 +383,52 @@ card: {
   },
   hover: {
     none: '',
-    subtle: 'transition-all duration-200 hover:shadow-md dark:hover:shadow-dark-md',
-    lift: 'transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 dark:hover:shadow-gray-900/30 transform-gpu',
+    subtle: 'transition-all duration-200 hover:shadow-md',
+    lift: 'transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 transform-gpu',
+    glow: 'transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary-500/20',
   },
+  variants: {
+    glass: 'bg-white/10 backdrop-blur-md border border-white/20',
+    solid: 'bg-white border border-gray-200',
+    gradient: 'bg-gradient-to-br from-primary-500/10 to-primary-600/10 border border-primary-100',
+  }
 },
 
 input: {
-  base: 'block w-full rounded-lg shadow-sm py-3 px-4 transition-all duration-200 ease-in-out dark:bg-secondary-800 dark:text-gray-200',
-  focus: 'focus:ring-2 focus:ring-opacity-50 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400',
-  error: 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 dark:border-red-700 dark:text-red-100 dark:placeholder-red-300 dark:focus:ring-red-600 dark:focus:border-red-600',
-  disabled: 'bg-gray-100 cursor-not-allowed opacity-75 dark:bg-gray-700',
-  readOnly: 'bg-gray-50 cursor-default dark:bg-gray-700',
+  base: 'block w-full rounded-lg shadow-sm py-3 px-4 transition-all duration-200 ease-in-out bg-white text-gray-700 border border-gray-300',
+  focus: 'focus:ring-2 focus:ring-opacity-50 focus:ring-primary-500 focus:border-primary-500',
+  error: 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500',
+  disabled: 'bg-gray-100 cursor-not-allowed opacity-75',
+  readOnly: 'bg-gray-50 cursor-default',
+  variants: {
+    outline: 'border border-gray-300',
+    filled: 'bg-gray-100 border-transparent',
+    underlined: 'border-0 border-b-2 border-gray-300 rounded-none px-0 focus:ring-0',
+  }
 },
 
 alert: {
   base: 'rounded-lg p-4 shadow-md transition-all duration-300 ease-in-out',
   types: {
     info: {
-      container: 'bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-400 dark:border-blue-500',
-      icon: 'text-blue-400 dark:text-blue-300',
-      text: 'text-blue-800 dark:text-blue-100',
+      container: 'bg-blue-50 border-l-4 border-blue-400',
+      icon: 'text-blue-400',
+      text: 'text-blue-800',
     },
     success: {
-      container: 'bg-green-50 dark:bg-green-900/30 border-l-4 border-green-400 dark:border-green-500',
-      icon: 'text-green-400 dark:text-green-300',
-      text: 'text-green-800 dark:text-green-100',
+      container: 'bg-green-50 border-l-4 border-green-400',
+      icon: 'text-green-400',
+      text: 'text-green-800',
     },
     warning: {
-      container: 'bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-500',
-      icon: 'text-yellow-400 dark:text-yellow-300',
-      text: 'text-yellow-800 dark:text-yellow-100',
+      container: 'bg-yellow-50 border-l-4 border-yellow-400',
+      icon: 'text-yellow-400',
+      text: 'text-yellow-800',
     },
     error: {
-      container: 'bg-red-50 dark:bg-red-900/30 border-l-4 border-red-400 dark:border-red-500',
-      icon: 'text-red-400 dark:text-red-300',
-      text: 'text-red-800 dark:text-red-100',
+      container: 'bg-red-50 border-l-4 border-red-400',
+      icon: 'text-red-400',
+      text: 'text-red-800',
     },
   },
   transitions: {

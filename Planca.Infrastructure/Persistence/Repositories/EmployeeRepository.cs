@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Planca.Domain.Common.Interfaces;
 using Planca.Domain.Entities;
+using Planca.Domain.Specifications;
 using Planca.Infrastructure.Persistence.Context;
 using System;
 using System.Collections.Generic;
@@ -38,11 +39,18 @@ namespace Planca.Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<Employee>> GetEmployeesByServiceIdAsync(Guid serviceId)
         {
-            return await _dbContext.Employees
-                .Where(e => e.ServiceIds.Contains(serviceId) && e.IsActive)
+            // Önce veritabanından verileri çekelim
+            var employees = await _dbContext.Employees
+                .Where(e => e.IsActive)
+                .AsNoTracking()
+                .ToListAsync();
+            
+            // Sonra memory'de ServiceIds filtrelemesini yapalım
+            return employees
+                .Where(e => e.ServiceIds != null && e.ServiceIds.Contains(serviceId))
                 .OrderBy(e => e.LastName)
                 .ThenBy(e => e.FirstName)
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task<bool> IsEmployeeAvailableAsync(Guid employeeId, DateTime startTime, DateTime endTime, Guid? excludeAppointmentId = null)
@@ -60,6 +68,39 @@ namespace Planca.Infrastructure.Persistence.Repositories
                 return false;
 
             return employee.IsAvailable(startTime, endTime);
+        }
+        
+        // Spesifikasyon kullanarak listeleme - özellikle ServiceId filtrelemesi için özel işlem
+        public override async Task<IReadOnlyList<Employee>> ListAsync(ISpecification<Employee> spec)
+        {
+            // EmployeesFilterSpecification'dan ServiceId alıyoruz
+            Guid? serviceIdFilter = null;
+            if (spec is EmployeesFilterSpecification employeeSpec)
+            {
+                serviceIdFilter = employeeSpec.ServiceIdFilter;
+            }
+            
+            // Temel sorguyu oluştur
+            var query = ApplySpecification(spec);
+            
+            // Önce veritabanından çalışanları getir
+            var employees = await query.ToListAsync();
+            
+            // ServiceId filtresi varsa, memory'de uygula (Entity Framework bunu SQL'e çeviremediği için)
+            if (serviceIdFilter.HasValue)
+            {
+                employees = employees
+                    .Where(e => e.ServiceIds != null && e.ServiceIds.Contains(serviceIdFilter.Value))
+                    .ToList();
+            }
+            
+            return employees;
+        }
+        
+        // SpecificationEvaluator'a erişim sağlamak için protected olarak tanımladık
+        protected IQueryable<Employee> ApplySpecification(ISpecification<Employee> spec)
+        {
+            return SpecificationEvaluator<Employee>.GetQuery(_dbContext.Set<Employee>().AsQueryable(), spec);
         }
     }
 }

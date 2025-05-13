@@ -166,22 +166,17 @@ export type RadiusSize = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 export type PaddingSize = 'none' | 'sm' | 'normal' | 'lg' | 'xl';
 
 // Component Props Types
-export interface ButtonProps {
-  type?: 'button' | 'submit' | 'reset';
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children?: React.ReactNode;
   className?: string;
   disabled?: boolean;
-  children?: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success' | 'warning' | 'ghost' | 'link' | 'customRed';
-  size?: ComponentSize;
-  onClick?: () => void;
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success' | 'warning' | 'ghost' | 'link' | 'glass';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   isLoading?: boolean;
   loadingText?: string;
   icon?: React.ReactNode;
-  rightIcon?: React.ReactNode; // Sağ taraf için ikon
   fullWidth?: boolean;
-  rounded?: RadiusSize;
-  elevated?: boolean; // Yükseltilmiş gölge efekti
-  active?: boolean; // Aktif durumu
+  rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
 export interface InputProps {
@@ -226,24 +221,21 @@ export interface AlertProps {
   variant?: 'solid' | 'outline' | 'light'; // Stil varyantları
 }
 
-export interface CardProps {
-  children?: React.ReactNode;
+export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+  children: React.ReactNode;
   className?: string;
   title?: React.ReactNode;
   titleClassName?: string;
   subtitle?: React.ReactNode;
   footer?: React.ReactNode;
   actions?: React.ReactNode;
-  shadow?: ShadowSize;
-  padding?: PaddingSize;
+  shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'glow';
+  padding?: 'none' | 'sm' | 'normal' | 'lg' | 'xl';
   border?: boolean;
-  rounded?: RadiusSize;
-  hover?: boolean;
+  rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  hover?: boolean | 'subtle' | 'lift' | 'glow';
   transparent?: boolean;
-  variant?: 'default' | 'primary' | 'secondary' | 'outline'; // Kart varyantları
-  clickable?: boolean; // Tıklanabilir kart
-  headerImage?: string; // Başlık resmi URL'si
-  badges?: React.ReactNode; // Başlık üzerinde rozetler
+  variant?: 'solid' | 'glass' | 'gradient';
 }
 
 export interface AppLayoutProps {

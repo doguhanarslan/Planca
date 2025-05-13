@@ -125,25 +125,41 @@ namespace Planca.Infrastructure.Persistence.Context
                 if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType) &&
                     entityType.ClrType != typeof(Tenant)) // Skip Tenant entity itself
                 {
-                    // Create a dynamic filter expression that calls the CurrentTenantService at query time
+                    // EF Core sorguyu çalıştırdığında tenant ID'yi dinamik olarak alacak şekilde değiştir
+                    // Bu, static olarak tenant ID'yi saklamak yerine, her sorgu çalıştırıldığında çalışma zamanında
+                    // güncel tenant ID değerini alacak bir metot çağrısı oluşturur.
                     var parameter = Expression.Parameter(entityType.ClrType, "e");
                     var tenantIdProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
                     
-                    // Instead of using a constant with the current value, create a method call expression
-                    // that will be evaluated when the query is executed
-                    var currentTenantIdMethod = typeof(ICurrentTenantService)
-                        .GetMethod(nameof(ICurrentTenantService.GetTenantId));
+                    // 1. DbContext instance'ını referans alan bir metot tanımla
+                    var getTenantIdMethod = typeof(ApplicationDbContext).GetMethod(
+                        nameof(GetCurrentTenantId), 
+                        BindingFlags.NonPublic | BindingFlags.Instance);
                     
-                    var currentTenantServiceProperty = Expression.Constant(_currentTenantService);
-                    var currentTenantIdCall = Expression.Call(currentTenantServiceProperty, currentTenantIdMethod);
+                    // 2. Expression.Constant yerine, Expression.Call kullanarak runtime'da metot çağrımı yap
+                    var callExpression = Expression.Call(
+                        Expression.Constant(this),  // "this" (DbContext) instance'ı
+                        getTenantIdMethod);         // Çağrılacak metot 
                     
+                    // 3. Property == Method() şeklinde bir lambda oluştur
                     var filter = Expression.Lambda(
-                        Expression.Equal(tenantIdProperty, currentTenantIdCall), 
+                        Expression.Equal(tenantIdProperty, callExpression), 
                         parameter);
 
+                    // 4. Entity tipi için query filter'ı uygula
                     modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
                 }
             }
+        }
+
+        // Query filter tarafından her sorgu çalıştırıldığında çağrılan metot
+        // Bu metot, runtime'da güncel tenant ID değerini alır
+        private Guid GetCurrentTenantId()
+        {
+            // Güncel tenant ID değerini al ve logla
+            var tenantId = _currentTenantService.GetTenantId();
+            // ILogger olmadığından loglama kaldırıldı
+            return tenantId;
         }
 
         private void ApplyTenantId()

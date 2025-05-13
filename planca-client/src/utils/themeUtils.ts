@@ -11,9 +11,6 @@ type ColorSet = {
   text: string;
   border: string;
   ring: string;
-  darkText: string;
-  darkBg: string;
-  darkBgHover: string;
 };
 
 type ThemeColors = {
@@ -39,8 +36,6 @@ interface FormTheme {
     error: string;
     disabled: string;
     readOnly: string;
-    dark: string;
-    darkFocus: string;
   };
 }
 
@@ -56,8 +51,6 @@ interface CardTheme {
     [key: string]: string;
   };
   hover: string;
-  dark: string;
-  darkHover: string;
 }
 
 export interface Theme {
@@ -82,9 +75,6 @@ export const theme: Theme = {
       text: 'text-primary-600',
       border: 'border-primary-300',
       ring: 'focus:ring-primary-500',
-      darkText: 'dark:text-primary-400',
-      darkBg: 'dark:bg-primary-700',
-      darkBgHover: 'dark:hover:bg-primary-600',
     },
     secondary: {
       light: 'text-emerald-300',
@@ -96,9 +86,6 @@ export const theme: Theme = {
       text: 'text-emerald-600',
       border: 'border-emerald-300',
       ring: 'focus:ring-emerald-500',
-      darkText: 'dark:text-emerald-400',
-      darkBg: 'dark:bg-emerald-700',
-      darkBgHover: 'dark:hover:bg-emerald-600',
     },
     danger: {
       light: 'text-red-300',
@@ -110,9 +97,6 @@ export const theme: Theme = {
       text: 'text-red-600',
       border: 'border-red-300',
       ring: 'focus:ring-red-500',
-      darkText: 'dark:text-red-400',
-      darkBg: 'dark:bg-red-700',
-      darkBgHover: 'dark:hover:bg-red-600',
     },
     success: {
       light: 'text-green-300',
@@ -124,9 +108,6 @@ export const theme: Theme = {
       text: 'text-green-600',
       border: 'border-green-300',
       ring: 'focus:ring-green-500',
-      darkText: 'dark:text-green-400',
-      darkBg: 'dark:bg-green-700',
-      darkBgHover: 'dark:hover:bg-green-600',
     },
     warning: {
       light: 'text-yellow-300',
@@ -138,9 +119,6 @@ export const theme: Theme = {
       text: 'text-yellow-500',
       border: 'border-yellow-300',
       ring: 'focus:ring-yellow-500',
-      darkText: 'dark:text-yellow-400',
-      darkBg: 'dark:bg-yellow-600',
-      darkBgHover: 'dark:hover:bg-yellow-500',
     },
     info: {
       light: 'text-blue-300',
@@ -152,9 +130,6 @@ export const theme: Theme = {
       text: 'text-blue-600',
       border: 'border-blue-300',
       ring: 'focus:ring-blue-500',
-      darkText: 'dark:text-blue-400',
-      darkBg: 'dark:bg-blue-700',
-      darkBgHover: 'dark:hover:bg-blue-600',
     },
     neutral: {
       light: 'text-gray-300',
@@ -166,9 +141,6 @@ export const theme: Theme = {
       text: 'text-gray-600',
       border: 'border-gray-300',
       ring: 'focus:ring-gray-500',
-      darkText: 'dark:text-gray-400',
-      darkBg: 'dark:bg-gray-700',
-      darkBgHover: 'dark:hover:bg-gray-600',
     }
   },
   
@@ -201,8 +173,6 @@ export const theme: Theme = {
       error: 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500',
       disabled: 'bg-gray-100 cursor-not-allowed opacity-75',
       readOnly: 'bg-gray-50 cursor-default',
-      dark: 'dark:bg-secondary-800 dark:border-gray-600 dark:text-gray-100',
-      darkFocus: 'dark:focus:ring-primary-500 dark:focus:border-primary-400'
     }
   },
   
@@ -213,8 +183,8 @@ export const theme: Theme = {
       sm: 'shadow-sm',
       md: 'shadow',
       lg: 'shadow-lg',
-      xl: 'shadow-xl dark:shadow-gray-900/30',
-      '2xl': 'shadow-2xl dark:shadow-gray-900/40'
+      xl: 'shadow-xl',
+      '2xl': 'shadow-2xl',
     },
     rounded: {
       none: 'rounded-none',
@@ -232,8 +202,6 @@ export const theme: Theme = {
       xl: 'p-8'
     },
     hover: 'transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1',
-    dark: 'dark:bg-secondary-800 dark:border-gray-700',
-    darkHover: 'dark:hover:shadow-gray-900/30'
   }
 };
 
@@ -248,16 +216,30 @@ interface ButtonClasses {
  * @returns Tailwind CSS classes
  */
 export function getVariantClasses(variant: ColorVariant = 'primary', style: ButtonStyle = 'solid'): string {
-  const colorSet = theme.colors[variant] || theme.colors.primary;
+  const variantColors = theme.colors[variant];
+  let classes = '';
   
-  const styleClasses: ButtonClasses = {
-    outline: `border ${colorSet.border} ${colorSet.text} ${colorSet.darkText} bg-white dark:bg-transparent dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 ${colorSet.ring}`,
-    ghost: `${colorSet.text} ${colorSet.darkText} hover:${colorSet.bgLight} dark:hover:bg-opacity-20 ${colorSet.ring} shadow-none`,
-    light: `${colorSet.bgLight} ${colorSet.text} ${colorSet.darkText} ${colorSet.bgLightHover} dark:bg-opacity-20 ${colorSet.ring}`,
-    solid: `${colorSet.bg} ${colorSet.darkBg} text-white ${colorSet.bgHover} ${colorSet.darkBgHover} ${colorSet.bgActive} ${colorSet.ring}`
-  };
+  switch (style) {
+    case 'solid':
+      classes = `${variantColors.bg} ${variantColors.bgHover} ${variantColors.bgActive} text-white`;
+      break;
+    case 'outline':
+      classes = `border ${variantColors.border} ${variantColors.text} ${variantColors.bgLightHover} bg-white hover:border-primary-400 hover:text-primary-600`;
+      break;
+    case 'ghost':
+      classes = `${variantColors.text} ${variantColors.bgLightHover} bg-transparent`;
+      break;
+    case 'light':
+      classes = `${variantColors.bgLight} ${variantColors.bgLightHover} ${variantColors.text}`;
+      break;
+    case 'link':
+      classes = `${variantColors.text} hover:underline bg-transparent`;
+      break;
+    default:
+      classes = `${variantColors.bg} ${variantColors.bgHover} ${variantColors.bgActive} text-white`;
+  }
   
-  return styleClasses[style] || styleClasses.solid;
+  return classes;
 }
 
 interface AlertClasses {
@@ -266,7 +248,6 @@ interface AlertClasses {
   text: string;
   ring: string;
   hover: string;
-  dark: string;
 }
 
 /**
@@ -282,8 +263,7 @@ export function getAlertClasses(type: 'info' | 'success' | 'warning' | 'error' =
     icon: colorSet.light,
     text: type === 'error' ? 'text-red-700' : `text-${type}-800`,
     ring: colorSet.ring,
-    hover: `hover:bg-${type}-100`,
-    dark: `dark:bg-${type}-900/30 dark:border-${type}-700 dark:text-${type}-100`
+    hover: `hover:bg-${type}-100`
   };
 }
 

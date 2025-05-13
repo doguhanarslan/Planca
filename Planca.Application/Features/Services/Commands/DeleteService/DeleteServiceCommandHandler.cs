@@ -12,13 +12,13 @@ namespace Planca.Application.Features.Services.Commands.DeleteService
     public class DeleteServiceCommandHandler : IRequestHandler<DeleteServiceCommand, Result>
     {
         private readonly IServiceRepository _serviceRepository;
-        private readonly IRepository<Employee> _employeeRepository;
+        private readonly IEmployeeRepository _employeeRepository;
         private readonly IRepository<Appointment> _appointmentRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public DeleteServiceCommandHandler(
             IServiceRepository serviceRepository,
-            IRepository<Employee> employeeRepository,
+            IEmployeeRepository employeeRepository,
             IRepository<Appointment> appointmentRepository,
             IUnitOfWork unitOfWork)
         {
@@ -55,9 +55,7 @@ namespace Planca.Application.Features.Services.Commands.DeleteService
             }
 
             // 4. Servisi kullanan çalışanları kontrol et ve onları güncelle
-            var employeesWithService = await _employeeRepository.ListAsync(
-                new Domain.Specifications.EmployeesFilterSpecification(
-                    serviceId: request.Id));
+            var employeesWithService = await _employeeRepository.GetEmployeesByServiceIdAsync(request.Id);
 
             foreach (var employee in employeesWithService)
             {

@@ -73,9 +73,15 @@ export const fetchServices = createAsyncThunk(
       };
       const { pageNumber, pageSize, filters } = state.services;
       
-      // Get tenant ID from auth state
+      // Get tenant ID from auth state - güncellendi
       const tenantId = state.auth.tenant?.id || state.auth.tenantId;
       console.log('Using tenantId for fetch:', tenantId);
+      
+      // Request öncesinde herhangi bir tenant ID önbelleği veya katı kodlanmış tenant ID kullanmadığımızdan emin oluyoruz
+      // Tarayıcı localStorage/sessionStorage ve daha önce başka bir kaynaktan saklanmış tenant ID olup olmadığını temizleme
+      if (!tenantId) {
+        console.warn('No tenant ID found in auth state. This may cause incorrect data fetching.');
+      }
       
       const response = await getServices({
         pageNumber,

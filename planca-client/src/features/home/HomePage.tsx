@@ -6,32 +6,27 @@ import Button from '@/components/common/Button';
 
 const HomePage: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-secondary-900">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
       {/* Modern Hero Section with improved visual effects */}
-      <section className="bg-gradient-to-br from-primary-800 to-primary-950 text-white 
+      <section className="text-black bg-gradient-to-t from-99% to-100% from-white to-red-600
                          py-24 md:py-32 relative overflow-hidden hero-section">
         {/* Abstract background shapes */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10">
-          <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-primary-500 blur-3xl"></div>
-          <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] rounded-full bg-primary-600 blur-3xl"></div>
-          <div className="absolute -bottom-[10%] left-[20%] w-[50%] h-[40%] rounded-full bg-primary-700 blur-3xl"></div>
-        </div>
-        
+       
         <div className="container mx-auto px-4 flex flex-col items-center relative z-10">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-center mb-6 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-6xl lg:text-7xl text-center mb-6 tracking-tight leading-tight">
             Kolay Randevu Yönetimi
           </h1>
-          <p className="text-xl md:text-2xl text-center max-w-3xl mb-10 text-gray-100 font-light">
+          <p className="text-xl md:text-2xl text-center max-w-3xl mb-10 text-black font-light">
             Güçlü randevu planlama sistemimizle işletmenizi daha verimli hale getirin. Zaman kazanın, randevusuz gelmeleri azaltın ve müşterilerinizi memnun edin.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link to="/register">
               <Button 
-                variant="primary" 
+                
                 size="lg" 
-                className="px-8 bg-white text-primary-700 hover:bg-gray-100 
+                className="px-8 bg-red-500 text-white hover:bg-white hover:text-black hover:border-black 
                           shadow-lg hover:shadow-xl transition-all duration-300 
                           hover:-translate-y-1 transform"
               >
@@ -40,10 +35,10 @@ const HomePage: React.FC = () => {
             </Link>
             <Link to="/login">
               <Button 
-                variant="outline" 
                 size="lg" 
-                className="px-8 text-white border-white hover:bg-white/10 
-                          transition-all duration-300 hover:-translate-y-1 transform"
+                className="px-8 bg-black text-white hover:bg-white hover:text-black hover:border-black 
+                          shadow-lg hover:shadow-xl transition-all duration-300 
+                          hover:-translate-y-1 transform"
               >
                 Giriş Yap
               </Button>
@@ -53,10 +48,10 @@ const HomePage: React.FC = () => {
       </section>
       
       {/* Features Section with enhanced card styling and effects */}
-      <section className="py-24 bg-secondary-800" id="features">
+      <section className="py-24 bg-gray-50" id="features">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-white">
-            Neden <span className="text-primary-500 relative">
+          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-black">
+            Neden <span className="text-primary-600 relative">
               Planca
               <span className="absolute -bottom-2 left-0 w-full h-1 bg-primary-500 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </span>?
@@ -96,21 +91,21 @@ const HomePage: React.FC = () => {
               <div 
                 key={index}
                 className="feature-card flex flex-col items-center text-center p-8 rounded-xl
-                          bg-secondary-700/50 backdrop-blur-sm 
-                          border border-secondary-600 hover:border-primary-600
+                          bg-white backdrop-blur-sm 
+                          border border-gray-200 hover:border-primary-600
                           transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl
                           group"
               >
-                <div className="feature-icon p-5 rounded-full mb-6 bg-primary-900/50 
-                               group-hover:bg-primary-800/70 transition-colors duration-300">
-                  <div className="text-primary-400 group-hover:text-primary-300 transition-colors duration-300">
+                <div className="feature-icon p-5 rounded-full mb-6 bg-primary-50 
+                               group-hover:bg-primary-100 transition-colors duration-300">
+                  <div className="text-primary-600 group-hover:text-primary-700 transition-colors duration-300">
                     {feature.icon}
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold mb-4 text-white group-hover:text-primary-300 transition-colors duration-300">
+                <h3 className="text-xl font-semibold mb-4 text-black group-hover:text-primary-600 transition-colors duration-300">
                   {feature.title}
                 </h3>
-                <p className="text-gray-300 group-hover:text-gray-200 transition-colors duration-300">
+                <p className="text-gray-800 group-hover:text-black transition-colors duration-300">
                   {feature.description}
                 </p>
               </div>
@@ -120,9 +115,9 @@ const HomePage: React.FC = () => {
       </section>
       
       {/* Modernized Pricing Section */}
-      <section className="py-24 bg-secondary-900" id="pricing">
+      <section className="py-24 bg-white" id="pricing">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-white">
+          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-black">
             Fiyatlandırma
           </h2>
           
@@ -176,8 +171,8 @@ const HomePage: React.FC = () => {
                 key={index}
                 className={`pricing-card 
                             ${plan.popular 
-                              ? 'bg-secondary-800 border-2 border-primary-600 relative transform scale-105 z-10 shadow-xl' 
-                              : 'bg-secondary-800 border border-secondary-700 shadow-lg'}
+                              ? 'bg-white border-2 border-primary-600 relative transform scale-105 z-10 shadow-xl' 
+                              : 'bg-white border border-gray-200 shadow-lg'}
                             rounded-xl flex flex-col transition-all duration-300 ease-in-out
                             hover:shadow-2xl hover:-translate-y-1`}
               >
@@ -190,20 +185,20 @@ const HomePage: React.FC = () => {
                 )}
                 
                 <div className="p-8">
-                  <h3 className="text-xl font-bold text-white mb-4">{plan.title}</h3>
+                  <h3 className="text-xl font-bold text-black mb-4">{plan.title}</h3>
                   <div className="mb-6 flex items-baseline">
-                    <span className="text-4xl font-bold text-white">{plan.price}</span>
-                    {plan.period && <span className="text-gray-400 ml-1">{plan.period}</span>}
+                    <span className="text-4xl font-bold text-black">{plan.price}</span>
+                    {plan.period && <span className="text-gray-700 ml-1">{plan.period}</span>}
                   </div>
-                  <p className="text-gray-300 mb-8">{plan.description}</p>
+                  <p className="text-gray-800 mb-8">{plan.description}</p>
                   
                   <ul className="mb-8 space-y-4 flex-grow">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center pricing-feature pb-4 border-b border-secondary-700">
-                        <svg className="h-5 w-5 text-primary-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <li key={i} className="flex items-center pricing-feature pb-4 border-b border-gray-200">
+                        <svg className="h-5 w-5 text-primary-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        <span className="text-gray-200">{feature}</span>
+                        <span className="text-black">{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -224,7 +219,7 @@ const HomePage: React.FC = () => {
       </section>
       
       {/* CTA Section with enhanced visual effects */}
-      <section className="py-24 bg-gradient-to-br from-primary-900 to-primary-950 text-white relative">
+      <section className="py-24 bg-gradient-to-br from-primary-600 to-primary-800 text-white relative">
         <div className="absolute inset-0 overflow-hidden opacity-20">
           {/* Background pattern elements */}
           <div className="absolute top-0 left-0 w-full h-full bg-[url('/pattern.png')] opacity-10"></div>

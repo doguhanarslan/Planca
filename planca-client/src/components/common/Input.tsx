@@ -33,13 +33,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   const baseInputClasses = `
     block w-full rounded-lg shadow-sm py-3 
     transition-all duration-200 ease-in-out
-    focus:ring-2 focus:ring-opacity-50
-    ${hasError 
-      ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 dark:border-red-700 dark:focus:ring-red-600' 
-      : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500 dark:border-gray-600 dark:bg-secondary-800 dark:text-gray-100 dark:focus:ring-primary-500 dark:focus:border-primary-400'
-    }
-    ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-75 dark:bg-gray-700' : ''}
-    ${readOnly ? 'bg-gray-50 cursor-default dark:bg-gray-700' : ''}
+     focus:ring-opacity-50 text-gray-600
+    
+    ${disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-75' : ''}
+    ${readOnly ? 'bg-gray-50 text-gray-400 cursor-default ' : ''}
     ${leftIcon ? 'pl-10' : 'pl-4'}
     ${rightIcon ? 'pr-10' : 'pr-4'}
   `;
@@ -52,9 +49,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
         <label 
           htmlFor={uniqueId} 
           className={`block text-sm font-medium mb-2 transition-colors duration-200
-            ${hasError 
-              ? 'text-red-600 dark:text-red-400' 
-              : 'text-gray-700 dark:text-gray-200'} 
+            text-gray-400
             ${labelClassName}`
           }
         >
@@ -64,7 +59,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       )}
       <div className="relative">
         {leftIcon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
             {leftIcon}
           </div>
         )}
@@ -87,7 +82,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
         />
         
         {rightIcon && !hasError && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-800">
             {rightIcon}
           </div>
         )}

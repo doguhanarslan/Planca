@@ -35,7 +35,7 @@ const Header: React.FC = () => {
   ];
 
   return (
-    <header className={`bg-white dark:bg-secondary-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-all duration-300 ${
+    <header className={`bg-white border-b border-gray-200 sticky top-0 z-50 transition-all duration-300 ${
       scrolled ? 'shadow-md' : ''
     }`}>
       <div className="container mx-auto px-4">
@@ -45,7 +45,7 @@ const Header: React.FC = () => {
             <Link to="/" className="flex items-center group">
               <span className="font-bold text-2xl text-primary-600 group-hover:text-primary-500 transition-colors duration-300 transform">
                 Planca
-                <span className="text-gray-800 dark:text-gray-200 group-hover:text-gray-600 dark:group-hover:text-gray-300 ml-1 transition-colors duration-300">.</span>
+                <span className="text-gray-800 group-hover:text-gray-600 ml-1 transition-colors duration-300">.</span>
               </span>
             </Link>
           </div>
@@ -56,14 +56,14 @@ const Header: React.FC = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`text-base font-medium transition-all duration-200 relative group ${
+                className={`text-base font-medium text-black hover:text-red-600 transition-all duration-200 relative group ${
                   location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href))
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400'
+                    ? 'text-black'
+                    : 'text-gray-600 hover:text-black'
                 }`}
               >
                 {item.name}
-                <span className={`absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300 group-hover:w-full ${
+                <span className={`absolute -bottom-1 left-0 w-0 h-0.5 bg-red-600 transition-all duration-300 group-hover:w-full ${
                   location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href))
                     ? 'w-full'
                     : 'w-0'
@@ -94,20 +94,21 @@ const Header: React.FC = () => {
               <>
                 <Link to="/login">
                   <Button 
-                    variant="outline" 
+                    
                     size="sm"
                     rounded="lg"
-                    className="border-gray-300 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    className="border-black shadow-xl hover:shadow-md  bg-black transition-all duration-300 text-white hover:bg-white hover:text-black hover:border-black"
                   >
                     Giriş Yap
                   </Button>
                 </Link>
                 <Link to="/register">
                   <Button 
-                    variant="primary" 
+                    
                     size="sm"
                     rounded="lg"
-                    className="shadow-sm hover:shadow-md transition-shadow"
+                    
+                    className="shadow-sm hover:shadow-md transition-all border-black bg-red-500 duration-300 text-black hover:bg-red-900"
                   >
                     Kayıt Ol
                   </Button>
@@ -120,7 +121,7 @@ const Header: React.FC = () => {
           <div className="md:hidden flex items-center">
             <button
               type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-primary-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-expanded={mobileMenuOpen}
             >
@@ -149,7 +150,7 @@ const Header: React.FC = () => {
 
       {/* Improved mobile menu with smooth transitions */}
       <div
-        className={`md:hidden bg-white dark:bg-secondary-900 border-t border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`md:hidden bg-white border-t border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${
           mobileMenuOpen ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
@@ -160,8 +161,8 @@ const Header: React.FC = () => {
               to={item.href}
               className={`block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
                 location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href))
-                  ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20' 
-                  : 'text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  ? 'text-primary-600 bg-primary-50' 
+                  : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >

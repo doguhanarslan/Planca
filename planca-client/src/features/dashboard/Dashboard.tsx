@@ -35,10 +35,10 @@ const Dashboard: React.FC = () => {
 
   const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change, color = 'primary' }) => {
     const colorClasses: Record<string, string> = {
-      primary: 'bg-primary-100/80 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300',
-      secondary: 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-      success: 'bg-green-100/80 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      warning: 'bg-yellow-100/80 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+      primary: 'bg-primary-100/80 text-primary-800',
+      secondary: 'bg-emerald-100/80 text-emerald-800',
+      success: 'bg-green-100/80 text-green-800',
+      warning: 'bg-yellow-100/80 text-yellow-800'
     };
 
     return (
@@ -46,6 +46,8 @@ const Dashboard: React.FC = () => {
         className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transform-gpu" 
         shadow="md"
         rounded="lg"
+        variant="glass"
+        hover="glow"
       >
         <div className="flex items-center p-5">
           <div className={`flex-shrink-0 rounded-full p-3 ${colorClasses[color]}`}>
@@ -53,22 +55,22 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">{title}</dt>
+              <dt className="truncate text-sm font-medium text-gray-500">{title}</dt>
               <dd>
-                <div className="text-xl font-semibold text-gray-900 dark:text-white">{value}</div>
+                <div className="text-xl font-semibold text-gray-900">{value}</div>
               </dd>
             </dl>
           </div>
         </div>
         {change !== undefined && (
-          <div className="bg-gray-50 dark:bg-secondary-800/50 px-5 py-3 border-t border-gray-200 dark:border-gray-700 text-sm">
+          <div className="bg-gray-50/50 px-5 py-3 border-t border-gray-200/50 text-sm">
             <span className={change >= 0 
-              ? 'text-green-600 dark:text-green-400 font-medium' 
-              : 'text-red-600 dark:text-red-400 font-medium'
+              ? 'text-green-600 font-medium' 
+              : 'text-red-600 font-medium'
             }>
               {change >= 0 ? `+${change}%` : `${change}%`}
             </span>
-            <span className="text-gray-500 dark:text-gray-400 ml-1">compared to last month</span>
+            <span className="text-gray-500 ml-1">compared to last month</span>
           </div>
         )}
       </Card>
@@ -85,15 +87,15 @@ const Dashboard: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="border-b border-gray-200 dark:border-gray-700 pb-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 bg-white text-gray-800">
+        <div className="border-b border-gray-200 pb-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Welcome, {user?.name || 'User'}</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{formattedDate}</p>
+            <h2 className="text-xl font-bold text-gray-800">Welcome, {user?.name || 'User'}</h2>
+            <p className="mt-1 text-sm text-gray-500">{formattedDate}</p>
           </div>
           <div className="mt-3 sm:mt-0 flex space-x-3">
             <Button
-              variant="primary"
+              variant="glass"
               size="sm"
               rounded="lg"
               icon={
@@ -108,7 +110,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="animate-fadeIn">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-5">
+          <h3 className="text-lg leading-6 font-medium text-gray-800 mb-5">
             Overview
           </h3>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -163,25 +165,26 @@ const Dashboard: React.FC = () => {
             padding="lg"
             shadow="lg"
             rounded="lg"
-            hover={true}
-            className="transition-all duration-300"
+            variant="gradient"
+            hover="glow"
+            className="transition-all duration-300 bg-white text-gray-800"
           >
             {tenant ? (
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Business Name</h4>
-                  <p className="mt-1 text-base text-gray-900 dark:text-white font-medium">{tenant.name}</p>
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business Name</h4>
+                  <p className="mt-1 text-base text-gray-900 font-medium">{tenant.name}</p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subdomain</h4>
-                  <p className="mt-1 text-base text-gray-900 dark:text-white">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Subdomain</h4>
+                  <p className="mt-1 text-base text-gray-900">
                     <span className="font-medium">{tenant.subdomain}</span>
-                    <span className="text-gray-500 dark:text-gray-400">.planca.app</span>
+                    <span className="text-gray-500">.planca.app</span>
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</h4>
-                  <p className="mt-1 text-base text-gray-900 dark:text-white">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Address</h4>
+                  <p className="mt-1 text-base text-gray-900">
                     {tenant.address && `${tenant.address}, ${tenant.city}, ${tenant.state} ${tenant.zipCode}`}
                   </p>
                 </div>
@@ -202,10 +205,10 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">No business information found.</p>
+                <p className="text-gray-500 mb-6">No business information found.</p>
                 <Button 
                   variant="primary" 
                   size="sm" 
@@ -223,8 +226,9 @@ const Dashboard: React.FC = () => {
             padding="lg"
             shadow="lg"
             rounded="lg"
-            hover={true}
-            className="transition-all duration-300"
+            variant="glass"
+            hover="glow"
+            className="transition-all duration-300 bg-white text-gray-800"
             actions={
               <Button 
                 variant="outline" 
@@ -245,27 +249,27 @@ const Dashboard: React.FC = () => {
                 <div 
                   key={index} 
                   className={`px-6 py-4 flex items-center space-x-4 transition-colors duration-200 
-                    hover:bg-gray-50 dark:hover:bg-secondary-700/50
-                    ${index !== 2 ? 'border-b border-gray-200 dark:border-gray-700' : ''}`}
+                    hover:bg-gray-50/50
+                    ${index !== 2 ? 'border-b border-gray-200/50' : ''}`}
                 >
                   <div className="flex-shrink-0">
                     <div className={`flex items-center justify-center h-10 w-10 rounded-full 
-                      ${index === 0 ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' :
-                        index === 1 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' :
-                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}`}>
+                      ${index === 0 ? 'bg-primary-100 text-primary-800' :
+                        index === 1 ? 'bg-emerald-100 text-emerald-800' :
+                        'bg-blue-100 text-blue-800'}`}>
                       {['JS', 'AK', 'MB'][index]}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-medium text-gray-900 truncate">
                       {['John Smith', 'Alice King', 'Mark Brown'][index]}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    <p className="text-sm text-gray-500 truncate">
                       {['Haircut', 'Beard Trim', 'Facial'][index]}
                     </p>
                   </div>
                   <div className="inline-flex items-center text-sm font-semibold">
-                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full px-3 py-1">
+                    <span className="bg-gray-100 text-gray-800 rounded-full px-3 py-1">
                       {['14:00', '15:30', '17:15'][index]}
                     </span>
                   </div>
@@ -274,10 +278,10 @@ const Dashboard: React.FC = () => {
               
               {[1, 2, 3].length === 0 && (
                 <div className="text-center py-12">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p className="text-gray-500 dark:text-gray-400">No appointments today.</p>
+                  <p className="text-gray-500">No appointments today.</p>
                 </div>
               )}
             </div>

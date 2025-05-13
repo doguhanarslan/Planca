@@ -175,78 +175,53 @@ app.UseEndpoints(endpoints =>
 });
 // Map controllers
 app.MapControllers();
+app.Run();
+//try
+//{
+//    // MİGRASYON VE SEED İŞLEMLERİ KISMI
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var services = scope.ServiceProvider;
+//        var logger = services.GetRequiredService<ILogger<Program>>();
 
-try
-{
-    // MİGRASYON VE SEED İŞLEMLERİ KISMI
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        var logger = services.GetRequiredService<ILogger<Program>>();
+//        try
+//        {
+//            // 1. Veritabanı bağlantısını ve connection string'i loglama
+//            var context = services.GetRequiredService<ApplicationDbContext>();
+//            var connectionString = context.Database.GetConnectionString();
+//            logger.LogInformation("Database connection string (masked): {ConnectionString}",
+//                connectionString?.Replace("Password=", "Password=***"));
 
-        try
-        {
-            // 1. Veritabanı bağlantısını ve connection string'i loglama
-            var context = services.GetRequiredService<ApplicationDbContext>();
-            var connectionString = context.Database.GetConnectionString();
-            logger.LogInformation("Database connection string (masked): {ConnectionString}",
-                connectionString?.Replace("Password=", "Password=***"));
+//            // 2. Veritabanı var mı kontrol et
+//            logger.LogInformation("Migrating database...");
+//            await context.Database.MigrateAsync(); // Bu satır migrations'ları uygular
+//            logger.LogInformation("Database migrated successfully");
 
-            // 2. Veritabanı var mı kontrol et
-            logger.LogInformation("Migrating database...");
-            await context.Database.MigrateAsync(); // Bu satır migrations'ları uygular
-            logger.LogInformation("Database migrated successfully");
+//            // 3. Tablo listesini loglama (varsa)
+//            try
+//            {
+//                var tables = await context.Database.SqlQuery<string>($"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").ToListAsync();
+//                logger.LogInformation("Current tables in database: {Tables}", string.Join(", ", tables));
+//            }
+//            catch (Exception ex)
+//            {
+//                logger.LogWarning(ex, "Could not query table names");
+//            }
 
-            // 3. Tablo listesini loglama (varsa)
-            try
-            {
-                var tables = await context.Database.SqlQuery<string>($"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").ToListAsync();
-                logger.LogInformation("Current tables in database: {Tables}", string.Join(", ", tables));
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Could not query table names");
-            }
-
-            // 4. Seed data uygulama
-            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-            // ApplicationDbContext tipine özel logger oluştur
-            var dbContextLogger = services.GetRequiredService<ILogger<ApplicationDbContext>>();
-
-            logger.LogInformation("Seeding default data...");
-            await ApplicationDbContextSeed.SeedDefaultDataAsync(context, userManager, roleManager, dbContextLogger);
-            logger.LogInformation("Seed data applied successfully");
-
-            // 5. Seed sonrası temel verileri kontrol et
-            try
-            {
-                var tenantsCount = await context.Tenants.CountAsync();
-                var usersCount = await userManager.Users.CountAsync();
-                var rolesCount = await roleManager.Roles.CountAsync();
-                var servicesCount = await context.Services.CountAsync();
-
-                logger.LogInformation("Database seed check: Tenants: {TenantsCount}, Users: {UsersCount}, Roles: {RolesCount}, Services: {ServicesCount}",
-                    tenantsCount, usersCount, rolesCount, servicesCount);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Could not verify seed data counts");
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "An error occurred while migrating or seeding the database.");
-        }
-    }
-    app.Run();
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "API terminated unexpectedly");
-}
-finally
-{
-    Log.CloseAndFlush();
-}
+//            // Seed işlemleri kaldırıldı
+//        }
+//        catch (Exception ex)
+//        {
+//            logger.LogError(ex, "An error occurred while migrating the database.");
+//        }
+//    }
+//    app.Run();
+//}
+//catch (Exception ex)
+//{
+//    Log.Fatal(ex, "API terminated unexpectedly");
+//}
+//finally
+//{
+//    Log.CloseAndFlush();
+//}

@@ -38,12 +38,12 @@ import Services from '@/features/services/Services';
 
 // Loading component
 const LoadingScreen = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-secondary-900">
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="max-w-md w-full p-6 text-center">
       <div className="flex justify-center">
-        <div className="animate-spin rounded-full h-14 w-14 border-t-3 border-b-3 border-primary-600 dark:border-primary-500"></div>
+        <div className="animate-spin rounded-full h-14 w-14 border-t-3 border-b-3 border-primary-600"></div>
       </div>
-      <p className="text-center mt-4 text-gray-600 dark:text-gray-300 font-medium">Yükleniyor...</p>
+      <p className="text-center mt-4 text-gray-600 font-medium">Yükleniyor...</p>
     </div>
   </div>
 );
@@ -139,10 +139,10 @@ const AppContent: React.FC = () => {
           element={
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4 dark:text-white">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">
                   Randevular
                 </h1>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-gray-600">
                   Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>
@@ -155,10 +155,10 @@ const AppContent: React.FC = () => {
           element={
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4 dark:text-white">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">
                   Müşteriler
                 </h1>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-gray-600">
                   Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>
@@ -171,10 +171,10 @@ const AppContent: React.FC = () => {
           element={
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4 dark:text-white">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">
                   Ayarlar
                 </h1>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-gray-600">
                   Bu sayfa geliştirme aşamasındadır.
                 </p>
               </div>

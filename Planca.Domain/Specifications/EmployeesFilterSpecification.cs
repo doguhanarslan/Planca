@@ -7,13 +7,19 @@ namespace Planca.Domain.Specifications
 {
     public class EmployeesFilterSpecification : BaseSpecification<Employee>
     {
+        public Guid? ServiceIdFilter { get; private set; }
+
         public EmployeesFilterSpecification(string? searchString = null, bool? isActive = null, Guid? serviceId = null)
-            : base(CreateSearchCriteria(searchString, isActive, serviceId))
+            : base(CreateSearchCriteria(searchString, isActive))
         {
-            // Constructor boş kalabilir çünkü criteria base constructor'a aktarıldı
+            // ServiceId filtresini ayrı tutuyoruz çünkü bunu SQL sorgusu içinde kullanamayız
+            // Repository tarafında manual işlenecek
+            ServiceIdFilter = serviceId;
+
+            // Diğer filtreler normal şekilde ekleniyor
         }
 
-        private static Expression<Func<Employee, bool>>? CreateSearchCriteria(string? searchString, bool? isActive, Guid? serviceId)
+        private static Expression<Func<Employee, bool>>? CreateSearchCriteria(string? searchString, bool? isActive)
         {
             // Başlangıçta kriterimiz yok, bütün filtreleri AND işlemi ile birleştireceğiz
             Expression<Func<Employee, bool>>? criteria = null;
@@ -39,12 +45,8 @@ namespace Planca.Domain.Specifications
                 criteria = criteria == null ? activeFilter : CombineWithAnd(criteria, activeFilter);
             }
 
-            // Servis ID filtresi
-            if (serviceId.HasValue)
-            {
-                Expression<Func<Employee, bool>> serviceFilter = e => e.ServiceIds.Contains(serviceId.Value);
-                criteria = criteria == null ? serviceFilter : CombineWithAnd(criteria, serviceFilter);
-            }
+            // ServiceId filtresi artık CreateSearchCriteria içinde oluşturulmuyor
+            // Bu filtreleme repository tarafında in-memory olarak yapılacak
 
             return criteria;
         }

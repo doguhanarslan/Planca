@@ -28,13 +28,17 @@ class ServicesAPI {
         console.warn('No tenantId provided for services fetch, this may cause empty results');
       }
       
+      // Önbellek engelleme için timestamp ekleyelim
+      const timestamp = new Date().getTime();
+      
       // Convert params to match API's expected PascalCase naming
       const apiParams: Record<string, any> = {
         PageNumber: params.pageNumber,
         PageSize: params.pageSize,
         SortBy: params.sortBy,
         SortAscending: params.sortAscending,
-        TenantId: params.tenantId
+        TenantId: params.tenantId,
+        _t: timestamp // Önbellek engelleme için timestamp ekle
       };
       
       // Only add search parameters if they have actual values
@@ -52,9 +56,19 @@ class ServicesAPI {
       
       console.log('Sending API request with formatted params:', apiParams);
       
+      // HTTP isteği için headers hazırla
+      const headers: Record<string, string> = {};
+      if (params.tenantId) {
+        headers['X-TenantId'] = params.tenantId;
+      }
+      
       const response = await axios.get<ApiResponse<PaginatedList<ServiceDto>>>(
         ServicesAPI.ENDPOINT,
-        { params: apiParams, withCredentials: true }
+        { 
+          params: apiParams, 
+          withCredentials: true,
+          headers
+        }
       );
       
       console.log('Services API raw response:', response);

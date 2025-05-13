@@ -1,109 +1,86 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { ThemeMode, isPrefersDarkMode, applyThemeMode, getThemeMode, saveThemeMode } from '@/utils/themeUtil';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface ThemeContextType {
-  isDarkMode: boolean;
-  themeMode: ThemeMode;
-  toggleDarkMode: () => void;
-  setThemeMode: (mode: ThemeMode) => void;
-  isTransitioning: boolean;
-}
+type ThemeContextType = {
+  isDark: boolean;
+  toggleTheme: () => void;
+  forceApplyLightMode: () => void;
+};
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType>({
+  isDark: false,
+  toggleTheme: () => {},
+  forceApplyLightMode: () => {},
+});
 
-interface ThemeProviderProps {
-  children: ReactNode;
-}
+export const useTheme = () => useContext(ThemeContext);
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [themeMode, setThemeModeState] = useState<ThemeMode>(getThemeMode());
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(
-    themeMode === ThemeMode.DARK || (themeMode === ThemeMode.SYSTEM && isPrefersDarkMode())
-  );
-  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Always default to light theme
+  const [isDark, setIsDark] = useState(false);
 
-  // Apply theme with transition effect
-  const applyThemeWithTransition = (dark: boolean) => {
-    setIsTransitioning(true);
-    applyThemeMode(dark);
+  // Force apply light mode - can be called anytime to ensure light mode is active
+  const forceApplyLightMode = () => {
+    // Remove dark class from document element
+    document.documentElement.classList.remove('dark');
     
-    // Reset transition state after the CSS transition completes
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 300);
+    // Force body styles
+    document.body.style.backgroundColor = 'rgb(255, 255, 255)'; // white
+    document.body.style.color = 'rgb(31, 41, 55)'; // text-gray-800
+    
+    // Set light meta tag
+    const meta = document.querySelector('meta[name="color-scheme"]');
+    if (meta) {
+      meta.setAttribute('content', 'light');
+    } else {
+      const newMeta = document.createElement('meta');
+      newMeta.name = 'color-scheme';
+      newMeta.content = 'light';
+      document.head.appendChild(newMeta);
+    }
+    
+    // Make sure state is set to light
+    setIsDark(false);
   };
 
+  // Apply theme changes when the isDark state changes
   useEffect(() => {
-    // Apply theme based on current state
-    applyThemeWithTransition(isDarkMode);
-  }, [isDarkMode]);
-
-  useEffect(() => {
-    // Update dark mode state when theme mode changes
-    if (themeMode === ThemeMode.DARK) {
-      setIsDarkMode(true);
-    } else if (themeMode === ThemeMode.LIGHT) {
-      setIsDarkMode(false);
-    } else {
-      // System preference
-      setIsDarkMode(isPrefersDarkMode());
-    }
-  }, [themeMode]);
-
-  useEffect(() => {
-    // Listen for system theme changes
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    // Apply dark mode class to document and direct styles
+    document.documentElement.classList.toggle('dark', isDark);
     
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (themeMode === ThemeMode.SYSTEM) {
-        setIsDarkMode(e.matches);
-      }
-    };
-    
-    if (darkModeMediaQuery.addEventListener) {
-      darkModeMediaQuery.addEventListener('change', handleChange);
+    if (isDark) {
+      document.body.style.backgroundColor = 'rgb(17, 24, 39)'; // bg-secondary-900
+      document.body.style.color = 'rgb(243, 244, 246)'; // text-secondary-100
     } else {
-      // For older browsers
-      darkModeMediaQuery.addListener(handleChange);
+      document.body.style.backgroundColor = 'rgb(255, 255, 255)'; // white
+      document.body.style.color = 'rgb(31, 41, 55)'; // text-gray-800
     }
     
-    return () => {
-      if (darkModeMediaQuery.removeEventListener) {
-        darkModeMediaQuery.removeEventListener('change', handleChange);
-      } else {
-        // For older browsers
-        darkModeMediaQuery.removeListener(handleChange);
-      }
-    };
-  }, [themeMode]);
-
-  const toggleDarkMode = () => {
-    if (themeMode === ThemeMode.SYSTEM) {
-      // If using system, switch to explicit mode opposite of current
-      const newMode = isDarkMode ? ThemeMode.LIGHT : ThemeMode.DARK;
-      setThemeMode(newMode);
+    // Set the color scheme meta tag
+    const meta = document.querySelector('meta[name="color-scheme"]');
+    if (meta) {
+      meta.setAttribute('content', isDark ? 'dark' : 'light');
     } else {
-      // Toggle between light/dark
-      setThemeMode(themeMode === ThemeMode.DARK ? ThemeMode.LIGHT : ThemeMode.DARK);
+      const newMeta = document.createElement('meta');
+      newMeta.name = 'color-scheme';
+      newMeta.content = isDark ? 'dark' : 'light';
+      document.head.appendChild(newMeta);
     }
-  };
+  }, [isDark]);
+  
+  // Force apply light mode on initial render
+  useEffect(() => {
+    forceApplyLightMode();
+  }, []);
 
-  const setThemeMode = (mode: ThemeMode) => {
-    setThemeModeState(mode);
-    saveThemeMode(mode);
+  const toggleTheme = () => {
+    setIsDark(prev => !prev);
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, themeMode, toggleDarkMode, setThemeMode, isTransitioning }}>
+    <ThemeContext.Provider value={{ isDark, toggleTheme, forceApplyLightMode }}>
       {children}
     </ThemeContext.Provider>
   );
 };
 
-export const useTheme = (): ThemeContextType => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
+export default ThemeProvider;

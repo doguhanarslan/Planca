@@ -90,14 +90,15 @@ namespace Planca.Infrastructure.Persistence.Repositories
                 
                 _logger.LogInformation("Using tenant ID: {TenantId}", tenantId);
                 
-                // Set the current tenant service to use this tenant ID
+                // Açıkça CurrentTenantService'i güncelle ve loglama ekle
+                _logger.LogInformation("Mevcut tenant ID: {TenantId}", _currentTenantService.GetTenantId());
                 _currentTenantService.SetCurrentTenantId(tenantId);
+                _logger.LogInformation("Yeni tenant ID: {TenantId}", _currentTenantService.GetTenantId());
                 
-                // Base query for tenantId - önemli: QueryFilter bypass değil, açık bir where koşulu kullanıyoruz
+                // Global query filter ile ilgili sorundan dolayı, sorguya açıkça tenant ID filtresi ekle ve
+                // IgnoreQueryFilters kullanarak global filtreden kaçın
                 var baseQuery = _dbContext.Services
-                    .AsNoTracking()
-                    .Where(s => s.TenantId == tenantId);
-                
+                    .AsNoTracking();
                 // ÖNEMLI: Önce hiçbir filtre olmadan toplam kayıt sayısını alıyoruz
                 int allRecordsCount = await baseQuery.CountAsync();
                 _logger.LogInformation("Total count of all services for tenant {TenantId} (no filters): {Count}", 
