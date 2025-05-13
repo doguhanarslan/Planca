@@ -14,13 +14,13 @@ namespace Planca.Application.Features.Customers.Commands.CreateCustomer
 {
     public class CreateCustomerCommandHandler : IRequestHandler<CreateCustomerCommand, Result<CustomerDto>>
     {
-        private readonly IRepository<Customer> _customerRepository;
+        private readonly ICustomerRepository _customerRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUserService;
 
         public CreateCustomerCommandHandler(
-            IRepository<Customer> customerRepository,
+            ICustomerRepository customerRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             ICurrentUserService currentUserService)
@@ -33,21 +33,32 @@ namespace Planca.Application.Features.Customers.Commands.CreateCustomer
 
         public async Task<Result<CustomerDto>> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
         {
-            // 1. Müşteri entity'si oluştur
+            // Check if email already exists
+            var isEmailUnique = true;
+            if (request.Email != null)
+            {
+                isEmailUnique = await _customerRepository.IsEmailUniqueAsync(request.Email);
+                if (!isEmailUnique)
+                {
+                    return Result<CustomerDto>.Failure("Email is already in use.");
+                }
+            }
+
+            // Create a new customer
             var customer = new Customer
             {
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
-                UserId = request.UserId,
                 Notes = request.Notes,
+                UserId = request.UserId,
                 TenantId = request.TenantId,
                 CreatedBy = _currentUserService.UserId ?? "System",
                 CreatedAt = DateTime.UtcNow
             };
 
-            // 2. Adres bilgisi varsa ekle
+            // Set address if provided
             if (request.Address != null)
             {
                 customer.Address = new Address
@@ -60,13 +71,13 @@ namespace Planca.Application.Features.Customers.Commands.CreateCustomer
                 };
             }
 
-            // 3. Repository'ye kaydet
+            // Add to repository
             await _customerRepository.AddAsync(customer);
 
-            // 4. Değişiklikleri uygula
+            // Save changes
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 5. DTO'ya dönüştür ve sonucu döndür
+            // Map back to DTO and return
             var customerDto = _mapper.Map<CustomerDto>(customer);
             return Result<CustomerDto>.Success(customerDto);
         }

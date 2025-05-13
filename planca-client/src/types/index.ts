@@ -260,6 +260,35 @@ export interface ServiceDto {
   lastModifiedBy?: string;
 }
 
+// CustomerDto interface matching backend model
+export interface CustomerDto {
+  id: string;
+  userId?: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  address?: AddressDto;
+  fullAddress?: string;
+  notes?: string;
+  tenantId?: string;
+}
+
+// AddressDto interface matching backend model
+export interface AddressDto {
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+}
+
+// AppointmentDto interface for appointments
+export interface AppointmentDto {
+  // ... existing code ...
+}
+
 // Paginated response from the API
 export interface PaginatedList<T> {
   items: T[];

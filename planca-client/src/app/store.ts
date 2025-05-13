@@ -3,12 +3,14 @@ export type AppDispatch = typeof store.dispatch;
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '@/features/auth/authSlice';
 import servicesReducer from '@/features/services/servicesSlice';
+import customersReducer from '@/features/customers/customersSlice';
 import { initializeAxios } from '@/utils/axios';
 
 const store = configureStore({
   reducer: {
     auth: authReducer,
     services: servicesReducer,
+    customers: customersReducer,
     // Add other reducers here as needed
   },
   middleware: (getDefaultMiddleware) =>

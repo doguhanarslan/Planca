@@ -36,6 +36,9 @@ import AppLayout from '@/components/layouts/AppLayout';
 // Import Services component
 import Services from '@/features/services/Services';
 
+// Import Customers component
+import Customers from '@/features/customers/Customers';
+
 // Loading component
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -132,7 +135,11 @@ const AppContent: React.FC = () => {
         
         {/* Services route */}
         <Route path="/services" element={<Services />} />
-
+        
+        {/* Customers routes */}
+        <Route path="/customers" element={<Customers />} />
+        <Route path="/customers/:customerId" element={<Customers />} />
+        
         {/* Placeholder routes for future development */}
         <Route
           path="/appointments"
@@ -149,17 +156,18 @@ const AppContent: React.FC = () => {
             </AppLayout>
           }
         />
-
+        
+        {/* Route for creating appointment for a specific customer */}
         <Route
-          path="/customers"
+          path="/appointments/create/:customerId"
           element={
             <AppLayout>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                  Müşteriler
+                  Create Appointment
                 </h1>
                 <p className="text-gray-600">
-                  Bu sayfa geliştirme aşamasındadır.
+                  This page for creating appointments is under development.
                 </p>
               </div>
             </AppLayout>
