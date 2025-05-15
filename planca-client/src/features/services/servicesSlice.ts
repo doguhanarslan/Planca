@@ -158,10 +158,41 @@ export const editService = createAsyncThunk(
   'services/editService',
   async (service: ServiceDto, { rejectWithValue }) => {
     try {
+      console.log('Updating service with data:', service);
+      
+      // Servis verisinin geçerli olduğundan emin olalım
+      if (!service || !service.id) {
+        console.error('Invalid service data for update:', service);
+        return rejectWithValue('Geçersiz hizmet verisi. ID bulunamadı.');
+      }
+      
       const response = await updateService(service.id, service);
+      console.log('Service update response:', response);
+      
+      // API yanıtının geçerli olduğundan emin ol
+      if (!response || !response.succeeded) {
+        console.error('Service update failed:', response);
+        return rejectWithValue('Hizmet güncellenemedi.');
+      }
+      
+      // Verinin varlığını kontrol et
+      if (!response.data) {
+        console.error('Service update response has no data:', response);
+        // Geçerli bir servis nesnesi geri dön, null dönmek hata yaratabilir
+        return { ...service, updatedAt: new Date().toISOString() };
+      }
+      
+      // Güncellenmiş verinin ID'sini kontrol et
+      if (!response.data.id) {
+        console.warn('Updated service has no ID, adding original ID:', service.id);
+        response.data.id = service.id;
+      }
+      
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update service');
+      const errorMessage = error.response?.data?.message || 'Hizmet güncellenirken bir hata oluştu';
+      console.error('Error updating service:', error);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -331,7 +362,24 @@ const servicesSlice = createSlice({
         state.error = null;
       })
       .addCase(editService.fulfilled, (state, action) => {
+        // Payload kontrolü yapalım
+        if (!action.payload) {
+          console.error('editService.fulfilled: Payload is undefined or null');
+          state.loading = false;
+          return;
+        }
+        
+        // Service DTO'ya çevirme işlemini güvenli hale getirelim
         const updatedService = action.payload as ServiceDto;
+        
+        // ID kontrolü yapalım
+        if (!updatedService || !updatedService.id) {
+          console.error('editService.fulfilled: Updated service or its ID is undefined', updatedService);
+          state.loading = false;
+          return;
+        }
+        
+        // Mevcut hizmet listesini güvenli şekilde güncelleyelim
         state.services = state.services.map(service => 
           service.id === updatedService.id ? updatedService : service
         );

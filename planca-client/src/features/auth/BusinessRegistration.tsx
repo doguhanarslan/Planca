@@ -16,51 +16,61 @@ interface DayOption {
 }
 
 const daysOfWeek: DayOption[] = [
-  { value: 0, label: "Sunday" },
-  { value: 1, label: "Monday" },
-  { value: 2, label: "Tuesday" },
-  { value: 3, label: "Wednesday" },
-  { value: 4, label: "Thursday" },
-  { value: 5, label: "Friday" },
-  { value: 6, label: "Saturday" },
+  { value: 0, label: "Pazar" },
+  { value: 1, label: "Pazartesi" },
+  { value: 2, label: "Salı" },
+  { value: 3, label: "Çarşamba" },
+  { value: 4, label: "Perşembe" },
+  { value: 5, label: "Cuma" },
+  { value: 6, label: "Cumartesi" },
 ];
 
 const businessValidationSchema = Yup.object({
   name: Yup.string()
-    .required("Business name is required")
-    .max(100, "Business name must not exceed 100 characters"),
+    .required("İşletme adı zorunludur")
+    .max(100, "İşletme adı 100 karakteri geçmemelidir"),
   subdomain: Yup.string()
-    .required("Subdomain is required")
-    .max(50, "Subdomain must not exceed 50 characters")
+    .required("Alt alan adı zorunludur")
+    .max(50, "Alt alan adı 50 karakteri geçmemelidir")
     .matches(
       /^[a-z0-9]+(-[a-z0-9]+)*$/,
-      "Subdomain can only contain lowercase letters, numbers, and hyphens"
+      "Alt alan adı sadece küçük harfler, sayılar ve tire içerebilir"
     ),
   address: Yup.string()
-    .required("Address is required")
-    .max(500, "Address must not exceed 500 characters"),
+    .required("Adres zorunludur")
+    .max(500, "Adres 500 karakteri geçmemelidir"),
   city: Yup.string()
-    .required("City is required")
-    .max(100, "City must not exceed 100 characters"),
+    .required("Şehir zorunludur")
+    .max(100, "Şehir 100 karakteri geçmemelidir"),
   state: Yup.string()
-    .required("State is required")
-    .max(100, "State must not exceed 100 characters"),
+    .required("İlçe zorunludur")
+    .max(100, "İlçe 100 karakteri geçmemelidir"),
   zipCode: Yup.string()
-    .required("Zip code is required")
-    .max(20, "Zip code must not exceed 20 characters"),
-    workSchedule: Yup.array().of(
-      Yup.object().shape({
-        day: Yup.number().required('Day is required'),
-        openTimeString: Yup.string().required('Open time is required'),
-        closeTimeString: Yup.string()
-          .required('Close time is required')
-          .test('is-after-open', 'Close time must be after open time', function(value) {
+    .required("Posta kodu zorunludur")
+    .max(20, "Posta kodu 20 karakteri geçmemelidir"),
+  primaryColor: Yup.string()
+    .matches(
+      /^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/,
+      "Geçerli bir HEX renk kodu giriniz (örn: #FF5733 veya #F57)"
+    ),
+  workSchedule: Yup.array().of(
+    Yup.object().shape({
+      day: Yup.number().required('Gün zorunludur'),
+      openTimeString: Yup.string().required('Açılış saati zorunludur'),
+      closeTimeString: Yup.string()
+        .required('Kapanış saati zorunludur')
+        // closeTime must be after openTime
+        .test({
+          name: 'is-after-open',
+          message: 'Kapanış saati açılış saatinden sonra olmalıdır',
+          test: function(closeTime, context) {
             const { openTimeString } = this.parent;
-            if (!openTimeString || !value) return true;
-            return value > openTimeString;
-          }),
-      })
-    )
+            if (!openTimeString || !closeTime) return true;
+            return closeTime > openTimeString;
+          }
+        })
+    })
+  )
 });
 
 interface FormValues extends Omit<BusinessData, "workSchedule"> {
@@ -89,35 +99,60 @@ const BusinessRegistration: React.FC = () => {
     { setSubmitting }: FormikHelpers<FormValues>
   ) => {
     try {
-      const workSchedule = values.workSchedule.map(schedule => ({
-        day: parseInt(schedule.day.toString()),
-        openTimeString: schedule.openTimeString,
-        closeTimeString: schedule.closeTimeString
-      }));
+      // Çalışma saatlerini düzgünce işle
+      const workSchedule = values.workSchedule.map(schedule => {
+        // Gün değerini sayıya çevir
+        const day = parseInt(schedule.day.toString());
+        
+        // Saat değerlerini al
+        const openTimeString = schedule.openTimeString || "09:00";
+        const closeTimeString = schedule.closeTimeString || "17:00";
+        
+        // API'nin beklediği format
+        return {
+          day,
+          openTimeString,
+          closeTimeString
+        };
+      });
   
+      // Ensure the primaryColor is in proper hex format (including the # if missing)
+      let primaryColor = values.primaryColor;
+      if (primaryColor && !primaryColor.startsWith('#')) {
+        primaryColor = `#${primaryColor}`;
+      }
+      
+      // Validate if it's a proper hex color
+      const isValidHexColor = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(primaryColor);
+      if (!isValidHexColor) {
+        console.error('Geçersiz renk kodu:', primaryColor);
+        // Fallback to a default color if invalid
+        primaryColor = '#3498db';
+      }
+      
       const businessData = {
         name: values.name,
         subdomain: values.subdomain,
         logoUrl: values.logoUrl || "",
-        primaryColor: values.primaryColor,
+        primaryColor: primaryColor,
         address: values.address,
         city: values.city,
         state: values.state,
         zipCode: values.zipCode,
         workSchedule
-      } as BusinessData; // Type assertion ekleyelim
+      } as BusinessData;
   
-      console.log('Sending business data:', businessData);
+      console.log('İşletme verileri gönderiliyor:', businessData);
       
       const result = await dispatch(createBusinessForUser(businessData)).unwrap();
-      console.log('Business creation result:', result);
+      console.log('İşletme oluşturma sonucu:', result);
       
       if (result) {
         // Başarılı olursa dashboard'a yönlendir
         navigate('/dashboard');
       }
     } catch (error) {
-      console.error('Error creating business:', error);
+      console.error('İşletme oluşturulurken hata:', error);
       // Hata mesajını göster
       dispatch(clearError());
     } finally {
@@ -135,17 +170,17 @@ const BusinessRegistration: React.FC = () => {
     }));
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-secondary-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50  py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">
+          <h1 className="text-3xl font-bold text-gray-900  mb-2 transition-colors duration-300">
             Planca
           </h1>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">
-            Create Your Business
+          <h2 className="text-2xl font-bold text-gray-900  mb-2 transition-colors duration-300">
+            İşletmenizi Oluşturun
           </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 transition-colors duration-300">
-            Set up your business profile to get started with Planca
+          <p className="mt-2 text-sm text-gray-600  transition-colors duration-300">
+            Planca ile başlamak için işletme profilinizi oluşturun
           </p>
         </div>
 
@@ -153,7 +188,6 @@ const BusinessRegistration: React.FC = () => {
           <Alert
             type="error"
             message={Array.isArray(error) ? error.join(", ") : error}
-            onClose={() => dispatch(clearError())}
           />
         )}
 
@@ -187,30 +221,30 @@ const BusinessRegistration: React.FC = () => {
                 hover={false}
                 className="overflow-hidden transition-all duration-300 border-t-4 border-t-primary-500"
               >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b dark:border-gray-700 transition-colors duration-300">
-                  Business Information
+                <h3 className="text-lg font-semibold text-gray-900  mb-6 pb-2 border-b  transition-colors duration-300">
+                  İşletme Bilgileri
                 </h3>
 
                 <div className="space-y-6">
                   <Input
                     name="name"
                     type="text"
-                    label="Business Name"
+                    label="İşletme Adı"
                     value={values.name}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={errors.name}
                     touched={touched.name}
-                    placeholder="Your Business Name"
+                    placeholder="İşletmenizin Adı"
                     required
                   />
 
-                  <div className="flex flex-col gap-6 sm:flex-row">
+                  <div className="flex flex-col gap-10 sm:flex-row">
                     <div className="flex-1">
                       <Input
                         name="subdomain"
                         type="text"
-                        label="Subdomain"
+                        label="Alt Alan Adı"
                         value={values.subdomain}
                         onChange={(e) => {
                           // Convert to lowercase and replace invalid characters
@@ -222,23 +256,24 @@ const BusinessRegistration: React.FC = () => {
                         onBlur={handleBlur}
                         error={errors.subdomain}
                         touched={touched.subdomain}
-                        placeholder="your-business"
+                        placeholder="isletmeniz"
                         required
                       />
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">
-                        Your business URL will be:{" "}
-                        <span className="font-medium text-primary-600 dark:text-primary-400">
-                          https://{values.subdomain || "your-business"}
+                      <p className="text-sm text-gray-500 text-nowrap transition-colors duration-300">
+                        İşletmenizin URL'si:{" "}
+                        <span className="font-bold text-primary-600 ">
+                          https://{values.subdomain || "isletmeniz"}
                           .planca.app
                         </span>
                       </p>
                     </div>
 
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300">
-                        Brand Color
+                      <label className="block text-sm font-medium text-gray-700 mb-1 transition-colors duration-300">
+                        Marka Rengi
                       </label>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center justify-center space-x-2">
+                        
                         <input
                           type="color"
                           name="primaryColor"
@@ -246,6 +281,7 @@ const BusinessRegistration: React.FC = () => {
                           onChange={handleChange}
                           className="h-10 w-10 border-gray-300 rounded-md shadow-sm cursor-pointer"
                         />
+                        
                         <Input
                           name="primaryColor"
                           type="text"
@@ -254,6 +290,9 @@ const BusinessRegistration: React.FC = () => {
                           onBlur={handleBlur}
                           placeholder="#3498db"
                         />
+
+                   
+                        
                       </div>
                     </div>
                   </div>
@@ -266,21 +305,21 @@ const BusinessRegistration: React.FC = () => {
                 hover={false}
                 className="overflow-hidden transition-all duration-300 border-t-4 border-t-primary-500"
               >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b dark:border-gray-700 transition-colors duration-300">
-                  Address Information
+                <h3 className="text-lg font-semibold text-gray-900  mb-6 pb-2 border-b transition-colors duration-300">
+                  Adres Bilgileri
                 </h3>
 
                 <div className="space-y-6">
                   <Input
                     name="address"
                     type="text"
-                    label="Street Address"
+                    label="Cadde Adresi"
                     value={values.address}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={errors.address}
                     touched={touched.address}
-                    placeholder="123 Main St"
+                    placeholder="Atatürk Caddesi No: 123"
                     required
                   />
 
@@ -288,39 +327,39 @@ const BusinessRegistration: React.FC = () => {
                     <Input
                       name="city"
                       type="text"
-                      label="City"
+                      label="Şehir"
                       value={values.city}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       error={errors.city}
                       touched={touched.city}
-                      placeholder="City"
+                      placeholder="İstanbul"
                       required
                     />
 
                     <Input
                       name="state"
                       type="text"
-                      label="State/Province"
+                      label="İlçe"
                       value={values.state}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       error={errors.state}
                       touched={touched.state}
-                      placeholder="State"
+                      placeholder="Kadıköy"
                       required
                     />
 
                     <Input
                       name="zipCode"
                       type="text"
-                      label="Zip/Postal Code"
+                      label="Posta Kodu"
                       value={values.zipCode}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       error={errors.zipCode}
                       touched={touched.zipCode}
-                      placeholder="Zip Code"
+                      placeholder="34000"
                       required
                     />
                   </div>
@@ -333,11 +372,11 @@ const BusinessRegistration: React.FC = () => {
                 hover={false}
                 className="overflow-hidden transition-all duration-300 border-t-4 border-t-primary-500"
               >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b dark:border-gray-700 transition-colors duration-300">
-                  Business Hours
+                <h3 className="text-lg font-semibold text-gray-900  mb-6 pb-2 border-b  transition-colors duration-300">
+                  Çalışma Saatleri
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 transition-colors duration-300">
-                  Set your regular business hours. You can update these later.
+                  Normal çalışma saatlerinizi ayarlayın. Bunları daha sonra güncelleyebilirsiniz.
                 </p>
 
                 <FieldArray name="workSchedule">
@@ -346,18 +385,18 @@ const BusinessRegistration: React.FC = () => {
                       {values.workSchedule.map((schedule, index) => (
                         <div
                           key={index}
-                          className="flex flex-col p-4 border border-gray-200 dark:border-gray-700 rounded-lg sm:flex-row sm:space-x-4 transition-all duration-200 hover:shadow-md bg-white dark:bg-secondary-800"
+                          className="flex flex-col p-4 border border-gray-200 rounded-lg sm:flex-row sm:space-x-4 transition-all duration-200 hover:shadow-md bg-white"
                         >
-                          <div className="sm:w-1/3 mb-4 sm:mb-0">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300">
-                              Day
+                          <div className="sm:w-1/4 mb-4 sm:mb-0">
+                            <label className="block text-sm font-medium text-gray-700 mb-1 transition-colors duration-300">
+                              Gün
                             </label>
                             <select
                               name={`workSchedule.${index}.day`}
                               value={schedule.day}
                               onChange={handleChange}
                               onBlur={handleBlur}
-                              className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-secondary-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200"
+                              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200 h-10"
                             >
                               {daysOfWeek.map((day) => (
                                 <option key={day.value} value={day.value}>
@@ -368,95 +407,76 @@ const BusinessRegistration: React.FC = () => {
                           </div>
 
                           <div className="sm:w-1/3 mb-4 sm:mb-0">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300">
-                              Open Time
+                            <label className="block text-sm font-medium text-gray-700 mb-1 transition-colors duration-300">
+                              Açılış Saati
                             </label>
                             <input
                               type="time"
                               name={`workSchedule.${index}.openTimeString`}
                               value={schedule.openTimeString || ""}
                               onChange={(e) => {
+                                const timeValue = e.target.value;
                                 setFieldValue(
                                   `workSchedule.${index}.openTimeString`,
-                                  e.target.value
+                                  timeValue
                                 );
-                                setFieldValue(
-                                  `workSchedule.${index}.openTime`,
-                                  e.target.value
-                                );
+                                // Eğer kapanış saati boşsa veya açılış saatinden önce ise otomatik güncelle
+                                const closeTime = schedule.closeTimeString;
+                                if (!closeTime || closeTime <= timeValue) {
+                                  // Açılış saatine 1 saat ekleyelim
+                                  let [hours, minutes] = timeValue.split(':').map(Number);
+                                  hours = (hours + 1) % 24;
+                                  const newCloseTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                                  setFieldValue(
+                                    `workSchedule.${index}.closeTimeString`,
+                                    newCloseTime
+                                  );
+                                }
                               }}
                               onBlur={handleBlur}
-                              className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-secondary-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200"
+                              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200 h-10 text-gray-800"
                             />
-                            {errors.workSchedule &&
-                              Array.isArray(errors.workSchedule) &&
-                              errors.workSchedule[index] &&
-                              typeof errors.workSchedule[index] === "object" &&
-                              "openTime" in errors.workSchedule[index] &&
-                              touched.workSchedule &&
-                              Array.isArray(touched.workSchedule) &&
-                              touched.workSchedule[index] &&
-                              typeof touched.workSchedule[index] === "object" &&
-                              "openTime" in touched.workSchedule[index] && (
-                                <p className="mt-2 text-sm text-red-600 dark:text-red-400 transition-colors duration-300">
-                                  {errors.workSchedule[index] &&
-                                    typeof errors.workSchedule[index] ===
-                                      "object" &&
-                                    "openTime" in errors.workSchedule[index] &&
-                                    String(errors.workSchedule[index].openTime)}
-                                </p>
-                              )}
                           </div>
 
                           <div className="sm:w-1/3 mb-4 sm:mb-0">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 transition-colors duration-300">
-                              Close Time
+                            <label className="block text-sm font-medium text-gray-700 mb-1 transition-colors duration-300">
+                              Kapanış Saati
                             </label>
                             <input
                               type="time"
                               name={`workSchedule.${index}.closeTimeString`}
                               value={schedule.closeTimeString || ""}
                               onChange={(e) => {
-                                setFieldValue(
-                                  `workSchedule.${index}.closeTimeString`,
-                                  e.target.value
-                                );
-                                setFieldValue(
-                                  `workSchedule.${index}.closeTime`,
-                                  e.target.value
-                                );
+                                const timeValue = e.target.value;
+                                // Kapanış saatinin açılış saatinden sonra olmasını kontrol et
+                                const openTime = schedule.openTimeString;
+                                if (!openTime || timeValue > openTime) {
+                                  setFieldValue(
+                                    `workSchedule.${index}.closeTimeString`,
+                                    timeValue
+                                  );
+                                } else {
+                                  // Eğer kapanış saati açılış saatinden önce ise, kapanış saatini açılış saatinin 1 saat sonrası olarak ayarla
+                                  let [hours, minutes] = openTime.split(':').map(Number);
+                                  hours = (hours + 1) % 24;
+                                  const newCloseTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                                  setFieldValue(
+                                    `workSchedule.${index}.closeTimeString`,
+                                    newCloseTime
+                                  );
+                                }
                               }}
                               onBlur={handleBlur}
-                              className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-secondary-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200"
+                              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-colors duration-200 h-10 text-gray-800"
                             />
-                            {errors.workSchedule &&
-                              Array.isArray(errors.workSchedule) &&
-                              errors.workSchedule[index] &&
-                              typeof errors.workSchedule[index] === "object" &&
-                              "closeTime" in errors.workSchedule[index] &&
-                              touched.workSchedule &&
-                              Array.isArray(touched.workSchedule) &&
-                              touched.workSchedule[index] &&
-                              typeof touched.workSchedule[index] === "object" &&
-                              "closeTime" in touched.workSchedule[index] && (
-                                <p className="mt-2 text-sm text-red-600 dark:text-red-400 transition-colors duration-300">
-                                  {errors.workSchedule[index] &&
-                                    typeof errors.workSchedule[index] ===
-                                      "object" &&
-                                    "closeTime" in errors.workSchedule[index] &&
-                                    String(
-                                      errors.workSchedule[index].closeTime
-                                    )}
-                                </p>
-                              )}
                           </div>
-
-                          <div className="flex items-end justify-center sm:justify-start">
+                          
+                          <div className="flex items-end justify-center sm:justify-start ml-2">
                             <button
                               type="button"
                               onClick={() => remove(index)}
-                              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none transition-colors duration-200"
-                              aria-label="Remove this business hour"
+                              className="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 focus:outline-none transition-colors duration-200"
+                              aria-label="Bu çalışma saatini kaldır"
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -474,7 +494,7 @@ const BusinessRegistration: React.FC = () => {
                           </div>
                         </div>
                       ))}
-
+                      
                       <Button
                         type="button"
                         variant="outline"
@@ -499,7 +519,7 @@ const BusinessRegistration: React.FC = () => {
                           </svg>
                         }
                       >
-                        Add Business Hours
+                        Çalışma Saati Ekle
                       </Button>
                     </div>
                   )}
@@ -512,10 +532,10 @@ const BusinessRegistration: React.FC = () => {
                   variant="primary"
                   size="xl"
                   rounded="lg"
-                  className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  className="w-full bg-red-600 hover:bg-red-900 focus:bg-red-600 duration-300 shadow-lg hover:shadow-xl transition-all"
                   isLoading={loading}
                 >
-                  Create Business
+                  İşletme Oluştur
                 </Button>
               </div>
             </Form>

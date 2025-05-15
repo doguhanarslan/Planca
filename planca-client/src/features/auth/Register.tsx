@@ -224,7 +224,7 @@ const Register: React.FC = () => {
                   <Button
                     type="submit"
                     variant="primary"
-                    className="w-full py-3 font-medium"
+                    className="w-full py-3 font-medium bg-red-600 hover:bg-red-900 focus:bg-red-600"
                     size="lg"
                     isLoading={loading || isSubmitting}
                   >

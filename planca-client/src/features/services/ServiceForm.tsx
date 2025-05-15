@@ -21,7 +21,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
     price: 0,
     durationMinutes: 60,
     isActive: true,
-    color: '#3498db',
+    color: '#FF0000',
     tenantId: tenant?.id || ''
   });
   
@@ -98,7 +98,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
     if (!formData.color) {
       newErrors.color = 'Renk gereklidir';
     } else if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(formData.color)) {
-      newErrors.color = 'Geçerli bir renk kodu giriniz (ör. #3498db)';
+      newErrors.color = 'Geçerli bir renk kodu giriniz (ör. #FF0000)';
     }
     
     setErrors(newErrors);
@@ -130,15 +130,15 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
   };
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
-        <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+    <div className="fixed inset-0  bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-red-600">
+          <h3 className="text-xl font-semibold text-white">
             {selectedService ? 'Hizmeti Düzenle' : 'Yeni Hizmet Ekle'}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+            className="text-white hover:cursor-pointer hover:text-gray-300 transition-all duration-300 focus:outline-none"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -149,7 +149,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Hizmet Adı *
             </label>
             <input
@@ -158,19 +158,19 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className={`mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border ${
-                errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              } rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
+              className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                errors.name ? 'border-red-500' : 'border-gray-300'
+              } rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm`}
               placeholder="Örn. Saç Kesimi"
             />
             {errors.name && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
+              <p className="mt-1 text-sm text-red-600">{errors.name}</p>
             )}
           </div>
           
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
               Açıklama
             </label>
             <textarea
@@ -179,25 +179,25 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
               value={formData.description}
               onChange={handleChange}
               rows={3}
-              className={`mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border ${
-                errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              } rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
+              className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                errors.description ? 'border-red-500' : 'border-gray-300'
+              } rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm`}
               placeholder="Hizmet hakkında bilgi"
             />
             {errors.description && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description}</p>
+              <p className="mt-1 text-sm text-red-600">{errors.description}</p>
             )}
           </div>
           
           {/* Price and Duration (side by side on larger screens) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700">
                 Fiyat (₺) *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 dark:text-gray-400 sm:text-sm">₺</span>
+                  <span className="text-gray-500 sm:text-sm">₺</span>
                 </div>
                 <input
                   type="number"
@@ -207,18 +207,18 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
                   onChange={handleChange}
                   min="0"
                   step="0.01"
-                  className={`block w-full pl-8 pr-3 py-2 bg-white dark:bg-gray-700 border ${
-                    errors.price ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
+                  className={`block w-full pl-8 pr-3 py-2 bg-white border ${
+                    errors.price ? 'border-red-500' : 'border-gray-300'
+                  } rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm`}
                 />
               </div>
               {errors.price && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.price}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.price}</p>
               )}
             </div>
             
             <div>
-              <label htmlFor="durationMinutes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="durationMinutes" className="block text-sm font-medium text-gray-700">
                 Süre (dakika) *
               </label>
               <input
@@ -229,12 +229,12 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
                 onChange={handleChange}
                 min="1"
                 max="480"
-                className={`mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border ${
-                  errors.durationMinutes ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                } rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
+                className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                  errors.durationMinutes ? 'border-red-500' : 'border-gray-300'
+                } rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm`}
               />
               {errors.durationMinutes && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.durationMinutes}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.durationMinutes}</p>
               )}
             </div>
           </div>
@@ -247,26 +247,26 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
               name="isActive"
               checked={formData.isActive}
               onChange={handleChange}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
+              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
             />
-            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
               Aktif
             </label>
           </div>
           
           {/* Color Picker */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Renk *
             </label>
             <div className="flex items-center space-x-2">
               <button
                 type="button"
                 onClick={() => setShowColorPicker(!showColorPicker)}
-                className="w-10 h-10 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-10 h-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
                 style={{ backgroundColor: formData.color }}
               ></button>
-              <span className="text-sm text-gray-600 dark:text-gray-400">{formData.color}</span>
+              <span className="text-sm text-gray-600">{formData.color}</span>
             </div>
             {showColorPicker && (
               <div className="absolute z-10 mt-2">
@@ -280,26 +280,26 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ onClose, onSuccess }) => {
               </div>
             )}
             {errors.color && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.color}</p>
+              <p className="mt-1 text-sm text-red-600">{errors.color}</p>
             )}
           </div>
           
           {/* Submit and Cancel Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <Button
               onClick={onClose}
-              variant="secondary"
               type="button"
               size="md"
+              className="bg-gray-200 text-black hover:bg-gray-300 focus:ring-gray-400"
             >
               İptal
             </Button>
             <Button
-              variant="primary"
               type="submit"
               size="md"
               isLoading={loading}
               loadingText="Kaydediliyor..."
+              className="bg-red-600 text-white hover:bg-red-900 focus:bg-red-600 hover:cursor-pointer"
             >
               {selectedService ? 'Güncelle' : 'Kaydet'}
             </Button>

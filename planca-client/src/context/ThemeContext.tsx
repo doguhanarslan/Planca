@@ -17,8 +17,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.documentElement.classList.remove('dark');
     
     // Force body styles
-    document.body.style.backgroundColor = 'rgb(255, 255, 255)'; // white
-    document.body.style.color = 'rgb(0, 0, 0)'; // black text
+    
+ 
     
     // Set light meta tag
     const meta = document.querySelector('meta[name="color-scheme"]');

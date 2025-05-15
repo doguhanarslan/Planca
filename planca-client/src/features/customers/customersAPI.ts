@@ -7,10 +7,22 @@ import { ApiResponse, PaginatedList, CustomerDto, AppointmentDto } from '@/types
 class CustomersAPI {
   private static readonly ENDPOINT = '/Customers';
   
-  // Cache mekanizması
+  // Cache for paginated customers
   private static customerCache: Map<string, { 
     data: PaginatedList<CustomerDto>;
     timestamp: number; 
+  }> = new Map();
+  
+  // New cache for individual customer details
+  private static customerDetailsCache: Map<string, {
+    data: CustomerDto;
+    timestamp: number;
+  }> = new Map();
+  
+  // New cache for customer appointments
+  private static appointmentsCache: Map<string, {
+    data: AppointmentDto[];
+    timestamp: number;
   }> = new Map();
   
   // En son kullanılan tenantId
@@ -26,6 +38,8 @@ class CustomersAPI {
   public static clearCache(): void {
     console.log('Customer cache tamamen temizleniyor');
     CustomersAPI.customerCache.clear();
+    CustomersAPI.customerDetailsCache.clear();
+    CustomersAPI.appointmentsCache.clear();
     CustomersAPI.lastTenantId = null;
   }
 
@@ -226,49 +240,116 @@ class CustomersAPI {
   }
 
   /**
+   * Get a cached customer detail by ID, or null if not found
+   */
+  private static getCachedCustomerDetail(id: string): CustomerDto | null {
+    const cacheEntry = this.customerDetailsCache.get(id);
+    
+    if (!cacheEntry) {
+      return null;
+    }
+    
+    const now = Date.now();
+    if (now - cacheEntry.timestamp > this.CACHE_DURATION) {
+      // Cache expired
+      this.customerDetailsCache.delete(id);
+      return null;
+    }
+    
+    return cacheEntry.data;
+  }
+  
+  /**
+   * Cache customer detail
+   */
+  private static cacheCustomerDetail(id: string, data: CustomerDto): void {
+    this.customerDetailsCache.set(id, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
    * Get a single customer by ID
    */
-  static async getCustomerById(id: string, tenantId?: string) {
+  static async getCustomerById(id: string, tenantId?: string, skipCache: boolean = false) {
     try {
+      // Check cache first if not explicitly skipping cache
+      if (!skipCache) {
+        const cachedCustomer = this.getCachedCustomerDetail(id);
+        if (cachedCustomer) {
+          console.log(`Using cached data for customer ${id}`);
+          return cachedCustomer;
+        }
+      }
+      
       const headers: Record<string, string> = {};
       if (tenantId) {
         headers['X-TenantId'] = tenantId;
       }
       
-      const response = await axios.get<CustomerDto>(
-        `${CustomersAPI.ENDPOINT}/${id}`,
-        { 
-          withCredentials: true,
-          headers 
+      console.log(`Making API call to get customer ${id}`);
+      
+      try {
+        const response = await axios.get<CustomerDto>(
+          `${CustomersAPI.ENDPOINT}/${id}`,
+          { 
+            withCredentials: true,
+            headers 
+          }
+        );
+        
+        console.log('API Response from getCustomerById:', response.data);
+        
+        // Transform data if needed
+        if (response.data) {
+          // Use type assertion to handle different casing
+          const customerAny = response.data as any;
+          
+          // Handle possible PascalCase property names from the backend
+          const normalizedCustomer = {
+            id: response.data.id || customerAny.Id || '',
+            userId: response.data.userId || customerAny.UserId || null,
+            firstName: response.data.firstName || customerAny.FirstName || '',
+            lastName: response.data.lastName || customerAny.LastName || '',
+            fullName: response.data.fullName || customerAny.FullName || 
+                     `${response.data.firstName || customerAny.FirstName || ''} ${response.data.lastName || customerAny.LastName || ''}`,
+            email: response.data.email || customerAny.Email || '',
+            phoneNumber: response.data.phoneNumber || customerAny.PhoneNumber || '',
+            notes: response.data.notes || customerAny.Notes || '',
+            tenantId: response.data.tenantId || customerAny.TenantId || null
+          };
+          
+          // Cache the normalized customer data
+          this.cacheCustomerDetail(id, normalizedCustomer);
+          
+          return normalizedCustomer;
         }
-      );
-      
-      console.log('API Response from getCustomerById:', response.data);
-      
-      // Transform data if needed
-      if (response.data) {
-        // Use type assertion to handle different casing
-        const customerAny = response.data as any;
         
-        // Handle possible PascalCase property names from the backend
-        const normalizedCustomer = {
-          id: response.data.id || customerAny.Id || '',
-          userId: response.data.userId || customerAny.UserId || null,
-          firstName: response.data.firstName || customerAny.FirstName || '',
-          lastName: response.data.lastName || customerAny.LastName || '',
-          fullName: response.data.fullName || customerAny.FullName || 
-                   `${response.data.firstName || customerAny.FirstName || ''} ${response.data.lastName || customerAny.LastName || ''}`,
-          email: response.data.email || customerAny.Email || '',
-          phoneNumber: response.data.phoneNumber || customerAny.PhoneNumber || '',
-          notes: response.data.notes || customerAny.Notes || '',
-          tenantId: response.data.tenantId || customerAny.TenantId || null
-        };
-        
-        return normalizedCustomer;
+        // Veri eksik veya geçersizse null dön ve uygun hata mesajı oluştur
+        console.warn(`Customer ${id} data is invalid or empty`);
+        throw new Error(`Müşteri bilgileri bulunamadı (ID: ${id})`);
+      } catch (axiosError: any) {
+        // Axios hata durumlarını daha detaylı işle
+        if (axiosError.response) {
+          // Sunucu cevap verdi ama 2xx dışında bir hata kodu döndü
+          if (axiosError.response.status === 404) {
+            console.warn(`Customer ${id} not found (404)`);
+            throw new Error(`Müşteri bulunamadı (ID: ${id})`);
+          } else {
+            console.error(`API error for customer ${id}:`, axiosError.response.status, axiosError.response.data);
+            throw new Error(`Müşteri bilgileri alınırken bir hata oluştu (${axiosError.response.status})`);
+          }
+        } else if (axiosError.request) {
+          // İstek yapıldı ama sunucudan yanıt gelmedi
+          console.error(`No response from server for customer ${id}:`, axiosError.request);
+          throw new Error('Sunucudan yanıt alınamadı. Lütfen internet bağlantınızı kontrol edin.');
+        } else {
+          // İstek oluşturulurken hata oldu
+          console.error(`Error creating request for customer ${id}:`, axiosError.message);
+          throw axiosError;
+        }
       }
-      
-      // Return null if we don't have valid customer data
-      return null;
     } catch (error) {
       console.error(`Error fetching customer ${id}:`, error);
       throw error;
@@ -309,6 +390,23 @@ class CustomersAPI {
   }
 
   /**
+   * Clear cache for a specific customer
+   */
+  private static clearCustomerCache(customerId: string): void {
+    // Remove from details cache
+    this.customerDetailsCache.delete(customerId);
+    
+    // Remove from appointments cache (any keys starting with customerId)
+    for (const key of this.appointmentsCache.keys()) {
+      if (key.startsWith(`${customerId}_`)) {
+        this.appointmentsCache.delete(key);
+      }
+    }
+    
+    console.log(`Cache cleared for customer ${customerId}`);
+  }
+
+  /**
    * Update an existing customer
    */
   static async updateCustomer(id: string, customerData: CustomerDto) {
@@ -331,7 +429,7 @@ class CustomersAPI {
       );
       
       // Müşteri güncellendiğinde cache'i temizle
-      this.customerCache.clear();
+      this.clearCustomerCache(id);
       
       // The response is already the updated customer
       return response.data;
@@ -352,7 +450,7 @@ class CustomersAPI {
       );
       
       // Müşteri silindiğinde cache'i temizle
-      this.customerCache.clear();
+      this.clearCustomerCache(id);
       
       // Just return success status
       return response.status === 200 || response.status === 204;
@@ -360,6 +458,51 @@ class CustomersAPI {
       console.error(`Error deleting customer ${id}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Create appointment cache key
+   */
+  private static createAppointmentCacheKey(customerId: string, params: Record<string, any>): string {
+    // Sort keys to ensure consistent cache key
+    const sortedParams = Object.keys(params).sort().reduce((result, key) => {
+      if (params[key] !== undefined && key !== 'tenantId' && key !== '_t') {
+        result[key] = params[key];
+      }
+      return result;
+    }, {} as Record<string, any>);
+    
+    return `${customerId}_${JSON.stringify(sortedParams)}`;
+  }
+  
+  /**
+   * Get cached customer appointments
+   */
+  private static getCachedAppointments(cacheKey: string): AppointmentDto[] | null {
+    const cacheEntry = this.appointmentsCache.get(cacheKey);
+    
+    if (!cacheEntry) {
+      return null;
+    }
+    
+    const now = Date.now();
+    if (now - cacheEntry.timestamp > this.CACHE_DURATION) {
+      // Cache expired
+      this.appointmentsCache.delete(cacheKey);
+      return null;
+    }
+    
+    return cacheEntry.data;
+  }
+  
+  /**
+   * Cache customer appointments
+   */
+  private static cacheAppointments(cacheKey: string, data: AppointmentDto[]): void {
+    this.appointmentsCache.set(cacheKey, {
+      data,
+      timestamp: Date.now()
+    });
   }
 
   /**
@@ -373,8 +516,22 @@ class CustomersAPI {
     pastOnly?: boolean;
     sortAscending?: boolean;
     tenantId?: string;
+    skipCache?: boolean;
   } = {}) {
     try {
+      // Generate cache key
+      const skipCache = params.skipCache === true;
+      const cacheKey = this.createAppointmentCacheKey(customerId, params);
+      
+      // Check cache if not skipping
+      if (!skipCache) {
+        const cachedAppointments = this.getCachedAppointments(cacheKey);
+        if (cachedAppointments) {
+          console.log(`Using cached appointments for customer ${customerId}`);
+          return cachedAppointments;
+        }
+      }
+      
       // Gerçek API isteği
       const apiParams: Record<string, any> = {
         _t: new Date().getTime()
@@ -393,6 +550,7 @@ class CustomersAPI {
         headers['X-TenantId'] = params.tenantId;
       }
       
+      console.log(`Making API call for appointments - customer ${customerId}`);
       const response = await axios.get<AppointmentDto[]>(
         `${CustomersAPI.ENDPOINT}/${customerId}/appointments`,
         { 
@@ -402,7 +560,10 @@ class CustomersAPI {
         }
       );
       
-      // İstemci beklentilerine uygun formata dönüştür
+      // Cache the appointments
+      this.cacheAppointments(cacheKey, response.data);
+      
+      // Return the appointments
       return response.data;
     } catch (error) {
       console.error(`Error fetching appointments for customer ${customerId}:`, error);

@@ -10,13 +10,24 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, tenant } = useAppSelector((state) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // Close sidebar on route change
+  // Close sidebar on route change for mobile view
   useEffect(() => {
-    setSidebarOpen(false);
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
   }, [location.pathname]);
+
+  // Update localStorage when sidebarCollapsed changes
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -30,6 +41,20 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Listen for window resize to adjust responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
@@ -92,7 +117,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition ease-in-out duration-300 transform md:hidden
           ${sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}`}
       >
-        <div className="h-full flex flex-col  text-white">
+        <div className="h-full flex flex-col bg-red-900 text-white">
           <div className="flex items-center justify-between px-4 py-5 border-b border-red-500">
             <div className="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
               <div className="flex-shrink-0 flex items-center">
@@ -121,7 +146,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       : 'text-white hover:bg-red-900 hover:bg-opacity-75'
                   }`}
                 >
-                  <div className="mr-4 flex-shrink-0 h-6 w-6 text-white">
+                  <div className="mr-4 flex-shrink-0 h-6 w-6 text-white group-hover:text-black">
                     {item.icon}
                   </div>
                   {item.name}
@@ -145,15 +170,31 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      {/* Static sidebar for desktop */}
-      <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col w-72">
+      {/* Desktop sidebar with collapsible functionality */}
+      <div className={`hidden md:flex md:flex-shrink-0 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'md:w-20' : 'md:w-72'}`}>
+        <div className={`flex flex-col ${sidebarCollapsed ? 'w-20' : 'w-72'} transition-width duration-300 ease-in-out`}>
           <div className="flex-1 flex flex-col min-h-0 bg-red-900">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-              <div className="flex items-center flex-shrink-0 px-6 mb-6">
-                <span className="text-gray-100 font-bold text-lg">Planca</span>
+              <div className="flex items-center justify-between px-4 mb-6">
+                {!sidebarCollapsed && (
+                  <span className="text-gray-100 font-bold text-lg">Planca</span>
+                )}
+                <button 
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  className="p-1 rounded-md hover:bg-red-800 text-white focus:outline-none"
+                >
+                  {sidebarCollapsed ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                    </svg>
+                  )}
+                </button>
               </div>
-              <nav className="flex-1 px-4 space-y-2">
+              <nav className="flex-1 px-2 space-y-2">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
@@ -162,28 +203,32 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       location.pathname === item.href
                         ? 'bg-white text-black'
                         : 'text-white hover:bg-white hover:bg-opacity-75'
-                    }`}
+                    } ${sidebarCollapsed ? 'justify-center' : ''}`}
                   >
-                    <div className="mr-3 flex-shrink-0 h-5 w-5 text-black">
+                    <div className={`flex-shrink-0 h-5 w-5 ${location.pathname === item.href ? 'text-black' : 'text-white group-hover:text-black'}`}>
                       {item.icon}
                     </div>
-                    {item.name}
+                    {!sidebarCollapsed && (
+                      <span className="ml-3">{item.name}</span>
+                    )}
                   </Link>
                 ))}
               </nav>
             </div>
             <div className="flex-shrink-0 flex border-t border-red-500 p-4">
               <div className="flex-shrink-0 w-full group block">
-                <div className="flex items-center">
+                <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : ''}`}>
                   <div>
-                    <img className="inline-block h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=John+Doe&background=990000&color=fff" alt="User avatar" />
+                    <img className="inline-block h-9 w-9 rounded-full" src="https://ui-avatars.com/api/?name=John+Doe&background=990000&color=fff" alt="User avatar" />
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
-                    <Link to="/settings" className="text-xs font-medium text-white hover:text-gray-200 transition duration-200">
-                      View settings
-                    </Link>
-                  </div>
+                  {!sidebarCollapsed && (
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-white truncate max-w-[8rem]">{user?.name || 'User'}</p>
+                      <Link to="/settings" className="text-xs font-medium text-white hover:text-gray-200 transition duration-200">
+                        Settings
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

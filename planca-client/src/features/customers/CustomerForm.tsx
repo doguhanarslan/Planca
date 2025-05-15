@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { createCustomer } from './customersSlice';
+import { createCustomer, updateCustomer } from './customersSlice';
 import { CustomerDto } from '@/types';
 
 interface CustomerFormProps {
   onSuccess?: (customer: CustomerDto) => void;
   onCancel?: () => void;
   initialData?: Partial<CustomerDto>;
+  isEditMode?: boolean;
 }
 
-const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initialData }) => {
+const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initialData, isEditMode = false }) => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector(state => state.auth);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +18,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
   
   // Form state
   const [formData, setFormData] = useState<Partial<CustomerDto>>({
+    id: initialData?.id || '',
     firstName: initialData?.firstName || '',
     lastName: initialData?.lastName || '',
     email: initialData?.email || '',
@@ -28,10 +30,56 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
   // Handle field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    if (name === 'phoneNumber') {
+      // Format phone number as (XXX) XXX XX XX
+      const numbers = value.replace(/\D/g, '');
+      let formattedNumber = '';
+      
+      if (numbers.length > 0) {
+        formattedNumber = '(' + numbers.substring(0, 3);
+        
+        if (numbers.length > 3) {
+          formattedNumber += ') ' + numbers.substring(3, 6);
+          
+          if (numbers.length > 6) {
+            formattedNumber += ' ' + numbers.substring(6, 8);
+            
+            if (numbers.length > 8) {
+              formattedNumber += ' ' + numbers.substring(8, 10);
+            }
+          }
+        }
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedNumber
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  
+  // Handle phone number input to prevent non-digit characters
+  const handlePhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: backspace, delete, tab, escape, enter, and special keys
+    if ([8, 9, 13, 27, 46].indexOf(e.keyCode) !== -1 ||
+        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+        (e.keyCode >= 35 && e.keyCode <= 40) ||
+        (e.ctrlKey && [65, 67, 86, 88].indexOf(e.keyCode) !== -1)) {
+      return;
+    }
+    
+    // Ensure that it is a number and stop the keypress if not
+    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && 
+        (e.keyCode < 96 || e.keyCode > 105)) {
+      e.preventDefault();
+    }
   };
   
   // Handle form submission
@@ -46,17 +94,38 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
         throw new Error('First name, last name, and email are required');
       }
       
-      // Submit the form data
-      const resultAction = await dispatch(createCustomer(formData as Omit<CustomerDto, 'id'>));
+      let resultAction;
       
-      if (createCustomer.fulfilled.match(resultAction)) {
-        // Call success callback with the new customer
-        if (onSuccess) {
-          onSuccess(resultAction.payload);
+      // Determine if we're creating a new customer or updating an existing one
+      if (isEditMode && formData.id) {
+        // Update existing customer
+        resultAction = await dispatch(updateCustomer({
+          id: formData.id,
+          customerData: formData as CustomerDto
+        }));
+        
+        if (updateCustomer.fulfilled.match(resultAction)) {
+          // Call success callback with the updated customer
+          if (onSuccess) {
+            onSuccess(resultAction.payload);
+          }
+        } else if (updateCustomer.rejected.match(resultAction)) {
+          // Handle error
+          setError(resultAction.error.message || 'Failed to update customer');
         }
-      } else if (createCustomer.rejected.match(resultAction)) {
-        // Handle error
-        setError(resultAction.error.message || 'Failed to create customer');
+      } else {
+        // Create new customer
+        resultAction = await dispatch(createCustomer(formData as Omit<CustomerDto, 'id'>));
+        
+        if (createCustomer.fulfilled.match(resultAction)) {
+          // Call success callback with the new customer
+          if (onSuccess) {
+            onSuccess(resultAction.payload);
+          }
+        } else if (createCustomer.rejected.match(resultAction)) {
+          // Handle error
+          setError(resultAction.error.message || 'Failed to create customer');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -69,7 +138,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
     <div className="bg-white shadow rounded-lg overflow-hidden">
       <div className="px-4 py-5 sm:p-6">
         <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-          {initialData?.id ? 'Müşteriyi Düzenle' : 'Yeni Müşteri Ekle'}
+          {isEditMode ? 'Müşteriyi Düzenle' : 'Yeni Müşteri Ekle'}
         </h3>
         
         {error && (
@@ -158,6 +227,8 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
                   id="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
+                  onKeyDown={handlePhoneKeyDown}
+                  maxLength={15}
                   className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full px-4 py-3 border-gray-300 rounded-md text-base"
                   placeholder="(___) ___ __ __"
                 />
@@ -169,7 +240,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
                 Notlar
               </label>
-              <div>
+              <div className="mb-4">
                 <textarea
                   id="notes"
                   name="notes"
@@ -180,7 +251,9 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
                   placeholder="Müşteri hakkında notlar..."
                 />
               </div>
-              <p className="mt-2 text-sm text-gray-500">Müşteri hakkında ek bilgileri buraya ekleyebilirsiniz.</p>
+              <div>
+                <p className="text-sm text-gray-500">Müşteri hakkında ek bilgileri buraya ekleyebilirsiniz.</p>
+              </div>
             </div>
           </div>
           
@@ -198,7 +271,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
                 disabled={isSubmitting}
                 className="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm transition-all duration-300 text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-900 hover:cursor-pointer  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
+                {isSubmitting ? (isEditMode ? 'Güncelleniyor...' : 'Kaydediliyor...') : (isEditMode ? 'Güncelle' : 'Kaydet')}
               </button>
             </div>
           </div>

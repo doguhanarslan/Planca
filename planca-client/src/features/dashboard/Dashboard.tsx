@@ -87,8 +87,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 bg-white text-gray-800">
-        <div className="border-b border-gray-200 pb-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="w-full transition-all duration-300 px-2 sm:px-4 md:px-6 bg-white text-gray-800">
+        <div className="border-b border-gray-200 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Welcome, {user?.name || 'User'}</h2>
             <p className="mt-1 text-sm text-gray-500">{formattedDate}</p>
@@ -113,7 +113,7 @@ const Dashboard: React.FC = () => {
           <h3 className="text-lg leading-6 font-medium text-gray-800 mb-5">
             Overview
           </h3>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard 
               title="Total Appointments" 
               value={stats.totalAppointments} 
@@ -159,14 +159,14 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card 
             title="Business Information" 
             padding="lg"
-            shadow="lg"
+            shadow="md"
             rounded="lg"
             variant="gradient"
-            hover="glow"
+            hover="subtle"
             className="transition-all duration-300 bg-white text-gray-800"
           >
             {tenant ? (
@@ -224,10 +224,10 @@ const Dashboard: React.FC = () => {
           <Card 
             title="Today's Appointments" 
             padding="lg"
-            shadow="lg"
+            shadow="md"
             rounded="lg"
             variant="glass"
-            hover="glow"
+            hover="subtle"
             className="transition-all duration-300 bg-white text-gray-800"
             actions={
               <Button 
@@ -248,12 +248,12 @@ const Dashboard: React.FC = () => {
               {[1, 2, 3].map((_, index) => (
                 <div 
                   key={index} 
-                  className={`px-6 py-4 flex items-center space-x-4 transition-colors duration-200 
+                  className={`px-4 sm:px-6 py-4 flex items-center space-x-3 sm:space-x-4 transition-colors duration-200 
                     hover:bg-gray-50/50
                     ${index !== 2 ? 'border-b border-gray-200/50' : ''}`}
                 >
                   <div className="flex-shrink-0">
-                    <div className={`flex items-center justify-center h-10 w-10 rounded-full 
+                    <div className={`flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full 
                       ${index === 0 ? 'bg-primary-100 text-primary-800' :
                         index === 1 ? 'bg-emerald-100 text-emerald-800' :
                         'bg-blue-100 text-blue-800'}`}>
@@ -269,7 +269,7 @@ const Dashboard: React.FC = () => {
                     </p>
                   </div>
                   <div className="inline-flex items-center text-sm font-semibold">
-                    <span className="bg-gray-100 text-gray-800 rounded-full px-3 py-1">
+                    <span className="bg-gray-100 text-gray-800 rounded-full px-2 sm:px-3 py-1">
                       {['14:00', '15:30', '17:15'][index]}
                     </span>
                   </div>

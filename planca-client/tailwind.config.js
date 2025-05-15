@@ -41,6 +41,7 @@ module.exports = {
       transitionProperty: {
         'height': 'height',
         'spacing': 'margin, padding',
+        'width': 'width',
       },
       animation: {
         'fadeIn': 'fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -49,11 +50,16 @@ module.exports = {
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'shimmer': 'shimmer 2s linear infinite',
         'bounce-slow': 'bounce 3s ease-in-out infinite',
+        'fadeInAnim': 'fadeInAnimation 0.3s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        fadeInAnimation: {
+          '0%': { opacity: '0', transform: 'translateX(10px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
         slideIn: {
           '0%': { transform: 'translateY(20px)', opacity: '0' },

@@ -135,7 +135,7 @@ const ServicesList: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md shadow-sm hover:bg-gray-200 transition-colors"
+            className="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:cursor-pointer text-gray-700 rounded-md shadow-sm hover:bg-gray-200 duration-300 transition-all"
           >
             <FaFilter className="mr-1" />
             {showFilters ? 'Filtreleri Gizle' : 'Filtrele'}
@@ -143,7 +143,7 @@ const ServicesList: React.FC = () => {
           
           <button
             onClick={handleNewServiceClick}
-            className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded-md shadow-sm hover:bg-red-700 transition-colors"
+            className="inline-flex items-center px-3 py-1.5 bg-red-600 hover:cursor-pointer text-white rounded-md shadow-sm hover:bg-red-900 duration-300 transition-all"
           >
             <FaPlus className="mr-1" />
             Yeni Hizmet

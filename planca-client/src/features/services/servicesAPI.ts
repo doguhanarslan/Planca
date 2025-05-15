@@ -239,8 +239,53 @@ class ServicesAPI {
         { withCredentials: true }
       );
       
-      return response.data;
-    } catch (error) {
+      console.log('Update service API response:', response);
+      
+      // API yanıt kontrolü
+      if (!response.data) {
+        console.error('Empty response from update service API');
+        throw new Error('Empty response from server');
+      }
+      
+      // Response data'nın formatını kontrol edelim
+      const responseData = response.data;
+      
+      // API başarılı bir yanıt döndürdü mü?
+      if (responseData.succeeded === false) {
+        console.error('Service update failed:', responseData.message || 'Unknown error');
+        throw new Error(responseData.message || 'Service update failed');
+      }
+      
+      // ApiResponse<ServiceDto> formatında mı? yoksa doğrudan ServiceDto mu?
+      if (responseData.data !== undefined) {
+        // ApiResponse formatı
+        console.log('API returned ApiResponse format with data');
+        // ID kontrolü yap
+        if (!responseData.data.id) {
+          console.warn('API returned service without ID, using original ID');
+          responseData.data.id = id; // Orijinal ID'yi kullan
+        }
+        return responseData;
+      } else if ((responseData as any).id) {
+        // Doğrudan ServiceDto formatı 
+        console.log('API returned direct ServiceDto format');
+        return {
+          succeeded: true,
+          data: responseData as any
+        };
+      } else {
+        // Beklenmeyen format, ancak orijinal servisi geri dönelim
+        console.warn('API returned unexpected format, using original service data with updated fields');
+        return {
+          succeeded: true,
+          data: {
+            ...serviceData,
+            // API yanıtından alabileceğimiz alanları ekleyelim
+            ...responseData
+          }
+        };
+      }
+    } catch (error: any) {
       console.error(`Error updating service ${id}:`, error);
       throw error;
     }

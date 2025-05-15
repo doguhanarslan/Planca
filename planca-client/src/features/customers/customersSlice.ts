@@ -48,7 +48,7 @@ const initialState: CustomersState = {
   customerAppointments: [],
   loading: false,
   error: null,
-  pageSize: 10,
+  pageSize: 6,
   searchString: '',
   sortBy: 'LastName',
   sortAscending: true
@@ -176,6 +176,13 @@ export const fetchCustomerById = createAsyncThunk(
     const state = getState() as RootState;
     const tenantId = state.auth.tenant?.id;
     
+    // Check if we already have this customer in the selectedCustomer state
+    // If so, don't make an API call
+    if (state.customers.selectedCustomer?.id === customerId) {
+      console.log(`Customer ${customerId} already selected, skipping API call`);
+      return state.customers.selectedCustomer;
+    }
+    
     const response = await CustomersAPI.getCustomerById(customerId, tenantId);
     console.log('Raw API response from fetchCustomerById:', response);
     
@@ -229,17 +236,28 @@ export const fetchCustomerAppointments = createAsyncThunk(
       futureOnly?: boolean;
       pastOnly?: boolean;
       sortAscending?: boolean;
+      skipCache?: boolean;
     }
-  }, { getState }) => {
+  }, { getState, rejectWithValue }) => {
     const state = getState() as RootState;
     const tenantId = state.auth.tenant?.id;
     
-    const response = await CustomersAPI.getCustomerAppointments(customerId, {
+    // Combine parameters with tenant ID
+    const combinedParams = {
       ...params,
       tenantId
-    });
+    };
     
-    return response;
+    try {
+      // Log fetch parameters for debugging
+      console.log(`Fetching appointments for customer ${customerId}`, combinedParams);
+      
+      const response = await CustomersAPI.getCustomerAppointments(customerId, combinedParams);
+      return response;
+    } catch (error) {
+      console.error(`Error fetching appointments for customer ${customerId}:`, error);
+      return rejectWithValue('Failed to fetch customer appointments');
+    }
   }
 );
 
@@ -349,6 +367,8 @@ const customersSlice = createSlice({
         state.selectedCustomer = action.payload;
       } else {
         state.error = 'Failed to retrieve customer details';
+        // Müşteri bulunamadıysa selected customer'ı temizleyelim
+        state.selectedCustomer = null;
       }
     });
     builder.addCase(fetchCustomerById.rejected, (state, action) => {
@@ -356,6 +376,8 @@ const customersSlice = createSlice({
       // Only set error if we're not handling a 401 error with auto-refresh
       if (!isHandling401Error()) {
         state.error = action.error.message || 'Failed to fetch customer details';
+        // Müşteri bulunamadığında state'i temizleyelim
+        state.selectedCustomer = null;
       }
     });
     
