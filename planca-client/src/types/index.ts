@@ -287,6 +287,7 @@ export interface AppointmentDto {
   endTime: string;
   status: string;
   notes?: string;
+  tenantId?: string;
 }
 
 // Paginated response from the API
@@ -308,3 +309,26 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 */
+
+// Employee DTO representing an employee in the system
+export interface EmployeeDto {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  title?: string;
+  isActive: boolean;
+  serviceIds: string[];
+  workingHours: WorkingHoursDto[];
+  tenantId?: string;
+}
+
+export interface WorkingHoursDto {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isWorkingDay: boolean;
+}

@@ -17,6 +17,9 @@ namespace Planca.Domain.Common.Interfaces
         Task<int> CountAsync(ISpecification<T> spec);
         Task<T> FirstOrDefaultAsync(ISpecification<T> spec);
         
+        // Toplu veri getirme için metod
+        Task<IReadOnlyList<T>> GetByIdsAsync(IEnumerable<Guid> ids);
+        
         // Performans optimizasyonu için IQueryable<T> döndüren metot
         IQueryable<T> GetQuery(ISpecification<T> spec);
     }

@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchCustomerAppointments } from './customersSlice';
 import { CustomerDto, AppointmentDto } from '@/types';
 import { format, parseISO } from 'date-fns';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiClock, FiInfo, FiPlus, FiX, FiEdit } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiClock, FiInfo, FiPlus, FiX, FiEdit, FiUserCheck } from 'react-icons/fi';
 import CustomerForm from './CustomerForm';
 import { debounce } from 'lodash';
 
@@ -27,6 +27,10 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment, on
     customerId: '',
     futureOnly: filterFutureOnly
   });
+  
+  // State for selected appointment and modal
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentDto | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Set mounted state on mount and cleanup on unmount
   useEffect(() => {
@@ -96,6 +100,18 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment, on
   // Düzenleme işlemi iptal edildiğinde
   const handleEditCancel = () => {
     setEditMode(false);
+  };
+  
+  // Handle appointment click to show details
+  const handleAppointmentClick = (appointment: AppointmentDto) => {
+    setSelectedAppointment(appointment);
+    setIsModalOpen(true);
+  };
+  
+  // Close the appointment details modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedAppointment(null);
   };
   
   if (!selectedCustomer) {
@@ -323,32 +339,39 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment, on
               {customerAppointments.map((appointment: AppointmentDto) => {
                 const { date, time } = formatAppointmentTime(appointment);
                 return (
-                  <li key={appointment.id} className="p-5 hover:bg-gray-50 transition-colors duration-150">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex items-start">
-                        <div className="flex-shrink-0 mr-3">
-                          <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                            <FiCalendar className="h-5 w-5 text-primary-700" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-base font-medium text-gray-900">{appointment.serviceName}</p>
-                          <div className="flex flex-col sm:flex-row sm:items-center mt-1 gap-3">
-                            <div className="flex items-center">
-                              <FiCalendar className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                              <p className="text-sm text-gray-500">{date}</p>
-                            </div>
-                            <div className="flex items-center">
-                              <FiClock className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                              <p className="text-sm text-gray-500">{time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
+                  <li 
+                    key={appointment.id} 
+                    className="hover:bg-gray-50 transition-all duration-150 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    onClick={() => handleAppointmentClick(appointment)}
+                  >
+                    <div className="p-4">
+                      {/* Başlık ve durum */}
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-base font-medium text-gray-900">{appointment.serviceName}</h4>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-md ${getStatusColor(appointment.status)}`}>
                           {appointment.status}
                         </span>
+                      </div>
+                      
+                      {/* Bilgi satırları */}
+                      <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        {/* Personel bilgisi */}
+                        <div className="flex items-center text-gray-700">
+                          <FiUserCheck className="mr-2 h-4 w-4 text-primary-600" />
+                          <span>{appointment.employeeName}</span>
+                        </div>
+                        
+                        {/* Tarih bilgisi */}
+                        <div className="flex items-center text-gray-700">
+                          <FiCalendar className="mr-2 h-4 w-4 text-primary-600" />
+                          <span>{date}</span>
+                        </div>
+                        
+                        {/* Saat bilgisi */}
+                        <div className="flex items-center text-gray-700 md:col-start-2 md:row-start-1">
+                          <FiClock className="mr-2 h-4 w-4 text-primary-600" />
+                          <span>{time}</span>
+                        </div>
                       </div>
                     </div>
                   </li>
@@ -358,6 +381,116 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ onCreateAppointment, on
           </div>
         )}
       </div>
+      
+      {/* Appointment Details Modal */}
+      {isModalOpen && selectedAppointment && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-30 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 md:mx-auto transform transition-all duration-300 ease-in-out">
+            {/* Modal header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+                <FiCalendar className="mr-2 h-5 w-5 text-primary-600" />
+                Randevu Detayları
+              </h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <FiX className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* Modal content */}
+            <div className="p-6 space-y-6">
+              <div className="divide-y divide-gray-100">
+                {/* Service */}
+                <div className="flex items-start py-3 first:pt-0">
+                  <div className="flex-shrink-0 mr-4">
+                    <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center drop-shadow-sm">
+                      <FiCalendar className="h-6 w-6 text-primary-600" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium uppercase tracking-wider text-gray-500 mb-1">Hizmet</p>
+                    <h4 className="text-base font-semibold text-gray-900 truncate">{selectedAppointment.serviceName}</h4>
+                  </div>
+                </div>
+                
+                {/* Staff */}
+                <div className="flex items-start py-3">
+                  <div className="flex-shrink-0 mr-4">
+                    <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center drop-shadow-sm">
+                      <FiUserCheck className="h-6 w-6 text-blue-600" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium uppercase tracking-wider text-gray-500 mb-1">Personel</p>
+                    <h4 className="text-base font-semibold text-gray-900 truncate">{selectedAppointment.employeeName}</h4>
+                  </div>
+                </div>
+                
+                {/* Date and Time */}
+                <div className="flex items-start py-3">
+                  <div className="flex-shrink-0 mr-4">
+                    <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center drop-shadow-sm">
+                      <FiClock className="h-6 w-6 text-green-600" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium uppercase tracking-wider text-gray-500 mb-1">Tarih ve Saat</p>
+                    <h4 className="text-base font-semibold text-gray-900">
+                      {formatAppointmentTime(selectedAppointment).date}
+                    </h4>
+                    <p className="text-base text-gray-700">
+                      {formatAppointmentTime(selectedAppointment).time}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Status */}
+                <div className="flex items-start py-3">
+                  <div className="flex-shrink-0 mr-4">
+                    <div className="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center drop-shadow-sm">
+                      <FiInfo className="h-6 w-6 text-purple-600" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium uppercase tracking-wider text-gray-500 mb-1">Durum</p>
+                    <span className={`mt-1 px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(selectedAppointment.status)}`}>
+                      {selectedAppointment.status}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Notes (if available) */}
+                {selectedAppointment.notes && (
+                  <div className="flex items-start py-3">
+                    <div className="flex-shrink-0 mr-4">
+                      <div className="h-12 w-12 rounded-full bg-yellow-50 flex items-center justify-center drop-shadow-sm">
+                        <FiInfo className="h-6 w-6 text-yellow-600" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium uppercase tracking-wider text-gray-500 mb-1">Notlar</p>
+                      <p className="text-base text-gray-700">{selectedAppointment.notes}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Modal footer */}
+            <div className="flex items-center justify-end p-5 border-t border-gray-100 gap-3">
+              <button
+                onClick={closeModal}
+                className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -4,6 +4,8 @@ import { configureStore, Reducer, AnyAction, combineReducers } from '@reduxjs/to
 import authReducer from '@/features/auth/authSlice';
 import servicesReducer from '@/features/services/servicesSlice';
 import customersReducer, { resetCustomers } from '@/features/customers/customersSlice';
+import employeesReducer, { resetFilters as resetEmployeesFilters } from '@/features/employees/employeesSlice';
+import appointmentsReducer, { clearAppointments } from '@/features/appointments/appointmentsSlice';
 import { initializeAxios } from '@/utils/axios';
 
 // Temel reducer'ları combineReducers ile birleştiriyoruz
@@ -11,6 +13,8 @@ const appReducer = combineReducers({
   auth: authReducer,
   services: servicesReducer,
   customers: customersReducer,
+  employees: employeesReducer,
+  appointments: appointmentsReducer,
   // Diğer reducer'lar buraya eklenebilir
 });
 
@@ -33,7 +37,9 @@ const rootReducer: Reducer = (state: RootState | undefined, action: AnyAction) =
       console.log(`Tenant değişikliği algılandı: ${previousTenantId} -> ${currentTenantId}`);
       return {
         ...nextState,
-        customers: customersReducer(undefined, resetCustomers())
+        customers: customersReducer(undefined, resetCustomers()),
+        employees: employeesReducer(undefined, resetEmployeesFilters()),
+        appointments: appointmentsReducer(undefined, clearAppointments())
       };
     }
     

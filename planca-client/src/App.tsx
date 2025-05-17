@@ -39,6 +39,12 @@ import Services from '@/features/services/Services';
 // Import Customers component
 import Customers from '@/features/customers/Customers';
 
+// Import Employees component
+import Employees from '@/features/employees/Employees';
+
+// Import Appointments component
+import Appointments from '@/features/appointments/Appointments';
+
 // Loading component
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-white">
@@ -51,74 +57,57 @@ const LoadingScreen = () => (
   </div>
 );
 
+// Auth initializer component
 const AuthInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authInitialized, setAuthInitialized] = useState(false);
-
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
   useEffect(() => {
-    // Uygulama ilk yüklendiğinde auth interceptor'larını ve token kontrolünü başlat
-    const initializeAuth = async () => {
+    const initAuth = async () => {
       try {
-        console.log('Token kontrolü ve interceptor\'lar başlatılıyor...');
-        await setupAuthInterceptors(store);
-        console.log('Token kontrolü ve interceptor\'lar başarıyla kuruldu');
+        // Setup auth interceptors
+        setupAuthInterceptors(store);
+        
+        // Only fetch current user if not already authenticated
+        if (!isAuthenticated) {
+          await dispatch(fetchCurrentUser());
+        }
       } catch (error) {
-        console.error('Auth başlatma hatası:', error);
+        console.error('Auth initialization error:', error);
       } finally {
-        setAuthInitialized(true);
+        setIsInitialized(true);
       }
     };
-
-    initializeAuth();
-  }, []);
-
-  if (!authInitialized) {
+    
+    initAuth();
+  }, [dispatch, isAuthenticated]);
+  
+  if (!isInitialized) {
     return <LoadingScreen />;
   }
-
+  
   return <>{children}</>;
 };
 
+// Main application content
 const AppContent: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const { isAuthenticated } = useAppSelector((state): AuthState => state.auth);
   const location = useLocation();
-  const [authInitialized, setAuthInitialized] = useState(false);
+  const { isAuthenticated, isBusinessRegistered } = useAppSelector((state) => state.auth);
   
-  // NOT: Redux store'daki abonelik zaten tenant değişikliklerini izliyor
-  // Bu nedenle buraya ek izleme kodu eklemiyoruz, böylece sonsuz döngüleri önlüyoruz
-
-  // Uygulama başladığında mevcut kullanıcı bilgilerini kontrol et
+  // Redirect logic for authenticated users
   useEffect(() => {
-    // JWT token yenileme işlemi setupAuthInterceptors tarafından yapıldıktan sonra
-    // kullanıcı bilgilerini al
-    const getCurrentUserInfo = async () => {
-      try {
-        console.log('Kullanıcı bilgileri alınıyor...');
-        await dispatch(fetchCurrentUser());
-        console.log('Kullanıcı bilgileri başarıyla alındı.');
-      } catch (error) {
-        console.log('Kullanıcı giriş yapmamış veya oturum süresi dolmuş.');
-      } finally {
-        // Mark auth check as completed regardless of the result
-        setAuthInitialized(true);
+    if (isAuthenticated) {
+      // If on login/register page and authenticated, redirect
+      if (['/login', '/register'].includes(location.pathname)) {
+        if (isBusinessRegistered) {
+          window.location.href = '/dashboard';
+        } else {
+          window.location.href = '/create-business';
+        }
       }
-    };
-
-    if (!authInitialized) {
-      getCurrentUserInfo();
     }
-  }, [dispatch, authInitialized]);
-
-  // Şu anki rotanın public olup olmadığını kontrol et
-  const isPublicRoute = 
-    location.pathname === "/" || 
-    location.pathname === "/login" || 
-    location.pathname === "/register";
-
-  // During the initial loading and on protected routes, show loading screen
-  if (!authInitialized && !isPublicRoute) {
-    return <LoadingScreen />;
-  }
+  }, [isAuthenticated, isBusinessRegistered, location.pathname]);
 
   return (
     <Routes>
@@ -143,36 +132,24 @@ const AppContent: React.FC = () => {
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/:customerId" element={<Customers />} />
         
-        {/* Placeholder routes for future development */}
-        <Route
-          path="/appointments"
-          element={
-            <AppLayout>
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-black mb-4">
-                  Randevular
-                </h1>
-                <p className="text-black">
-                  Bu sayfa geliştirme aşamasındadır.
-                </p>
-              </div>
-            </AppLayout>
-          }
-        />
+        {/* Employees routes */}
+        <Route path="/employees" element={<Employees />} />
+        <Route path="/employees/:employeeId" element={<Employees />} />
+        <Route path="/employees/new" element={<Employees />} />
+        
+        {/* Appointments routes */}
+        <Route path="/appointments" element={
+          <AppLayout>
+            <Appointments />
+          </AppLayout>
+        } />
         
         {/* Route for creating appointment for a specific customer */}
         <Route
           path="/appointments/create/:customerId"
           element={
             <AppLayout>
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-black mb-4">
-                  Create Appointment
-                </h1>
-                <p className="text-black">
-                  This page for creating appointments is under development.
-                </p>
-              </div>
+              <Appointments />
             </AppLayout>
           }
         />

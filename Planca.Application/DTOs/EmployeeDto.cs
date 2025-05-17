@@ -17,12 +17,4 @@ namespace Planca.Application.DTOs
         public List<Guid> ServiceIds { get; set; }
         public List<WorkingHoursDto> WorkingHours { get; set; }
     }
-
-    public class WorkingHoursDto
-    {
-        public DayOfWeek DayOfWeek { get; set; }
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
-        public bool IsWorkingDay { get; set; }
-    }
 }

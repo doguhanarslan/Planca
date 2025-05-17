@@ -23,6 +23,13 @@ namespace Planca.Infrastructure.Persistence.Repositories
             return await _dbContext.Set<T>().FindAsync(id);
         }
 
+        public async Task<IReadOnlyList<T>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            return await _dbContext.Set<T>()
+                .Where(e => ids.Contains(e.Id))
+                .ToListAsync();
+        }
+
         public async Task<IReadOnlyList<T>> ListAllAsync()
         {
             return await _dbContext.Set<T>().ToListAsync();

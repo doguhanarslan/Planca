@@ -17,13 +17,22 @@ namespace Planca.Application.Features.Appointments.Queries.GetAppointmentsList
     public class GetAppointmentsListQueryHandler : IRequestHandler<GetAppointmentsListQuery, PaginatedList<AppointmentDto>>
     {
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IServiceRepository _serviceRepository;
         private readonly IMapper _mapper;
 
         public GetAppointmentsListQueryHandler(
             IAppointmentRepository appointmentRepository,
+            ICustomerRepository customerRepository,
+            IEmployeeRepository employeeRepository,
+            IServiceRepository serviceRepository,
             IMapper mapper)
         {
             _appointmentRepository = appointmentRepository;
+            _customerRepository = customerRepository;
+            _employeeRepository = employeeRepository;
+            _serviceRepository = serviceRepository;
             _mapper = mapper;
         }
 
@@ -59,6 +68,42 @@ namespace Planca.Application.Features.Appointments.Queries.GetAppointmentsList
 
             // Domain entity'leri DTO'lara dönüştür
             var appointmentDtos = _mapper.Map<List<AppointmentDto>>(appointments);
+
+            // İlişkili verileri verimli bir şekilde getir
+            if (appointmentDtos.Count > 0)
+            {
+                // 1. Benzersiz ID'leri çıkar
+                var customerIds = appointmentDtos.Select(a => a.CustomerId).Distinct().ToList();
+                var employeeIds = appointmentDtos.Select(a => a.EmployeeId).Distinct().ToList();
+                var serviceIds = appointmentDtos.Select(a => a.ServiceId).Distinct().ToList();
+
+                // 2. Gerekli verileri tek seferde getir
+                var customers = (await _customerRepository.GetByIdsAsync(customerIds))
+                    .ToDictionary(c => c.Id);
+                var employees = (await _employeeRepository.GetByIdsAsync(employeeIds))
+                    .ToDictionary(e => e.Id);
+                var services = (await _serviceRepository.GetByIdsAsync(serviceIds))
+                    .ToDictionary(s => s.Id);
+
+                // 3. DTO'ları doldur
+                foreach (var dto in appointmentDtos)
+                {
+                    if (customers.TryGetValue(dto.CustomerId, out var customer))
+                    {
+                        dto.CustomerName = $"{customer.FirstName} {customer.LastName}";
+                    }
+                    
+                    if (employees.TryGetValue(dto.EmployeeId, out var employee))
+                    {
+                        dto.EmployeeName = $"{employee.FirstName} {employee.LastName}";
+                    }
+                    
+                    if (services.TryGetValue(dto.ServiceId, out var service))
+                    {
+                        dto.ServiceName = service.Name;
+                    }
+                }
+            }
 
             // Sayfalanmış listeyi döndür
             return new PaginatedList<AppointmentDto>(

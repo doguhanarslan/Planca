@@ -552,7 +552,7 @@ class CustomersAPI {
       
       console.log(`Making API call for appointments - customer ${customerId}`);
       const response = await axios.get<AppointmentDto[]>(
-        `${CustomersAPI.ENDPOINT}/${customerId}/appointments`,
+        `/Appointments/customer/${customerId}`,
         { 
           params: apiParams,
           withCredentials: true,

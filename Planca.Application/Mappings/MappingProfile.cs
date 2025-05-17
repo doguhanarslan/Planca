@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Planca.Application.DTOs;
 using Planca.Domain.Entities;
+using Planca.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,6 +47,9 @@ namespace Planca.Application.Mappings
             // Tenant mappings
             CreateMap<Tenant, TenantDto>();
             CreateMap<TenantWorkingHours, TenantWorkingHoursDto>();
+
+            // WorkingHours mappings
+            CreateMap<WorkingHours, WorkingHoursDto>();
         }
     }
 }

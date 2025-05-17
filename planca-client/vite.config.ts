@@ -5,7 +5,12 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react({
+      jsxImportSource: 'react'
+    }), 
+    tailwindcss()
+  ],
   css: {
     postcss: './postcss.config.js',
   },
@@ -16,6 +21,9 @@ export default defineConfig({
   },
   build: {
     sourcemap: true
+  },
+  esbuild: {
+    jsx: 'automatic'
   },
   server: {
     

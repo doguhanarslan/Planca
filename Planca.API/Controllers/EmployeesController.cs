@@ -36,7 +36,7 @@ namespace Planca.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<ActionResult> CreateEmployee(CreateEmployeeCommand command)
         {
             var result = await Mediator.Send(command);
@@ -44,7 +44,7 @@ namespace Planca.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<ActionResult> UpdateEmployee(Guid id, UpdateEmployeeCommand command)
         {
             if (id != command.Id)
@@ -55,7 +55,7 @@ namespace Planca.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteEmployee(Guid id)
         {
             var result = await Mediator.Send(new DeleteEmployeeCommand { Id = id });

@@ -1,4 +1,3 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import './App.css'; // Import the custom App CSS
@@ -20,9 +19,7 @@ metaColorScheme.content = 'light';
 document.head.appendChild(metaColorScheme);
 
 ReactDOM.createRoot(rootElement as HTMLElement).render(
-  <React.StrictMode>
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>
-  </React.StrictMode>
+  <ThemeProvider>
+    <App />
+  </ThemeProvider>
 );
