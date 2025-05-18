@@ -148,7 +148,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   key={item.name}
                   to={item.href}
                   className={`group flex items-center px-2 py-2 text-base font-medium rounded-md transition duration-200 ${
-                    location.pathname === item.href
+                    location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href))
                       ? 'bg-red-900 text-white'
                       : 'text-white hover:bg-red-900 hover:bg-opacity-75'
                   }`}
@@ -207,12 +207,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     key={item.name}
                     to={item.href}
                     className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition duration-200 ${
-                      location.pathname === item.href
+                      location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href))
                         ? 'bg-white text-black'
                         : 'text-white hover:bg-white hover:bg-opacity-75'
                     } ${sidebarCollapsed ? 'justify-center' : ''}`}
                   >
-                    <div className={`flex-shrink-0 h-5 w-5 ${location.pathname === item.href ? 'text-black' : 'text-white group-hover:text-black'}`}>
+                    <div className={`flex-shrink-0 h-5 w-5 ${location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href)) ? 'text-black' : 'text-white group-hover:text-black'}`}>
                       {item.icon}
                     </div>
                     {!sidebarCollapsed && (
@@ -256,29 +256,50 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </svg>
           </button>
           
-          {/* Enhanced header area with search and right navigation */}
+          {/* Enhanced header area with centered logo and improved icons */}
           <div className="flex-1 px-4 flex items-center justify-between">
-            <div className="flex-1 flex items-center">
-              <form className="w-full max-w-lg lg:max-w-xs" action="#" method="GET">
-                <label htmlFor="search" className="sr-only">Search</label>
-                <div className="relative text-gray-400 focus-within:text-gray-600">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            {/* Left side: Dynamic Page Title & Icon */}
+            <div className="flex items-center">
+              <div className="flex items-center">
+                <div className="w-10 h-10 mr-3 bg-red-900 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300">
+                  {navigation.find(item => 
+                    location.pathname === item.href || 
+                    (item.href !== '/' && location.pathname.startsWith(item.href))
+                  )?.icon ? (
+                    <div className="text-white">
+                      {navigation.find(item => 
+                        location.pathname === item.href || 
+                        (item.href !== '/' && location.pathname.startsWith(item.href))
+                      )?.icon}
+                    </div>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                  </div>
-                  <input
-                    id="search"
-                    name="search"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md leading-5 bg-white text-black placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm transition duration-150 ease-in-out"
-                    placeholder="Search"
-                    type="search"
-                  />
+                  )}
                 </div>
-              </form>
+                <h1 className="text-xl font-bold text-gray-800">
+                  {navigation.find(item => 
+                    location.pathname === item.href || 
+                    (item.href !== '/' && location.pathname.startsWith(item.href))
+                  )?.name || 'Dashboard'}
+                  <span className="text-red-600">.</span>
+                </h1>
+              </div>
+            </div>
+
+            {/* Center: Planca Logo */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 hidden md:flex items-center">
+              <div className="flex items-center">
+                <span className="font-bold text-2xl text-gray-800">
+                  Planca
+                  <span className="text-red-600">.</span>
+                </span>
+              </div>
             </div>
             
-            <div className="ml-4 flex items-center md:ml-6 space-x-3">
+            {/* Right side: User menu and notifications */}
+            <div className="flex items-center md:ml-6 space-x-3">
               <button
                 type="button"
                 className="p-1.5 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-100 transition duration-150"

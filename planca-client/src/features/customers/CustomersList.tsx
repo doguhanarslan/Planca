@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { fetchCustomers, setSearchString, setSortBy, setSortDirection, fetchCustomerById } from './customersSlice';
+import { fetchCustomers, setSearchString, setSortBy, setSortDirection, fetchCustomerById, removeCustomer } from './customersSlice';
+import { fetchCustomerAppointments, removeAppointment } from '../appointments/appointmentsSlice';
 import { CustomerDto } from '@/types';
 import { isHandling401Error } from '@/utils/axios';
 import { debounce } from 'lodash';
 
 // Import UI components
-import { FiSearch, FiUser, FiPhone, FiMail, FiChevronDown, FiChevronUp, FiPlus, FiRefreshCw } from 'react-icons/fi';
+import { FiSearch, FiUser, FiPhone, FiMail, FiChevronDown, FiChevronUp, FiPlus, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 
 interface CustomersListProps {
   onSelectCustomer: (customerId: string) => void;
@@ -36,6 +37,9 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [shouldSkipFetch, setShouldSkipFetch] = useState(false);
   const [isCustomerSelectionInProgress, setIsCustomerSelectionInProgress] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [customerHasAppointments, setCustomerHasAppointments] = useState(false);
+  const [isCheckingAppointments, setIsCheckingAppointments] = useState(false);
   
   // References
   const listRef = useRef<HTMLDivElement>(null);
@@ -267,6 +271,71 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
     };
   }, []); // Empty dependency array means this runs on mount
   
+  // Handle delete customer confirmation
+  const handleDeleteClick = async (e: React.MouseEvent, customerId: string) => {
+    e.stopPropagation(); // Prevent the card click from triggering
+    setShowDeleteConfirm(customerId);
+    setIsCheckingAppointments(true);
+    
+    try {
+      // Müşterinin randevularını kontrol et
+      const appointmentsResult = await dispatch(fetchCustomerAppointments({
+        customerId: customerId
+      }));
+      
+      const appointments = appointmentsResult.payload;
+      
+      // Randevular var mı kontrol et
+      if (appointments && Array.isArray(appointments) && appointments.length > 0) {
+        setCustomerHasAppointments(true);
+      } else {
+        setCustomerHasAppointments(false);
+      }
+    } catch (error) {
+      console.error('Error checking customer appointments:', error);
+      setCustomerHasAppointments(false);
+    } finally {
+      setIsCheckingAppointments(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (showDeleteConfirm) {
+      try {
+        // Eğer müşterinin randevuları varsa, önce onları sil
+        if (customerHasAppointments) {
+          // Müşterinin randevularını getir
+          const appointmentsResult = await dispatch(fetchCustomerAppointments({
+            customerId: showDeleteConfirm
+          }));
+          
+          const appointments = appointmentsResult.payload;
+          
+          if (appointments && Array.isArray(appointments) && appointments.length > 0) {
+            // Tüm randevuları silme işlemlerini bir dizi Promise olarak oluştur
+            const deletePromises = appointments.map(appointment => 
+              dispatch(removeAppointment(appointment.id))
+            );
+            
+            // Tüm randevuları sil
+            await Promise.all(deletePromises);
+          }
+        }
+        
+        // Ardından müşteriyi sil
+        await dispatch(removeCustomer(showDeleteConfirm));
+        setShowDeleteConfirm(null);
+        
+        // Force refresh the list if needed
+        if (safeCustomersList.items.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+      }
+    }
+  };
+  
   return (
     <div className="bg-white shadow rounded-lg flex flex-col h-full overflow-hidden">
       {/* Header with search and add button */}
@@ -406,9 +475,18 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
                     key={customer.id} 
                     className={`bg-white border rounded-lg shadow-sm transition-all duration-200 cursor-pointer hover:shadow-md ${
                       selectedCustomerId === customer.id ? 'ring-2 ring-primary-500 bg-primary-50' : 'hover:border-primary-200'
-                    } p-5`}
+                    } p-5 relative`}
                     onClick={() => handleSelectCustomer(customer)}
                   >
+                    {/* Delete button */}
+                    <button
+                      onClick={(e) => handleDeleteClick(e, customer.id)}
+                      className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                      title="Müşteriyi Sil"
+                    >
+                      <FiTrash2 size={16} />
+                    </button>
+                    
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0 h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center">
                         <FiUser className="h-6 w-6 text-gray-500" />
@@ -533,6 +611,63 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onAddCu
                   </svg>
                 </button>
               </nav>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Müşteriyi Sil</h3>
+            
+            {isCheckingAppointments ? (
+              <div className="mb-6">
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600"></div>
+                </div>
+                <p className="text-gray-600 text-center mt-2">Randevular kontrol ediliyor...</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-gray-600 mb-3">
+                  Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                </p>
+                
+                {customerHasAppointments && (
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-700">
+                          Bu müşteriye ait randevular bulunuyor. Müşteriyi sildiğinizde tüm randevuları da silinecektir.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                İptal
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isCheckingAppointments}
+                className={`px-4 py-2 rounded-md text-white ${isCheckingAppointments ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+              >
+                Sil
+              </button>
             </div>
           </div>
         </div>

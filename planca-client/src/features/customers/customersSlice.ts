@@ -261,6 +261,29 @@ export const fetchCustomerAppointments = createAsyncThunk(
   }
 );
 
+export const editCustomer = createAsyncThunk(
+  'customers/editCustomer',
+  async ({ id, data }: { id: string; data: CustomerDto }, { rejectWithValue }) => {
+    try {
+      return await updateCustomer(id, data);
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update customer');
+    }
+  }
+);
+
+export const removeCustomer = createAsyncThunk(
+  'customers/removeCustomer',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await CustomersAPI.deleteCustomer(id);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete customer');
+    }
+  }
+);
+
 // Create the slice
 const customersSlice = createSlice({
   name: 'customers',
@@ -508,6 +531,33 @@ const customersSlice = createSlice({
       state.customerAppointments = [];
       // Error durumunu değiştirmiyoruz, böylece diğer hataları göstermeye devam ediyoruz
       // state.error = action.error.message || 'Failed to fetch customer appointments';
+    });
+
+    // Handle editCustomer
+    builder.addCase(editCustomer.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Remove customer
+    builder.addCase(removeCustomer.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(removeCustomer.fulfilled, (state, action) => {
+      const customerId = action.payload as string;
+      state.customersList.items = state.customersList.items.filter(customer => customer.id !== customerId);
+      if (state.selectedCustomer?.id === customerId) {
+        state.selectedCustomer = null;
+      }
+      if (state.customersList.totalCount !== undefined) {
+        state.customersList.totalCount -= 1;
+      }
+      state.loading = false;
+    });
+    builder.addCase(removeCustomer.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
     });
   }
 });

@@ -185,6 +185,30 @@ export const updateAppointment = createAsyncThunk(
   }
 );
 
+export const cancelAppointment = createAsyncThunk(
+  'appointments/cancelAppointment',
+  async ({ id, reason }: { id: string; reason?: string }, { rejectWithValue }) => {
+    try {
+      const response = await AppointmentsAPI.cancelAppointment(id, reason);
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to cancel appointment');
+    }
+  }
+);
+
+export const removeAppointment = createAsyncThunk(
+  'appointments/removeAppointment',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await AppointmentsAPI.deleteAppointment(id);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete appointment');
+    }
+  }
+);
+
 // Create the appointments slice
 const appointmentsSlice = createSlice({
   name: 'appointments',
@@ -317,6 +341,43 @@ const appointmentsSlice = createSlice({
         state.error = null;
       })
       .addCase(updateAppointment.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload as string;
+      })
+      
+      // Cancel appointment
+      .addCase(cancelAppointment.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(cancelAppointment.fulfilled, (state, action) => {
+        // Update the appointment in the list
+        const updatedAppointment = action.payload;
+        const index = state.appointments.findIndex(appointment => appointment.id === updatedAppointment.id);
+        if (index !== -1) {
+          state.appointments[index] = updatedAppointment;
+        }
+        state.status = 'succeeded';
+      })
+      .addCase(cancelAppointment.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload as string;
+      })
+      
+      // Remove appointment
+      .addCase(removeAppointment.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(removeAppointment.fulfilled, (state, action) => {
+        const appointmentId = action.payload as string;
+        state.appointments = state.appointments.filter(appointment => appointment.id !== appointmentId);
+        if (state.selectedAppointment?.id === appointmentId) {
+          state.selectedAppointment = null;
+        }
+        state.status = 'succeeded';
+      })
+      .addCase(removeAppointment.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload as string;
       });

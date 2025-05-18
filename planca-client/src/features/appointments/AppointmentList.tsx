@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { format, parseISO, isWithinInterval } from 'date-fns';
-import { FiClock, FiUser, FiTool, FiCalendar, FiX, FiEdit, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
-import { selectAppointments, selectAppointmentsStatus } from './appointmentsSlice';
+import { tr } from 'date-fns/locale';
+import { FiClock, FiUser, FiTool, FiCalendar, FiX, FiEdit, FiCheckCircle, FiAlertCircle, FiTrash2 } from 'react-icons/fi';
+import { selectAppointments, selectAppointmentsStatus, removeAppointment } from './appointmentsSlice';
 import { RootState } from '../../app/store';
 import { AppointmentDto } from '../../types';
+import { AppDispatch } from '../../app/store';
 
 interface AppointmentListProps {
   viewMode?: 'day' | 'week' | 'month';
@@ -13,10 +15,12 @@ interface AppointmentListProps {
 }
 
 const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditAppointment }: AppointmentListProps) => {
+  const dispatch = useDispatch<AppDispatch>();
   const appointments = useSelector(selectAppointments);
   const status = useSelector(selectAppointmentsStatus);
   const [filteredAppointments, setFilteredAppointments] = useState<AppointmentDto[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   // Filter appointments based on date range and search term
   useEffect(() => {
@@ -134,13 +138,32 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color} border border-current border-opacity-20 shadow-sm`}>
         <span className="mr-1">{icon}</span>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status === 'confirmed' ? 'Onaylandı' : 
+         status === 'canceled' ? 'İptal Edildi' : 
+         status === 'pending' ? 'Beklemede' : status}
       </span>
     );
   };
   
   console.log('AppointmentList render - Status:', status);
   console.log('AppointmentList render - filteredAppointments:', filteredAppointments.length);
+
+  // Handle delete appointment
+  const handleDeleteClick = (e: React.MouseEvent, appointmentId: string) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(appointmentId);
+  };
+
+  const confirmDelete = async () => {
+    if (showDeleteConfirm) {
+      try {
+        await dispatch(removeAppointment(showDeleteConfirm));
+        setShowDeleteConfirm(null);
+      } catch (error) {
+        console.error('Error deleting appointment:', error);
+      }
+    }
+  };
 
   if (status === 'loading' && appointments.length === 0) {
     return (
@@ -173,8 +196,8 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
       {/* Debug Info */}
       {process.env.NODE_ENV !== 'production' && (
         <div className="p-3 bg-blue-50 border-b border-blue-100 text-xs">
-          <div><strong>Debug:</strong> Status: {status} | Found: {appointments?.length} appointments</div>
-          <div>Filtered: {filteredAppointments?.length} | Grouped dates: {sortedDates?.length}</div>
+          <div><strong>Hata Ayıklama:</strong> Durum: {status} | Bulunan: {appointments?.length} randevu</div>
+          <div>Filtrelenen: {filteredAppointments?.length} | Gruplanmış tarihler: {sortedDates?.length}</div>
         </div>
       )}
 
@@ -190,7 +213,7 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
             <div key={date} className="border-b last:border-b-0">
               <div className="bg-gray-50 px-4 py-3 font-medium text-primary-700 border-l-4 border-primary-500 flex items-center">
                 <FiCalendar className="mr-2" />
-                {format(parseISO(date), 'EEEE, MMMM d, yyyy')}
+                {format(parseISO(date), 'EEEE, d MMMM yyyy', { locale: tr })}
               </div>
               <ul>
                 {groupedAppointments[date]
@@ -200,7 +223,7 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
                       <div className="px-4 py-3 hover:bg-gray-50 sm:flex sm:justify-between rounded-md transition-colors duration-150">
                         <div className="mb-2 sm:mb-0">
                           <div className="flex items-center space-x-2">
-                            <span className="font-medium text-gray-900 text-base">{appointment.customerName || 'Customer'}</span>
+                            <span className="font-medium text-gray-900 text-base">{appointment.customerName || 'Müşteri'}</span>
                             <span>
                               <StatusBadge status={appointment.status || 'pending'} />
                             </span>
@@ -209,7 +232,7 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
                           <div className="mt-2 flex flex-col space-y-1.5 text-sm text-gray-600">
                             <div className="flex items-center">
                               <FiTool className="mr-2 text-primary-500" />
-                              <span className="font-medium">{appointment.serviceName || 'Service'}</span>
+                              <span className="font-medium">{appointment.serviceName || 'Hizmet'}</span>
                             </div>
                             <div className="flex items-center">
                               <FiUser className="mr-2 text-primary-500" />
@@ -222,20 +245,29 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
                           <div className="flex items-center text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
                             <FiClock className="mr-1.5 text-primary-500" />
                             <time dateTime={appointment.startTime}>
-                              {format(parseISO(appointment.startTime), 'h:mm a')} - 
-                              {appointment.endTime ? format(parseISO(appointment.endTime), ' h:mm a') : ''}
+                              {format(parseISO(appointment.startTime), 'HH:mm')} - 
+                              {appointment.endTime ? format(parseISO(appointment.endTime), ' HH:mm') : ''}
                             </time>
                           </div>
                           
-                          {onEditAppointment && (
+                          <div className="mt-3 flex space-x-2">
+                            {onEditAppointment && (
+                              <button
+                                onClick={() => onEditAppointment(appointment)}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-primary-600 focus:outline-none focus:border-primary-300 focus:ring focus:ring-primary-200 active:text-gray-800 active:bg-gray-50 transition-colors duration-150"
+                              >
+                                <FiEdit className="mr-1.5" size={14} />
+                                Düzenle
+                              </button>
+                            )}
                             <button
-                              onClick={() => onEditAppointment(appointment)}
-                              className="mt-3 inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-primary-600 focus:outline-none focus:border-primary-300 focus:ring focus:ring-primary-200 active:text-gray-800 active:bg-gray-50 transition-colors duration-150"
+                              onClick={(e) => handleDeleteClick(e, appointment.id)}
+                              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs leading-4 font-medium rounded-md text-red-600 bg-white hover:bg-red-50 hover:text-red-700 focus:outline-none focus:border-red-300 focus:ring focus:ring-red-200 active:bg-red-50 transition-colors duration-150"
                             >
-                              <FiEdit className="mr-1.5" size={14} />
-                              Düzenle
+                              <FiTrash2 className="mr-1.5" size={14} />
+                              Sil
                             </button>
-                          )}
+                          </div>
                         </div>
                       </div>
                     </li>
@@ -243,6 +275,32 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
               </ul>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Randevuyu Sil</h3>
+            <p className="text-gray-600 mb-6">
+              Bu randevuyu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                İptal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 rounded-md text-white hover:bg-red-700"
+              >
+                Sil
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

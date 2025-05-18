@@ -349,6 +349,35 @@ class AppointmentsAPI {
   private static clearCache(): void {
     this.appointmentsCache.clear();
   }
+
+  /**
+   * Get appointments for a given date and employee to check availability
+   */
+  static async getAppointmentsForDateAndEmployee(employeeId: string, date: Date, tenantId?: string) {
+    try {
+      if (!employeeId) {
+        return [];
+      }
+      
+      // Create start and end of the requested day
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+      
+      // Use the existing employee appointments endpoint with the day's date range
+      return await this.getEmployeeAppointments(
+        employeeId,
+        startDate.toISOString(),
+        endDate.toISOString(),
+        tenantId
+      );
+    } catch (error) {
+      console.error(`Error fetching appointments for date and employee:`, error);
+      throw error;
+    }
+  }
 }
 
 export default AppointmentsAPI; 

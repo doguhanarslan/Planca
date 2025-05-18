@@ -27,7 +27,7 @@ const AppointmentCalendar = ({ onDateSelect }: AppointmentCalendarProps) => {
     if (appointments && appointments.length > 0) {
       const events = appointments.map((appointment: AppointmentDto) => ({
         id: appointment.id,
-        title: `${appointment.customerName || 'Customer'} - ${appointment.serviceName || 'Service'}`,
+        title: `${appointment.customerName || 'Müşteri'} - ${appointment.serviceName || 'Hizmet'}`,
         start: new Date(appointment.startTime),
         end: new Date(appointment.endTime),
         resource: appointment
@@ -55,7 +55,7 @@ const AppointmentCalendar = ({ onDateSelect }: AppointmentCalendarProps) => {
           endDate: endOfMonth.toISOString()
         }));
       } catch (error) {
-        console.error('Error fetching appointments:', error);
+        console.error('Randevular yüklenirken hata:', error);
       }
       
       return;
@@ -77,7 +77,7 @@ const AppointmentCalendar = ({ onDateSelect }: AppointmentCalendarProps) => {
         endDate: endOfMonth.toISOString()
       }));
     } catch (error) {
-      console.error('Error fetching appointments on navigate:', error);
+      console.error('Takvimde gezinirken randevuları yüklerken hata:', error);
     }
   };
   
@@ -100,7 +100,7 @@ const AppointmentCalendar = ({ onDateSelect }: AppointmentCalendarProps) => {
             &lt;
           </button>
           <button type="button" onClick={goToToday}>
-            Today
+            Bugün
           </button>
           <button type="button" onClick={() => toolbar.onNavigate('NEXT')}>
             &gt;
@@ -113,21 +113,21 @@ const AppointmentCalendar = ({ onDateSelect }: AppointmentCalendarProps) => {
             className={toolbar.view === 'month' ? 'rbc-active' : ''}
             onClick={() => toolbar.onView('month')}
           >
-            Month
+            Ay
           </button>
           <button 
             type="button" 
             className={toolbar.view === 'week' ? 'rbc-active' : ''}
             onClick={() => toolbar.onView('week')}
           >
-            Week
+            Hafta
           </button>
           <button 
             type="button" 
             className={toolbar.view === 'day' ? 'rbc-active' : ''}
             onClick={() => toolbar.onView('day')}
           >
-            Day
+            Gün
           </button>
         </span>
       </div>

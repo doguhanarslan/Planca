@@ -99,9 +99,9 @@ const Appointments = () => {
       {/* Header with Title and Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Randevular</h1>
           <p className="mt-1 text-gray-600">
-            Manage your appointments and schedule
+            Randevularınızı ve programınızı yönetin
           </p>
         </div>
         <div className="mt-4 md:mt-0 flex space-x-2">
@@ -109,40 +109,40 @@ const Appointments = () => {
             <button
               type="button"
               onClick={() => handleTimeFrameChange('day')}
-              className={`px-4 py-2 text-sm font-medium border-r ${
+              className={`px-4 py-2 text-sm font-medium ${
                 timeFrame === 'day'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              } rounded-l-md focus:z-10 focus:outline-none focus:ring-1`}
+                  ? 'bg-red-600 text-white hover:bg-red-900'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              } rounded-l-md shadow-sm duration-300 hover:cursor-pointer focus:z-10 focus:outline-none focus:ring-1`}
             >
-              Day
+              Gün
             </button>
             <button
               type="button"
               onClick={() => handleTimeFrameChange('week')}
-              className={`px-4 py-2 text-sm font-medium border-r ${
+              className={`px-4 py-2 text-sm font-medium ${
                 timeFrame === 'week'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              } focus:z-10 focus:outline-none focus:ring-1`}
+                  ? 'bg-red-600 text-white hover:bg-red-900'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              } focus:z-10 shadow-sm hover:cursor-pointer focus:outline-none duration-300 focus:ring-1`}
             >
-              Week
+              Hafta
             </button>
             <button
               type="button"
               onClick={() => handleTimeFrameChange('month')}
               className={`px-4 py-2 text-sm font-medium ${
                 timeFrame === 'month'
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-red-600 text-white hover:bg-red-900'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
-              } rounded-r-md focus:z-10 focus:outline-none focus:ring-1`}
+              } rounded-r-md shadow-sm hover:cursor-pointer focus:z-10 focus:outline-none duration-300`}
             >
-              Month
+              Ay
             </button>
           </div>
           
           <button
-            className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="flex items-center px-4 py-2 bg-red-600 font-bold text-white rounded-md hover:bg-red-900 focus:outline-none duration-300 hover:cursor-pointer shadow-lg"
             onClick={() => {
               setSelectedDate(new Date());
               setShowForm(true);
@@ -150,7 +150,7 @@ const Appointments = () => {
             }}
           >
             <FiPlus className="mr-2" />
-            New Appointment
+            Yeni Randevu
           </button>
         </div>
       </div>
@@ -167,7 +167,7 @@ const Appointments = () => {
             }`}
           >
             <FiCalendar className="mr-2" />
-            Calendar
+            Takvim
           </button>
           <button
             onClick={() => handleViewModeChange('list')}
@@ -178,7 +178,7 @@ const Appointments = () => {
             }`}
           >
             <FiList className="mr-2" />
-            List
+            Liste
           </button>
         </div>
         
@@ -190,7 +190,7 @@ const Appointments = () => {
       {/* Debug Info */}
       {process.env.NODE_ENV !== 'production' && (
         <div className="p-2 bg-blue-50 border border-blue-100 rounded-md text-xs mb-3">
-          <strong>Debug:</strong> Loaded {appointments?.length || 0} appointments
+          <strong>Hata Ayıklama:</strong> {appointments?.length || 0} randevu yüklendi
         </div>
       )}
       
@@ -209,7 +209,7 @@ const Appointments = () => {
       
       {/* Appointment Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-700/30 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <AppointmentForm 
               selectedDate={selectedDate} 
