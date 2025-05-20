@@ -2,24 +2,33 @@ import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { format, parseISO, isWithinInterval } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { FiClock, FiUser, FiTool, FiCalendar, FiX, FiEdit, FiCheckCircle, FiAlertCircle, FiTrash2 } from 'react-icons/fi';
-import { selectAppointments, selectAppointmentsStatus, removeAppointment } from './appointmentsSlice';
+import { FiClock, FiUser, FiTool, FiCalendar, FiX, FiEdit, FiCheckCircle, FiAlertCircle, FiTrash2, FiInfo } from 'react-icons/fi';
+import { selectAppointmentsStatus, removeAppointment } from './appointmentsSlice';
 import { RootState } from '../../app/store';
 import { AppointmentDto } from '../../types';
 import { AppDispatch } from '../../app/store';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 interface AppointmentListProps {
   viewMode?: 'day' | 'week' | 'month';
   selectedDate?: Date;
   onEditAppointment?: (appointment: AppointmentDto) => void;
+  appointments?: AppointmentDto[]; // Add prop for pre-filtered appointments
+  searchQuery?: string; // Add search query prop
 }
 
-const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditAppointment }: AppointmentListProps) => {
+const AppointmentList = ({ 
+  viewMode = 'week', 
+  selectedDate = new Date(), 
+  onEditAppointment,
+  appointments: propAppointments,
+  searchQuery = '' 
+}: AppointmentListProps) => {
   const dispatch = useDispatch<AppDispatch>();
-  const appointments = useSelector(selectAppointments);
+  const defaultAppointments = useSelector((state: RootState) => state.appointments.appointments);
+  const appointments = propAppointments || defaultAppointments;
   const status = useSelector(selectAppointmentsStatus);
   const [filteredAppointments, setFilteredAppointments] = useState<AppointmentDto[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   // Filter appointments based on date range and search term
@@ -35,7 +44,7 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
     let dateFilteredAppointments = [...appointments];
     
     // Apply date filtering based on viewMode
-    if (viewMode !== 'month') {
+    if (viewMode !== 'month' && !propAppointments) {
       const today = selectedDate;
       let startDate: Date, endDate: Date;
       
@@ -71,10 +80,10 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
     }
     
     // Then apply search filter if needed
-    if (searchTerm.trim() === '') {
+    if (searchQuery.trim() === '') {
       setFilteredAppointments(dateFilteredAppointments);
     } else {
-      const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+      const normalizedSearchTerm = searchQuery.toLowerCase().trim();
       const searchFiltered = dateFilteredAppointments.filter((appointment: AppointmentDto) => 
         (appointment.customerName && appointment.customerName.toLowerCase().includes(normalizedSearchTerm)) ||
         (appointment.serviceName && appointment.serviceName.toLowerCase().includes(normalizedSearchTerm)) ||
@@ -83,7 +92,7 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
       
       setFilteredAppointments(searchFiltered);
     }
-  }, [appointments, viewMode, selectedDate, searchTerm]);
+  }, [appointments, viewMode, selectedDate, searchQuery, propAppointments]);
 
   // Debug groupedAppointments calculation
   let groupedAppointments: Record<string, AppointmentDto[]> = {};
@@ -165,96 +174,95 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
     }
   };
 
-  if (status === 'loading' && appointments.length === 0) {
+  if (status === 'loading' && appointments?.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="p-16">
+        <LoadingSpinner text="Randevular yükleniyor..." />
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      {/* Search bar */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-            </svg>
+    <div className="bg-white overflow-hidden">
+      {/* Empty state */}
+      {filteredAppointments.length === 0 && (
+        <div className="p-8 text-center">
+          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <FiCalendar size={24} className="text-gray-400" />
           </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Randevularda ara..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-          />
-        </div>
-      </div>
-
-      {/* Debug Info */}
-      {process.env.NODE_ENV !== 'production' && (
-        <div className="p-3 bg-blue-50 border-b border-blue-100 text-xs">
-          <div><strong>Hata Ayıklama:</strong> Durum: {status} | Bulunan: {appointments?.length} randevu</div>
-          <div>Filtrelenen: {filteredAppointments?.length} | Gruplanmış tarihler: {sortedDates?.length}</div>
+          <h3 className="text-lg font-medium text-gray-800 mb-1">Randevu bulunamadı</h3>
+          <p className="text-gray-500 text-sm mb-4">
+            {searchQuery ? 'Arama kriterlerine uygun randevu bulunamadı.' : 'Bu zaman dilimi için randevu bulunmuyor.'}
+          </p>
+          {searchQuery && (
+            <p className="text-gray-500 text-sm">
+              Arama terimini değiştirmeyi deneyin veya yeni bir randevu oluşturun.
+            </p>
+          )}
         </div>
       )}
-
-      {filteredAppointments.length === 0 ? (
-        <div className="p-8 text-center text-gray-500">
-          <FiCalendar size={48} className="mx-auto mb-4 text-gray-300" />
-          <p className="text-lg font-medium">Randevu bulunamadı</p>
-          <p className="text-sm">Arama kriterlerinizi veya tarih aralığını değiştirmeyi deneyin</p>
-        </div>
-      ) : (
+      
+      {/* Appointment List */}
+      {filteredAppointments.length > 0 && (
         <div>
           {sortedDates.map(date => (
-            <div key={date} className="border-b last:border-b-0">
-              <div className="bg-gray-50 px-4 py-3 font-medium text-primary-700 border-l-4 border-primary-500 flex items-center">
-                <FiCalendar className="mr-2" />
-                {format(parseISO(date), 'EEEE, d MMMM yyyy', { locale: tr })}
+            <div key={date} className="mb-4 last:mb-0">
+              <div className="bg-gray-50 px-5 py-3 font-medium text-gray-800 flex items-center justify-between rounded-lg mb-2 shadow-sm">
+                <div className="flex items-center">
+                  <FiCalendar className="mr-2 text-red-500" />
+                  {format(parseISO(date), 'EEEE, d MMMM yyyy', { locale: tr })}
+                </div>
+                <div className="text-sm text-gray-500 bg-white px-2 py-0.5 rounded-full shadow-sm">
+                  {groupedAppointments[date].length} randevu
+                </div>
               </div>
-              <ul>
+              <div className="space-y-2 px-1">
                 {groupedAppointments[date]
                   .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
                   .map((appointment) => (
-                    <li key={appointment.id} className="border-b last:border-b-0">
-                      <div className="px-4 py-3 hover:bg-gray-50 sm:flex sm:justify-between rounded-md transition-colors duration-150">
-                        <div className="mb-2 sm:mb-0">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium text-gray-900 text-base">{appointment.customerName || 'Müşteri'}</span>
-                            <span>
-                              <StatusBadge status={appointment.status || 'pending'} />
-                            </span>
+                    <div 
+                      key={appointment.id} 
+                      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+                    >
+                      <div className="px-5 py-4 sm:flex sm:justify-between rounded-md">
+                        <div className="mb-3 sm:mb-0">
+                          <div className="flex items-center space-x-2 mb-1.5">
+                            <span className="font-medium text-gray-900">{appointment.customerName || 'Müşteri'}</span>
+                            <StatusBadge status={appointment.status || 'pending'} />
                           </div>
                           
                           <div className="mt-2 flex flex-col space-y-1.5 text-sm text-gray-600">
                             <div className="flex items-center">
-                              <FiTool className="mr-2 text-primary-500" />
-                              <span className="font-medium">{appointment.serviceName || 'Hizmet'}</span>
+                              <FiTool className="mr-2 text-red-500" />
+                              <span>{appointment.serviceName || 'Hizmet'}</span>
                             </div>
                             <div className="flex items-center">
-                              <FiUser className="mr-2 text-primary-500" />
-                              <span className="font-medium">{appointment.employeeName || 'Personel bilgisi yok'}</span>
+                              <FiUser className="mr-2 text-red-500" />
+                              <span>{appointment.employeeName || 'Personel bilgisi yok'}</span>
                             </div>
+                            {appointment.notes && (
+                              <div className="flex items-start max-w-md">
+                                <FiInfo className="mr-2 text-red-500 mt-0.5" />
+                                <span className="text-gray-500 text-xs line-clamp-1">{appointment.notes}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
-                        <div className="sm:flex sm:flex-col sm:items-end mt-2 sm:mt-0">
-                          <div className="flex items-center text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                            <FiClock className="mr-1.5 text-primary-500" />
+                        <div className="sm:flex sm:flex-col sm:items-end">
+                          <div className="flex items-center text-sm font-medium text-gray-700 bg-gray-50 px-3.5 py-1.5 rounded-full shadow-sm mb-3">
+                            <FiClock className="mr-1.5 text-red-500" />
                             <time dateTime={appointment.startTime}>
                               {format(parseISO(appointment.startTime), 'HH:mm')} - 
                               {appointment.endTime ? format(parseISO(appointment.endTime), ' HH:mm') : ''}
                             </time>
                           </div>
                           
-                          <div className="mt-3 flex space-x-2">
+                          <div className="flex space-x-2">
                             {onEditAppointment && (
                               <button
                                 onClick={() => onEditAppointment(appointment)}
-                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-primary-600 focus:outline-none focus:border-primary-300 focus:ring focus:ring-primary-200 active:text-gray-800 active:bg-gray-50 transition-colors duration-150"
+                                className="inline-flex items-center px-3.5 py-1.5 shadow-sm text-xs leading-4 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors"
                               >
                                 <FiEdit className="mr-1.5" size={14} />
                                 Düzenle
@@ -262,7 +270,7 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
                             )}
                             <button
                               onClick={(e) => handleDeleteClick(e, appointment.id)}
-                              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs leading-4 font-medium rounded-md text-red-600 bg-white hover:bg-red-50 hover:text-red-700 focus:outline-none focus:border-red-300 focus:ring focus:ring-red-200 active:bg-red-50 transition-colors duration-150"
+                              className="inline-flex items-center px-3.5 py-1.5 shadow-sm text-xs leading-4 font-medium rounded-full text-red-600 bg-white hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors"
                             >
                               <FiTrash2 className="mr-1.5" size={14} />
                               Sil
@@ -270,9 +278,9 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
                           </div>
                         </div>
                       </div>
-                    </li>
+                    </div>
                   ))}
-              </ul>
+              </div>
             </div>
           ))}
         </div>
@@ -289,13 +297,13 @@ const AppointmentList = ({ viewMode = 'week', selectedDate = new Date(), onEditA
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteConfirm(null)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 rounded-full shadow-sm text-gray-700 hover:bg-gray-50"
               >
                 İptal
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 rounded-md text-white hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 rounded-full shadow-sm text-white hover:bg-red-700"
               >
                 Sil
               </button>
