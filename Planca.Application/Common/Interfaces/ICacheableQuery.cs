@@ -10,6 +10,5 @@ namespace Planca.Application.Common.Interfaces
     {
         string CacheKey { get; }
         TimeSpan? CacheDuration { get; }
-        bool BypassCache { get; }
     }
 }

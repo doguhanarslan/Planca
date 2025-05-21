@@ -2,11 +2,12 @@
 using Planca.Application.Common.Behaviors;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Common.Interfaces;
 using System;
 
 namespace Planca.Application.Features.Auth.Queries.GetUsersList
 {
-    public class GetUsersListQuery : IRequest<PaginatedList<UserListItemDto>>, ITenantRequest
+    public class GetUsersListQuery : IRequest<PaginatedList<UserListItemDto>>, ITenantRequest, ICacheableQuery<PaginatedList<UserListItemDto>>
     {
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
@@ -17,5 +18,9 @@ namespace Planca.Application.Features.Auth.Queries.GetUsersList
 
         // Will be set by TenantBehavior
         public Guid TenantId { get; set; }
+
+        public string CacheKey => $"users_list_p{PageNumber}_s{PageSize}_q{SearchString}_r{Role}_sb{SortBy}_sa{SortAscending}";
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(10);
+        public bool BypassCache { get; set; } = false;
     }
 }

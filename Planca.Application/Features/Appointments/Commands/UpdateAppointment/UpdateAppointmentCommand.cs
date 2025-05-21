@@ -2,11 +2,12 @@
 using Planca.Application.Common.Behaviors;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Common.Interfaces;
 using System;
 
 namespace Planca.Application.Features.Appointments.Commands.UpdateAppointment
 {
-    public class UpdateAppointmentCommand : IRequest<Result<AppointmentDto>>, ITenantRequest
+    public class UpdateAppointmentCommand : IRequest<Result<AppointmentDto>>, ITenantRequest, ICacheInvalidatorCommand<Result<AppointmentDto>>
     {
         // Güncellenecek randevu ID'si
         public Guid Id { get; set; }
@@ -29,5 +30,8 @@ namespace Planca.Application.Features.Appointments.Commands.UpdateAppointment
 
         // Tenant ID (TenantBehavior tarafından otomatik doldurulacak)
         public Guid TenantId { get; set; }
+
+        public string CacheKeyToInvalidate => null;
+        public string CacheKeyPatternToInvalidate => "appointments_list";
     }
 }

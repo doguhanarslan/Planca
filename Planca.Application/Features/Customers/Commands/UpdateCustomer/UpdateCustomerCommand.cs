@@ -2,10 +2,11 @@
 using Planca.Application.Common.Behaviors;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Common.Interfaces;
 
 namespace Planca.Application.Features.Customers.Commands.UpdateCustomer
 {
-    public class UpdateCustomerCommand : IRequest<Result<CustomerDto>>, ITenantRequest
+    public class UpdateCustomerCommand : IRequest<Result<CustomerDto>>, ITenantRequest, ICacheInvalidatorCommand<Result<CustomerDto>>
     {
         // Güncellenecek müşteri kimliği
         public Guid Id { get; set; }
@@ -21,5 +22,8 @@ namespace Planca.Application.Features.Customers.Commands.UpdateCustomer
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
         public Guid TenantId { get; set; }
+
+        public string CacheKeyToInvalidate => null;
+        public string CacheKeyPatternToInvalidate => "customers_list";
     }
 }

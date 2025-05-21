@@ -2,11 +2,12 @@
 using Planca.Application.Common.Behaviors;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Common.Interfaces;
 using System;
 
 namespace Planca.Application.Features.Customers.Commands.CreateCustomer
 {
-    public class CreateCustomerCommand : IRequest<Result<CustomerDto>>, ITenantRequest
+    public class CreateCustomerCommand : IRequest<Result<CustomerDto>>, ITenantRequest, ICacheInvalidatorCommand<Result<CustomerDto>>
     {
         // Basic information
         public string FirstName { get; set; }
@@ -22,5 +23,8 @@ namespace Planca.Application.Features.Customers.Commands.CreateCustomer
 
         // Tenant ID will be filled automatically by TenantBehavior
         public Guid TenantId { get; set; }
+
+        public string CacheKeyToInvalidate => null;
+        public string CacheKeyPatternToInvalidate => "customers_list";
     }
 }

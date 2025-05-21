@@ -2,12 +2,13 @@
 using Planca.Application.Common.Behaviors;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Common.Interfaces;
 using System;
 using System.Collections.Generic;
 
 namespace Planca.Application.Features.Employees.Commands.UpdateEmployee
 {
-    public class UpdateEmployeeCommand : IRequest<Result<EmployeeDto>>, ITenantRequest
+    public class UpdateEmployeeCommand : IRequest<Result<EmployeeDto>>, ITenantRequest, ICacheInvalidatorCommand<Result<EmployeeDto>>
     {
         // Güncellenecek çalışan kimliği
         public Guid Id { get; set; }
@@ -28,5 +29,8 @@ namespace Planca.Application.Features.Employees.Commands.UpdateEmployee
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
         public Guid TenantId { get; set; }
+
+        public string CacheKeyToInvalidate => null; // Belirli bir anahtar yerine pattern kullanıyoruz
+        public string CacheKeyPatternToInvalidate => "employees_list"; // Tüm employee listelerini temizle
     }
 }

@@ -2,10 +2,11 @@
 using Planca.Application.Common.Behaviors;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Common.Interfaces;
 
 namespace Planca.Application.Features.Customers.Queries.GetCustomersList
 {
-    public class GetCustomersListQuery : IRequest<PaginatedList<CustomerDto>>, ITenantRequest
+    public class GetCustomersListQuery : IRequest<PaginatedList<CustomerDto>>, ITenantRequest, ICacheableQuery<PaginatedList<CustomerDto>>
     {
         // Sayfalama parametreleri
         public int PageNumber { get; set; } = 1;
@@ -18,5 +19,8 @@ namespace Planca.Application.Features.Customers.Queries.GetCustomersList
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
         public Guid TenantId { get; set; }
+        public string CacheKey => $"customers_list_p{PageNumber}_s{PageSize}_q{SearchString}_sb{SortBy}_sa{SortAscending}";
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(15);
+        public bool BypassCache { get; set; } = false;
     }
 }

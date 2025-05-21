@@ -21,5 +21,8 @@ namespace Planca.Application.Features.Services.Commands.UpdateService
 
         // Tenant ID, TenantBehavior tarafından doldurulacak
         public Guid TenantId { get; set; }
+
+        public string CacheKeyToInvalidate => null;
+        public string CacheKeyPatternToInvalidate => "services_list";
     }
 }

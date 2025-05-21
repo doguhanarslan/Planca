@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Common.Interfaces;
 using System;
 
 namespace Planca.Application.Features.Tenants.Commands.UpdateTenant
@@ -14,5 +15,6 @@ namespace Planca.Application.Features.Tenants.Commands.UpdateTenant
         public string PrimaryColor { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public string? ConnectionString { get; set; }
+
     }
 }

@@ -20,15 +20,17 @@ namespace Planca.Application.Features.Services.Queries.GetServicesList
         private readonly IMapper _mapper;
         private readonly ILogger<GetServicesListQueryHandler> _logger;
         private readonly ICurrentTenantService _currentTenantService;
-
+        private readonly ICacheService _cacheService;
         public GetServicesListQueryHandler(
             IServiceRepository serviceRepository,
             IMapper mapper,
+            ICacheService cacheService,
             ILogger<GetServicesListQueryHandler> logger,
             ICurrentTenantService currentTenantService)
         {
             _serviceRepository = serviceRepository;
             _mapper = mapper;
+            _cacheService = cacheService;
             _logger = logger;
             _currentTenantService = currentTenantService;
         }

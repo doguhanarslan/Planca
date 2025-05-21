@@ -24,7 +24,7 @@ namespace Planca.Application.Features.Services.Queries.GetServicesList
         public Guid TenantId { get; set; }
 
         public string CacheKey => $"services_list_p{PageNumber}_s{PageSize}_st{SearchString}_ia{IsActive}_mp{MaxPrice}_sb{SortBy}_sa{SortAscending}";
-        public TimeSpan? CacheDuration => TimeSpan.FromHours(1); // 10 dakika cache'te tut
+        public TimeSpan? CacheDuration => TimeSpan.FromHours(1);
         public bool BypassCache { get; set; } = false;
     }
 }
