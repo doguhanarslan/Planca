@@ -10,12 +10,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Planca.Application.Common.Interfaces;
 using Planca.Domain.Common.Interfaces;
+using Planca.Infrastructure.Configuration;
 using Planca.Infrastructure.Identity.Models;
 using Planca.Infrastructure.Identity.Services;
 using Planca.Infrastructure.Persistence.Context;
 using Planca.Infrastructure.Persistence.Interceptors;
 using Planca.Infrastructure.Persistence.Repositories;
 using Planca.Infrastructure.Services;
+using StackExchange.Redis;
 
 namespace Planca.Infrastructure
 {
@@ -52,7 +54,43 @@ namespace Planca.Infrastructure
             .AddDefaultTokenProviders();
 
             // Add JWT Authentication
-           
+
+
+
+            //Redis conf
+
+            services.Configure<CacheSettings>(configuration.GetSection("CacheSettings"));
+
+
+            //Cache servisleri
+            var cacheSettings = configuration.GetSection("CacheSettings").Get<CacheSettings>();
+            if (cacheSettings.EnableDistributedCache)
+            {
+                // Redis connection
+                services.AddSingleton<IConnectionMultiplexer>(sp =>
+                {
+                    var connectionString = cacheSettings.ConnectionString;
+                    return ConnectionMultiplexer.Connect(connectionString);
+                });
+
+                // Redis distributed cache
+                services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = cacheSettings.ConnectionString;
+                    options.InstanceName = cacheSettings.InstanceName;
+                });
+
+                // Cache services
+                services.AddScoped<ITenantCacheKeyService, TenantCacheKeyService>();
+                services.AddScoped<ICacheService, RedisCacheService>();
+            }
+            else
+            {
+                // Fallback to memory cache if Redis is disabled
+                services.AddMemoryCache();
+                services.AddScoped<ITenantCacheKeyService, TenantCacheKeyService>();
+                services.AddScoped<ICacheService, MemoryCacheService>();
+            }
 
 
 
