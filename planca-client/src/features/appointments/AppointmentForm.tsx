@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { format, parseISO, addMinutes, startOfDay, isBefore, isAfter, setHours, setMinutes, isEqual } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { CustomerDto, ServiceDto, EmployeeDto, AppointmentDto } from '../../types';
+import { CustomerDto, ServiceDto, EmployeeDto, AppointmentDto, WorkingHoursDto } from '../../types';
 import { createAppointment, updateAppointment } from './appointmentsSlice';
 import { AppDispatch, RootState } from '../../app/store';
 import CustomersAPI from '../customers/customersAPI';
@@ -48,17 +48,18 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
   const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [selectedServiceDuration, setSelectedServiceDuration] = useState<number>(30); // Default 30 min
+  const [selectedEmployeeWorkingHours, setSelectedEmployeeWorkingHours] = useState<WorkingHoursDto[]>([]);
   
-  // Generate all time slots (every 15 minutes from 8:00 to 20:00)
+  // Generate all time slots (every 30 minutes from 8:00 to 20:00)
   const allTimeSlots = useMemo(() => {
     const slots = [];
     const startTime = setHours(setMinutes(new Date(), 0), 8);
-    const endTime = setHours(setMinutes(new Date(), 0), 20);
+    const endTime = setHours(setMinutes(new Date(), 0), 20);     // buradan sample veri geliyor bunu düzelt
     let currentSlot = startTime;
     
     while (isBefore(currentSlot, endTime)) {
       slots.push(format(currentSlot, 'HH:mm'));
-      currentSlot = addMinutes(currentSlot, 15);
+      currentSlot = addMinutes(currentSlot, 30);
     }
     
     return slots;
@@ -229,6 +230,34 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
     }
   }, [serviceId, services]);
   
+  // Fetch employee working hours when employee changes
+  useEffect(() => {
+    if (!employeeId) {
+      setSelectedEmployeeWorkingHours([]);
+      return;
+    }
+    
+    const employee = employees.find(emp => emp.id === employeeId);
+    if (employee && employee.workingHours) {
+      setSelectedEmployeeWorkingHours(employee.workingHours);
+    } else {
+      // If for some reason we don't have working hours, try to fetch the employee details
+      const fetchEmployeeDetails = async () => {
+        try {
+          const employeeDetails = await EmployeesAPI.getEmployeeById(employeeId);
+          if (employeeDetails && employeeDetails.workingHours) {
+            setSelectedEmployeeWorkingHours(employeeDetails.workingHours);
+          }
+        } catch (error) {
+          console.error('Error fetching employee details:', error);
+          setSelectedEmployeeWorkingHours([]);
+        }
+      };
+      
+      fetchEmployeeDetails();
+    }
+  }, [employeeId, employees]);
+
   // Fetch appointments for selected employee and date to determine availability
   useEffect(() => {
     const fetchAppointmentsForDate = async () => {
@@ -250,10 +279,24 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
     fetchAppointmentsForDate();
   }, [employeeId, appointmentDate, tenant?.id]);
   
-  // Filter available time slots
+  // Filter available time slots based on employee working hours and existing appointments
   useEffect(() => {
     if (!employeeId || !appointmentDate || !selectedServiceDuration) {
       setAvailableTimeSlots(allTimeSlots);
+      return;
+    }
+    
+    // Filter by employee working hours
+    const filteredByWorkingHours = filterTimeSlotsByWorkingHours(
+      allTimeSlots, 
+      selectedEmployeeWorkingHours,
+      appointmentDate,
+      selectedServiceDuration
+    );
+    
+    // If no working hours available for this day, return empty array
+    if (filteredByWorkingHours.length === 0) {
+      setAvailableTimeSlots([]);
       return;
     }
     
@@ -279,7 +322,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
         let slotTime = new Date(appointmentStartTime);
         while (isBefore(slotTime, appointmentEndTime)) {
           bookedSlots.add(format(slotTime, 'HH:mm'));
-          slotTime = addMinutes(slotTime, 15);
+          slotTime = addMinutes(slotTime, 30);
         }
       }
     });
@@ -291,7 +334,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
     }
     
     // Filter available slots based on booked appointments
-    const availableSlots = allTimeSlots.filter(timeSlot => {
+    const availableSlots = filteredByWorkingHours.filter(timeSlot => {
       // Check if this slot is booked
       if (bookedSlots.has(timeSlot)) {
         return false;
@@ -309,7 +352,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
         if (bookedSlots.has(timeKey)) {
           return false;
         }
-        currentCheckTime = addMinutes(currentCheckTime, 15);
+        currentCheckTime = addMinutes(currentCheckTime, 30);
       }
       
       return true;
@@ -321,7 +364,74 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
     if (availableSlots.length > 0 && !availableSlots.includes(appointmentTime)) {
       setAppointmentTime(availableSlots[0]);
     }
-  }, [allTimeSlots, appointments, appointmentDate, employeeId, selectedServiceDuration, isEditMode, appointmentToEdit, appointmentTime, services]);
+  }, [allTimeSlots, appointments, appointmentDate, employeeId, selectedServiceDuration, isEditMode, appointmentToEdit, appointmentTime, services, selectedEmployeeWorkingHours]);
+  
+  // Filter time slots by employee working hours
+  const filterTimeSlotsByWorkingHours = (
+    timeSlots: string[],
+    workingHours: WorkingHoursDto[],
+    date: Date,
+    serviceDuration: number
+  ): string[] => {
+    if (!workingHours || workingHours.length === 0) {
+      return timeSlots; // If no working hours defined, return all slots
+    }
+    
+    // Get day of week (0-6, where 0 is Sunday)
+    const dayOfWeek = date.getDay();
+    
+    // Convert to 1-7 where 1 is Monday, 7 is Sunday
+    const dayIndex = dayOfWeek === 0 ? 7 : dayOfWeek;
+    
+    // Find working hours for this day
+    const dayWorkingHours = workingHours.find(wh => wh.dayOfWeek === dayIndex);
+    
+    // If not a working day or no hours defined, return empty array
+    if (!dayWorkingHours || !dayWorkingHours.isWorkingDay) {
+      console.log('Not a working day for employee:', dayIndex);
+      return [];
+    }
+    
+    // Parse start and end times
+    let startTimeString = dayWorkingHours.startTime;
+    let endTimeString = dayWorkingHours.endTime;
+    
+    // Handle different time formats
+    if (!startTimeString.includes(':')) {
+      startTimeString = `${startTimeString}:00`;
+    }
+    
+    if (!endTimeString.includes(':')) {
+      endTimeString = `${endTimeString}:00`;
+    }
+    
+    // Create date objects for start and end times
+    const [startHours, startMinutes] = startTimeString.split(':').map(Number);
+    const [endHours, endMinutes] = endTimeString.split(':').map(Number);
+    
+    // Return only slots that fall within working hours and allow enough time for the service
+    return timeSlots.filter(slot => {
+      const [slotHours, slotMinutes] = slot.split(':').map(Number);
+      
+      // Check if slot starts during working hours
+      const isAfterStart = (
+        slotHours > startHours || 
+        (slotHours === startHours && slotMinutes >= startMinutes)
+      );
+      
+      // Calculate service end time
+      const serviceEndHours = Math.floor(slotHours + (slotMinutes + serviceDuration) / 60);
+      const serviceEndMinutes = (slotMinutes + serviceDuration) % 60;
+      
+      // Check if service will finish before end of working hours
+      const isBeforeEnd = (
+        serviceEndHours < endHours || 
+        (serviceEndHours === endHours && serviceEndMinutes <= endMinutes)
+      );
+      
+      return isAfterStart && isBeforeEnd;
+    });
+  };
   
   // Handle month navigation
   const previousMonth = () => {
@@ -613,12 +723,17 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 value={appointmentTime}
                 onChange={(e) => setAppointmentTime(e.target.value)}
                 required
+                disabled={availableTimeSlots.length === 0}
               >
-                {availableTimeSlots.map((time) => (
-                  <option key={time} value={time}>
-                    {time}
-                  </option>
-                ))}
+                {availableTimeSlots.length > 0 ? (
+                  availableTimeSlots.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">Uygun zaman aralığı bulunamadı</option>
+                )}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                 <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -626,6 +741,11 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 </svg>
               </div>
             </div>
+            {availableTimeSlots.length === 0 && employeeId && (
+              <p className="text-sm text-red-500 mt-1">
+                Bu tarihte personel müsait değil
+              </p>
+            )}
           </div>
           
           {/* Notes */}
@@ -681,7 +801,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
           <button
             type="submit"
             className="px-4 py-2 shadow-sm rounded-md text-white hover:bg-red-700 focus:outline-none bg-red-600 hover:cursor-pointer duration-300"
-            disabled={loading}
+            disabled={loading || availableTimeSlots.length === 0}
           >
             {loading ? 'İşleniyor...' : isEditMode ? 'Randevuyu Güncelle' : 'Randevu Oluştur'}
           </button>

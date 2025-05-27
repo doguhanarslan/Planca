@@ -40,6 +40,8 @@ namespace Planca.Application.Features.Auth.Queries.GetCurrentUser
                 throw new UnauthorizedAccessException("User is not authenticated");
             }
 
+            request.SetUserId(userId); // Set userId for cache key generation
+
             // Get user basic data - artık IUserService'ten alıyoruz
             var userDataResult = await _userService.GetUserBasicDataAsync(userId);
             if (!userDataResult.Succeeded)

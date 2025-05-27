@@ -35,6 +35,13 @@ namespace Planca.API.Controllers
             return HandleActionResult(result);
         }
 
+        [HttpGet("{id}/working-hours")]
+        public async Task<ActionResult> GetEmployeeWorkingHours(Guid id)
+        {
+            var result = await Mediator.Send(new GetEmployeeDetailQuery { Id = id });
+            return HandleActionResult(result);
+        }
+
         [HttpPost]
         //[Authorize(Roles = "Admin")]
         public async Task<ActionResult> CreateEmployee(CreateEmployeeCommand command)

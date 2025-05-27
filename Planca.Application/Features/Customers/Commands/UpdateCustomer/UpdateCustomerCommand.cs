@@ -23,7 +23,9 @@ namespace Planca.Application.Features.Customers.Commands.UpdateCustomer
         // Tenant ID, TenantBehavior tarafından doldurulacak
         public Guid TenantId { get; set; }
 
-        public string CacheKeyToInvalidate => null;
-        public string CacheKeyPatternToInvalidate => "customers_list";
+        public string CacheKeyToInvalidate => $"customer_detail_{Id}";
+        public string CacheKeyPatternToInvalidate =>
+            "customers_list|" +              // All customer lists
+            $"customer_appointments_{Id}";   // This customer's appointments
     }
 }

@@ -31,6 +31,8 @@ namespace Planca.Application.Features.Employees.Commands.CreateEmployee
         public Guid TenantId { get; set; }
 
         public string CacheKeyToInvalidate => null;
-        public string CacheKeyPatternToInvalidate => "employees_list";
+        public string CacheKeyPatternToInvalidate =>
+            "employees_list|" +                  // All employee lists
+            String.Join("|", ServiceIds.Select(id => $"service_employees_{id}"));
     }
 }

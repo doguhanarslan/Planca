@@ -16,5 +16,8 @@ namespace Planca.Application.Features.Tenants.Commands.UpdateTenant
         public bool IsActive { get; set; }
         public string? ConnectionString { get; set; }
 
+        public string CacheKeyToInvalidate => $"tenant_detail_{Id}"; // Invalidate specific tenant detail
+        public string CacheKeyPatternToInvalidate => "tenants_list";
+
     }
 }

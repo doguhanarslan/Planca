@@ -31,7 +31,11 @@ namespace Planca.Application.Features.Appointments.Commands.UpdateAppointment
         // Tenant ID (TenantBehavior tarafından otomatik doldurulacak)
         public Guid TenantId { get; set; }
 
-        public string CacheKeyToInvalidate => null;
-        public string CacheKeyPatternToInvalidate => "appointments_list";
+        public string CacheKeyToInvalidate => $"appointment_detail_{Id}";
+        public string CacheKeyPatternToInvalidate =>
+            "appointments_list|" +               // All appointment lists
+            $"employee_appointments_{EmployeeId}|" + // Current employee's appointments
+            $"customer_appointments_{CustomerId}|" + // Current customer's appointments
+            "employees_list";                    // Employee availability affects lists
     }
 }

@@ -1,6 +1,7 @@
 ﻿// Planca.Application/Common/Behaviours/CachingBehavior.cs
 using MediatR;
 using Planca.Application.Common.Interfaces;
+using Planca.Application.Features.Auth.Queries.GetCurrentUser;
 using System;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
@@ -12,10 +13,13 @@ namespace Planca.Application.Common.Behaviours
         where TRequest : ICacheableQuery<TResponse>
     {
         private readonly ICacheService _cacheService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public CachingBehavior(ICacheService cacheService)
+
+        public CachingBehavior(ICacheService cacheService, ICurrentUserService currentUserService)
         {
             _cacheService = cacheService;
+            _currentUserService = currentUserService;
         }
 
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
@@ -23,13 +27,25 @@ namespace Planca.Application.Common.Behaviours
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            if (!request.BypassCache && request.CacheKey != null)
+            if (request is GetCurrentUserQuery currentUserQuery)
+            {
+                var userId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    // If no user ID, don't use cache
+                    return await next();
+                }
+
+                // Set the user ID for cache key generation
+                currentUserQuery.SetUserId(userId);
+            }
+
+            if (request.CacheKey != null)
             {
                 return await _cacheService.GetOrCreateAsync(
                     request.CacheKey,
                     () => next(),
-                    request.CacheDuration,
-                    request.BypassCache);
+                    request.CacheDuration);
             }
 
             // Cache key yok veya bypass aktif - direkt olarak handler'ı çalıştır

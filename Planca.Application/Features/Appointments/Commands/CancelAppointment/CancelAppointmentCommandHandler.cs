@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using Planca.Application.Common.Exceptions;
+using Planca.Application.Common.Interfaces;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
 using Planca.Domain.Common.Enums;
@@ -17,17 +18,21 @@ namespace Planca.Application.Features.Appointments.Commands.CancelAppointment
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICacheService _cacheService;
 
         public CancelAppointmentCommandHandler(
             IAppointmentRepository appointmentRepository,
             IMapper mapper,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            ICacheService cacheService)
         {
             _appointmentRepository = appointmentRepository;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _cacheService = cacheService;
         }
 
+        // Update Planca.Application/Features/Appointments/Commands/CancelAppointment/CancelAppointmentCommandHandler.cs
         public async Task<Result<AppointmentDto>> Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)
         {
             // 1. Get the appointment
@@ -49,6 +54,10 @@ namespace Planca.Application.Features.Appointments.Commands.CancelAppointment
                 return Result<AppointmentDto>.Failure("This appointment cannot be canceled due to its current status");
             }
 
+            // Store IDs for cache invalidation
+            var employeeId = appointment.EmployeeId;
+            var customerId = appointment.CustomerId;
+
             // 4. Cancel the appointment (using domain logic)
             appointment.Cancel(request.CancellationReason);
 
@@ -62,7 +71,11 @@ namespace Planca.Application.Features.Appointments.Commands.CancelAppointment
             // 7. Save changes
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 8. Return DTO
+            // 8. Manually invalidate specific caches
+            await _cacheService.RemoveByPatternAsync($"employee_appointments_{employeeId}");
+            await _cacheService.RemoveByPatternAsync($"customer_appointments_{customerId}");
+
+            // 9. Return DTO
             return Result<AppointmentDto>.Success(_mapper.Map<AppointmentDto>(appointment));
         }
     }

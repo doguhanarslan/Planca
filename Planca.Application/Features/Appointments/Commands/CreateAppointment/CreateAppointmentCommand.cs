@@ -18,6 +18,10 @@ namespace Planca.Application.Features.Appointments.Commands.CreateAppointment
         public Guid TenantId { get; set; }
 
         public string CacheKeyToInvalidate => null;
-        public string CacheKeyPatternToInvalidate => "appointments_list|employees_list|customers_list|services_list";
+        public string CacheKeyPatternToInvalidate =>
+            "appointments_list|" +               // All appointment lists
+            $"employee_appointments_{EmployeeId}|" + // Specific employee's appointments
+            $"customer_appointments_{CustomerId}|" + // Specific customer's appointments
+            "employees_list";                    // Employee availability in lists
     }
 }
