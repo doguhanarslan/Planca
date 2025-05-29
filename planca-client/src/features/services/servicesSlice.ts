@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { ServiceDto, PaginatedList } from '@/types';
+import { ServiceDto, PaginatedList } from '@/shared/types';
 import { 
   getServices, 
   getServiceById, 

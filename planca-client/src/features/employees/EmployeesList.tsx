@@ -13,9 +13,9 @@ import {
   removeEmployee,
   setSelectedEmployee
 } from './employeesSlice';
-import { EmployeeDto } from '@/types';
+import { EmployeeDto } from '@/shared/types';
 import { FaSort, FaSortUp, FaSortDown, FaPlus, FaEdit, FaTrash, FaFilter, FaUndo } from 'react-icons/fa';
-import Alert from '@/components/common/Alert';
+import Alert from '@/shared/ui/components/Alert';
 
 interface EmployeesListProps {
   onNewEmployeeClick: () => void;

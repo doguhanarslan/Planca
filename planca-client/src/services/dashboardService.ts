@@ -1,5 +1,5 @@
-import axios from '@/utils/axios';
-import { ApiResponse, PaginatedList, AppointmentDto, CustomerDto, DashboardStats } from '@/types';
+import axios from '@/shared/api/base/axios';
+import { ApiResponse, PaginatedList, AppointmentDto, CustomerDto, DashboardStats } from '@/shared/types';
 
 /**
  * Dashboard API service to fetch dashboard-related data
@@ -57,7 +57,16 @@ export class DashboardService {
               TenantId: tenantId
             },
             withCredentials: true
-          }),
+          }).catch((error) => {
+            console.error('Error fetching customers:', error);
+            return {
+              data: {
+                data: {
+                totalCount: 0,
+                items: []
+              }
+            }
+          }}),
           
           // Tamamlanmış randevular (aylık gelir hesabı için)
           axios.get<ApiResponse<PaginatedList<AppointmentDto>>>('/Appointments', {
@@ -166,9 +175,9 @@ export class DashboardService {
       if (response.data?.data?.items && Array.isArray(response.data.data.items)) {
         // Standart ApiResponse<PaginatedList<T>> formatı
         appointments = response.data.data.items;
-      } else if (response.data?.items && Array.isArray(response.data.items)) {
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
         // PaginatedList<T> formatı
-        appointments = response.data.items;
+        appointments = response.data.data;
       } else if (Array.isArray(response.data)) {
         // Doğrudan T[] formatı
         appointments = response.data;

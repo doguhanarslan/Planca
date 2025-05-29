@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { updateEmployee } from './employeesSlice';
-import { EmployeeDto, ServiceDto } from '@/types';
+import { EmployeeDto, ServiceDto } from '@/shared/types';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import Alert from '@/components/common/Alert';
+import Alert from '@/shared/ui/components/Alert';
 import { fetchServices } from '@/features/services/servicesSlice';
 
 interface EmployeeBasicInfoProps {

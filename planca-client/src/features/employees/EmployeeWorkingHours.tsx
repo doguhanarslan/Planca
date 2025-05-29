@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { updateEmployee } from './employeesSlice';
-import { EmployeeDto, WorkingHoursDto } from '@/types';
-import Alert from '@/components/common/Alert';
+import { EmployeeDto, WorkingHoursDto } from '@/shared/types';
+import Alert from '@/shared/ui/components/Alert';
 
 interface EmployeeWorkingHoursProps {
   employee: EmployeeDto;

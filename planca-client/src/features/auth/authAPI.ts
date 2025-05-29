@@ -1,4 +1,4 @@
-import axios from '@/utils/axios';
+import axios from '@/shared/api/base/axios';
 import { isAxiosError } from 'axios';
 import { 
   LoginCredentials, 
@@ -6,7 +6,7 @@ import {
   BusinessData, 
   ApiResponse, 
   AuthResponse 
-} from '@/types';
+} from '@/shared/types';
 import { fetchCurrentUser } from './authSlice';
 
 /**
@@ -34,7 +34,7 @@ class AuthService {
         this.ENDPOINTS.LOGIN, 
         credentials, 
         { withCredentials: true }
-      ).finally(()=>fetchCurrentUser());
+      ).then(()=>fetchCurrentUser());
     } catch (error) {
       console.error('Login error:', error);
       throw error;

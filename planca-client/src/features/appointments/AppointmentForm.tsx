@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { format, parseISO, addMinutes, startOfDay, isBefore, isAfter, setHours, setMinutes, isEqual } from 'date-fns';
+import { format, addMinutes, startOfDay, isBefore,  setHours, setMinutes,  } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { CustomerDto, ServiceDto, EmployeeDto, AppointmentDto, WorkingHoursDto } from '../../types';
+import { CustomerDto, ServiceDto, EmployeeDto, AppointmentDto, WorkingHoursDto } from '../../shared/types';
 import { createAppointment, updateAppointment } from './appointmentsSlice';
 import { AppDispatch, RootState } from '../../app/store';
 import CustomersAPI from '../customers/customersAPI';
@@ -17,6 +17,10 @@ interface AppointmentFormProps {
   onSuccess?: () => void;
   appointmentToEdit?: AppointmentDto | null;
 }
+
+
+// TODO: Customers, Services, Employees, Appointments gibi verilerin API'den alınmaması gerekiyor. Redux store'da tutulması gerekiyor.
+// TODO: Çok fazla Custom State var bunları düzenlemek gerekiyor.
 
 const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }: AppointmentFormProps) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -66,6 +70,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
   }, []);
   
   // Generate calendar days for the current month view
+  // TODO: Bu kısım farklı bir component'e taşınacak.
   const calendarDays = useMemo(() => {
     const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const lastDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);

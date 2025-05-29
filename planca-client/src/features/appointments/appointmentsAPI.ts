@@ -1,5 +1,5 @@
-import axios from '@/utils/axios';
-import { AppointmentDto } from '../../types';
+import axios from '@/shared/api/base/axios';
+import { AppointmentDto } from '../../shared/types';
 
 class AppointmentsAPI {
   private static readonly ENDPOINT = '/Appointments';
@@ -37,6 +37,12 @@ class AppointmentsAPI {
         params,
         headers,
         withCredentials: true
+      }).then((response) => {
+        console.log('AppointmentsAPI.getAppointments - Raw response:', response);
+        return response;
+      }).catch((error) => {
+        console.error('Error fetching appointments:', error);
+        throw error;
       });
       
       // Log the raw response structure to understand the data format

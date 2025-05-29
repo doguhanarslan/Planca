@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { createEmployee, updateEmployee } from './employeesSlice';
-import { EmployeeDto, ServiceDto, WorkingHoursDto } from '@/types';
-import Button from '@/components/common/Button';
+import { EmployeeDto, ServiceDto, WorkingHoursDto } from '@/shared/types';
+import Button from '@/shared/ui/components/Button';
 import { fetchServices } from '@/features/services/servicesSlice';
 
 interface EmployeeFormProps {

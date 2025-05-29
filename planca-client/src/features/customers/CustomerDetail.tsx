@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchCustomerAppointments } from './customersSlice';
-import { CustomerDto, AppointmentDto } from '@/types';
+import { CustomerDto, AppointmentDto } from '@/shared/types';
 import { format, parseISO } from 'date-fns';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiClock, FiInfo, FiPlus, FiX, FiEdit, FiUserCheck } from 'react-icons/fi';
 import CustomerForm from './CustomerForm';

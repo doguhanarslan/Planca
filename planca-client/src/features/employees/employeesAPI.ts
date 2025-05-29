@@ -1,5 +1,5 @@
-import axios from '@/utils/axios';
-import { EmployeeDto, PaginatedList } from '@/types';
+import axios from '@/shared/api/base/axios';
+import { EmployeeDto, PaginatedList } from '@/shared/types';
 
 class EmployeesAPI {
   private static readonly ENDPOINT = '/Employees';

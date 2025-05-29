@@ -1,5 +1,5 @@
-import axios from '@/utils/axios';
-import { ApiResponse, PaginatedList, CustomerDto, AppointmentDto } from '@/types';
+import axios from '@/shared/api/base/axios';
+import { ApiResponse, PaginatedList, CustomerDto, AppointmentDto } from '@/shared/types';
 
 /**
  * Customers API endpoints and methods
@@ -57,7 +57,7 @@ class CustomersAPI {
       this.customerCache.delete(cacheKey);
       return null;
     }
-    
+    console.log('>> CACHE HIT: Customers verileri önbellekten alınıyor, API isteği yapılmayacak.)',cached.data);
     return cached.data;
   }
   

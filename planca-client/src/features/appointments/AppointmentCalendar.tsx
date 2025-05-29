@@ -5,7 +5,7 @@ import moment from 'moment';
 import 'moment/locale/tr'; // Import Turkish locale
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './calendar-styles.css'; // Import custom calendar styles
-import { AppointmentDto } from '../../types';
+import { AppointmentDto } from '../../shared/types';
 import { fetchAppointments, selectAppointments, selectCalendarDate, setCalendarDate } from './appointmentsSlice';
 import { AppDispatch } from '../../app/store';
 import { FiChevronLeft, FiChevronRight, FiCalendar, FiClock, FiUser, FiTool, FiInfo, FiMoreHorizontal } from 'react-icons/fi';

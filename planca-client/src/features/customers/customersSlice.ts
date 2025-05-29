@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { CustomerDto, AppointmentDto, PaginatedList } from '@/types';
+import { CustomerDto, AppointmentDto, PaginatedList } from '@/shared/types';
 import CustomersAPI from './customersAPI';
 import { RootState } from '@/app/store';
-import { isHandling401Error } from '@/utils/axios';
+import { isHandling401Error } from '@/shared/api/base/axios';
 
 // Son istek zamanını takip etmek için değişken
 let lastFetchTime = 0;

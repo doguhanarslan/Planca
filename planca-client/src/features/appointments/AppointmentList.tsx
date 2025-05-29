@@ -5,9 +5,9 @@ import { tr } from 'date-fns/locale';
 import { FiClock, FiUser, FiTool, FiCalendar, FiX, FiEdit, FiCheckCircle, FiAlertCircle, FiTrash2, FiInfo } from 'react-icons/fi';
 import { selectAppointmentsStatus, removeAppointment } from './appointmentsSlice';
 import { RootState } from '../../app/store';
-import { AppointmentDto } from '../../types';
+import { AppointmentDto } from '../../shared/types';
 import { AppDispatch } from '../../app/store';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import LoadingSpinner from '../../shared/ui/components/LoadingSpinner';
 
 interface AppointmentListProps {
   viewMode?: 'day' | 'week' | 'month';

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { addService, editService } from './servicesSlice';
-import { ServiceDto } from '@/types';
-import Button from '@/components/common/Button';
+import { ServiceDto } from '@/shared/types';
+import Button from '@/shared/ui/components/Button';
 import { ChromePicker } from 'react-color';
 
 interface ServiceFormProps {

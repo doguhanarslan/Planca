@@ -1,5 +1,5 @@
-import axios from '@/utils/axios';
-import { ApiResponse, PaginatedList, ServiceDto } from '@/types';
+import axios from '@/shared/api/base/axios';
+import { ApiResponse, PaginatedList, ServiceDto } from '@/shared/types';
 
 /**
  * Services API endpoints and methods

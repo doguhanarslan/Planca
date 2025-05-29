@@ -1,6 +1,6 @@
 import React from 'react';
-import { EmployeeDto } from '@/types';
-import Alert from '@/components/common/Alert';
+import { EmployeeDto } from '@/shared/types';
+import Alert from '@/shared/ui/components/Alert';
 
 interface EmployeePermissionsProps {
   employee: EmployeeDto;

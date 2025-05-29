@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { EmployeeDto, PaginatedList } from '@/types';
+import { EmployeeDto, PaginatedList } from '@/shared/types';
 import EmployeesAPI from './employeesAPI';
 import { RootState } from '@/app/store';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { createCustomer, updateCustomer } from './customersSlice';
-import { CustomerDto } from '@/types';
+import { CustomerDto } from '@/shared/types';
 
 interface CustomerFormProps {
   onSuccess?: (customer: CustomerDto) => void;

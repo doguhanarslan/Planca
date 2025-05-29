@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchCustomers, setSearchString, setSortBy, setSortDirection, fetchCustomerById, removeCustomer } from './customersSlice';
 import { fetchCustomerAppointments, removeAppointment } from '../appointments/appointmentsSlice';
-import { CustomerDto } from '@/types';
-import { isHandling401Error } from '@/utils/axios';
+import { CustomerDto } from '@/shared/types';
+import { isHandling401Error } from '@/shared/api/base/axios';
 import { debounce } from 'lodash';
 
 // Import UI components

@@ -6,7 +6,7 @@ import servicesReducer from '@/features/services/servicesSlice';
 import customersReducer, { resetCustomers } from '@/features/customers/customersSlice';
 import employeesReducer, { resetFilters as resetEmployeesFilters } from '@/features/employees/employeesSlice';
 import appointmentsReducer, { clearAppointments } from '@/features/appointments/appointmentsSlice';
-import { initializeAxios } from '@/utils/axios';
+import { initializeAxios } from '@/shared/api/base/axios';
 
 // Temel reducer'ları combineReducers ile birleştiriyoruz
 const appReducer = combineReducers({

@@ -14,7 +14,7 @@ import {
   BusinessData, 
   User,
   Tenant
-} from '@/types/index';
+} from '@/shared/types/index';
 
 /**
  * Async thunk for user login
@@ -24,7 +24,7 @@ export const loginUser = createAsyncThunk(
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       const response = await login(credentials);
-      return response.data;
+      return response;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.errors || ['Login failed']);
     }

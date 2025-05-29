@@ -2,7 +2,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import './App.css'; // Import the custom App CSS
 import '@/styles/designSystem'; // Import color and theme variables
-import '@/utils/constants'; // Import application constants
+import '@/shared/lib/constants/constants'; // Import application constants
 import App from './App';
 import ThemeProvider from './context/ThemeContext';
 
