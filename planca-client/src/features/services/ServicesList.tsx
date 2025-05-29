@@ -1,56 +1,79 @@
-import React, { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { 
-  fetchServices, 
-  setPageNumber, 
-  setSearchString, 
-  setIsActive,
-  setMaxPrice,
-  setSortBy,
-  setSortDirection,
-  resetFilters,
-  removeService,
-  setSelectedService
-} from './servicesSlice';
+import React, { useState, useMemo } from 'react';
 import { ServiceDto } from '@/shared/types';
 import { FaSort, FaSortUp, FaSortDown, FaPlus, FaEdit, FaTrash, FaFilter, FaUndo } from 'react-icons/fa';
 import Alert from '@/shared/ui/components/Alert';
 import ServiceForm from './ServiceForm';
 
-const ServicesList: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const { 
-    services,
-    loading,
-    error,
-    totalCount,
-    pageNumber,
-    pageSize,
-    totalPages,
-    isFiltered,
-    filters
-  } = useAppSelector(state => state.services);
+// RTK Query hooks
+import {
+  useGetServicesQuery,
+  useDeleteServiceMutation
+} from './api/servicesAPI';
 
+const ServicesList: React.FC = () => {
+  // Local state for filters and UI
+  const [filters, setFilters] = useState({
+    pageNumber: 1,
+    pageSize: 10,
+    searchString: '',
+    isActive: undefined as boolean | undefined,
+    maxPrice: undefined as number | undefined,
+    sortBy: 'name',
+    sortAscending: true,
+  });
+  
   const [showFilters, setShowFilters] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
 
-  // Load services on component mount
-  useEffect(() => {
-    dispatch(fetchServices());
-  }, [dispatch, pageNumber, pageSize, filters]);
+  // RTK Query hooks
+  const {
+    data: servicesData,
+    error,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetServicesQuery(filters, {
+    // Refetch on mount if data is older than 5 minutes
+    refetchOnMountOrArgChange: 300,
+    // Refetch on window focus
+    refetchOnFocus: true,
+  });
+
+  const [deleteService, { 
+    isLoading: isDeleting 
+  }] = useDeleteServiceMutation();
+
+  // Memoized computed values
+  const { services, totalCount, pageNumber, totalPages, isFiltered } = useMemo(() => {
+    if (!servicesData) {
+      return {
+        services: [],
+        totalCount: 0,
+        pageNumber: 1,
+        totalPages: 1,
+        isFiltered: false,
+      };
+    }
+
+    return {
+      services: servicesData.items || [],
+      totalCount: servicesData.totalCount || 0,
+      pageNumber: servicesData.pageNumber || 1,
+      totalPages: servicesData.totalPages || 1,
+      isFiltered: !!(filters.searchString || filters.isActive !== undefined || filters.maxPrice),
+    };
+  }, [servicesData, filters]);
 
   // Handle sorting
   const handleSort = (field: string) => {
-    if (filters.sortBy === field) {
-      // Toggle direction if already sorting by this field
-      dispatch(setSortDirection(!filters.sortAscending));
-    } else {
-      // Set new sort field and default to ascending
-      dispatch(setSortBy(field));
-      dispatch(setSortDirection(true));
-    }
-    dispatch(fetchServices());
+    setFilters(prev => ({
+      ...prev,
+      sortBy: field,
+      sortAscending: prev.sortBy === field ? !prev.sortAscending : true,
+      pageNumber: 1, // Reset to first page when sorting
+    }));
   };
 
   // Render sort icon
@@ -66,28 +89,47 @@ const ServicesList: React.FC = () => {
   // Handle page change
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      dispatch(setPageNumber(newPage));
+      setFilters(prev => ({ ...prev, pageNumber: newPage }));
     }
   };
 
   // Handle filter changes
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch(setSearchString(e.target.value));
+    setFilters(prev => ({
+      ...prev,
+      searchString: e.target.value,
+      pageNumber: 1, // Reset to first page when searching
+    }));
   };
 
   const handleActiveFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    dispatch(setIsActive(value === 'all' ? undefined : value === 'true'));
+    setFilters(prev => ({
+      ...prev,
+      isActive: value === 'all' ? undefined : value === 'true',
+      pageNumber: 1,
+    }));
   };
 
   const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value ? parseFloat(e.target.value) : undefined;
-    dispatch(setMaxPrice(value));
+    setFilters(prev => ({
+      ...prev,
+      maxPrice: value,
+      pageNumber: 1,
+    }));
   };
 
   const handleResetFilters = () => {
-    dispatch(resetFilters());
-    dispatch(fetchServices());
+    setFilters({
+      pageNumber: 1,
+      pageSize: 10,
+      searchString: '',
+      isActive: undefined,
+      maxPrice: undefined,
+      sortBy: 'name',
+      sortAscending: true,
+    });
   };
 
   // Handle delete service
@@ -97,26 +139,38 @@ const ServicesList: React.FC = () => {
 
   const confirmDelete = async () => {
     if (showDeleteConfirm) {
-      await dispatch(removeService(showDeleteConfirm));
-      setShowDeleteConfirm(null);
+      try {
+        await deleteService(showDeleteConfirm).unwrap();
+        setShowDeleteConfirm(null);
+      } catch (error) {
+        console.error('Delete failed:', error);
+        // Error will be handled by RTK Query automatically
+      }
     }
   };
 
   // Handle edit service
   const handleEditClick = (service: ServiceDto) => {
-    dispatch(setSelectedService(service));
+    setSelectedService(service);
     setEditModalOpen(true);
   };
 
   // Handle new service
   const handleNewServiceClick = () => {
-    dispatch(setSelectedService(null));
+    setSelectedService(null);
     setEditModalOpen(true);
   };
 
-  // Apply filters
-  const applyFilters = () => {
-    dispatch(fetchServices());
+  // Handle form close/success
+  const handleFormClose = () => {
+    setEditModalOpen(false);
+    setSelectedService(null);
+  };
+
+  const handleFormSuccess = () => {
+    setEditModalOpen(false);
+    setSelectedService(null);
+    // RTK Query will automatically invalidate and refetch data
   };
 
   return (
@@ -128,6 +182,11 @@ const ServicesList: React.FC = () => {
           {isFiltered && (
             <span className="ml-2 text-xs bg-red-100 text-red-800 py-1 px-2 rounded-full">
               Filtreli
+            </span>
+          )}
+          {isFetching && !isLoading && (
+            <span className="ml-2 text-xs bg-blue-100 text-blue-800 py-1 px-2 rounded-full">
+              Güncelleniyor...
             </span>
           )}
         </h2>
@@ -162,7 +221,7 @@ const ServicesList: React.FC = () => {
               <input
                 id="search"
                 type="text"
-                value={filters.searchString || ''}
+                value={filters.searchString}
                 onChange={handleSearchChange}
                 placeholder="Hizmet adı veya açıklama"
                 className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
@@ -212,10 +271,11 @@ const ServicesList: React.FC = () => {
             </button>
             
             <button
-              onClick={applyFilters}
+              onClick={() => refetch()}
               className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded-md shadow-sm hover:bg-red-700 transition-colors"
+              disabled={isFetching}
             >
-              Uygula
+              {isFetching ? 'Yenileniyor...' : 'Yenile'}
             </button>
           </div>
         </div>
@@ -223,12 +283,19 @@ const ServicesList: React.FC = () => {
       
       {/* Error display */}
       {error && (
-        <Alert type="error" message={error} />
+        <Alert 
+          type="error" 
+          message={
+            'status' in error 
+              ? `Error ${error.status}: ${JSON.stringify(error.data)}` 
+              : error.message || 'Bir hata oluştu'
+          } 
+        />
       )}
       
       {/* Main content */}
       <div className="overflow-x-auto">
-        {loading ? (
+        {isLoading ? (
           <div className="p-8 flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
           </div>
@@ -270,11 +337,11 @@ const ServicesList: React.FC = () => {
                   <th 
                     scope="col" 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('duration')}
+                    onClick={() => handleSort('durationMinutes')}
                   >
                     <div className="flex items-center">
                       Süre
-                      {renderSortIcon('duration')}
+                      {renderSortIcon('durationMinutes')}
                     </div>
                   </th>
                   <th 
@@ -332,12 +399,14 @@ const ServicesList: React.FC = () => {
                       <button
                         onClick={() => handleEditClick(service)}
                         className="text-red-600 hover:text-red-900 mr-3"
+                        disabled={isDeleting}
                       >
                         <FaEdit size={18} />
                       </button>
                       <button
                         onClick={() => handleDeleteClick(service.id)}
                         className="text-red-600 hover:text-red-900"
+                        disabled={isDeleting}
                       >
                         <FaTrash size={18} />
                       </button>
@@ -361,9 +430,9 @@ const ServicesList: React.FC = () => {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handlePageChange(pageNumber - 1)}
-                    disabled={pageNumber <= 1}
+                    disabled={pageNumber <= 1 || isLoading}
                     className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                      pageNumber <= 1
+                      pageNumber <= 1 || isLoading
                       ? 'bg-gray-100 cursor-not-allowed'
                       : 'bg-white hover:bg-gray-50'
                     } border-gray-300 text-sm font-medium text-gray-500`}
@@ -372,9 +441,9 @@ const ServicesList: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handlePageChange(pageNumber + 1)}
-                    disabled={pageNumber === totalPages}
+                    disabled={pageNumber === totalPages || isLoading}
                     className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                      pageNumber === totalPages
+                      pageNumber === totalPages || isLoading
                       ? 'bg-gray-100 cursor-not-allowed'
                       : 'bg-white hover:bg-gray-50'
                     } border-gray-300 text-sm font-medium text-gray-500`}
@@ -400,14 +469,16 @@ const ServicesList: React.FC = () => {
               <button
                 onClick={() => setShowDeleteConfirm(null)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                disabled={isDeleting}
               >
                 İptal
               </button>
               <button
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-600 rounded-md text-white hover:bg-red-700"
+                disabled={isDeleting}
               >
-                Sil
+                {isDeleting ? 'Siliniyor...' : 'Sil'}
               </button>
             </div>
           </div>
@@ -417,15 +488,13 @@ const ServicesList: React.FC = () => {
       {/* Edit/Create Service Modal */}
       {editModalOpen && (
         <ServiceForm 
-          onClose={() => setEditModalOpen(false)} 
-          onSuccess={() => {
-            setEditModalOpen(false);
-            dispatch(fetchServices());
-          }}
+          selectedService={selectedService}
+          onClose={handleFormClose} 
+          onSuccess={handleFormSuccess}
         />
       )}
     </div>
   );
 };
 
-export default ServicesList; 
+export default ServicesList;

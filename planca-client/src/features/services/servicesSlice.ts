@@ -6,7 +6,7 @@ import {
   createService, 
   updateService, 
   deleteService 
-} from './servicesAPI';
+} from './api/servicesAPI';
 
 // Interface defining the services state
 interface ServicesState {

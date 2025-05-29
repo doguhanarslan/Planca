@@ -1,66 +1,100 @@
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+// src/app/store.ts
 import { configureStore, Reducer, AnyAction, combineReducers } from '@reduxjs/toolkit';
+import { setupListeners } from '@reduxjs/toolkit/query';
 import authReducer from '@/features/auth/authSlice';
-import servicesReducer from '@/features/services/servicesSlice';
 import customersReducer, { resetCustomers } from '@/features/customers/customersSlice';
 import employeesReducer, { resetFilters as resetEmployeesFilters } from '@/features/employees/employeesSlice';
 import appointmentsReducer, { clearAppointments } from '@/features/appointments/appointmentsSlice';
 import { initializeAxios } from '@/shared/api/base/axios';
 
-// Temel reducer'ları combineReducers ile birleştiriyoruz
+// Import RTK Query APIs
+import { baseApi } from '@/shared/api/base/baseApi';
+
+// Note: servicesReducer is now replaced by RTK Query
+// We can remove it once all components are migrated
+
+// Combine base reducers
 const appReducer = combineReducers({
   auth: authReducer,
-  services: servicesReducer,
   customers: customersReducer,
   employees: employeesReducer,
   appointments: appointmentsReducer,
-  // Diğer reducer'lar buraya eklenebilir
+  // Add RTK Query reducer
+  [baseApi.reducerPath]: baseApi.reducer,
 });
 
-// Root reducer, auth state değişimlerini dinleyerek diğer state'leri temizleyebilir
+// Root reducer with state reset logic
 const rootReducer: Reducer = (state: RootState | undefined, action: AnyAction) => {
-  // Oturum açma/kapama durumlarında veya tenant değiştiğinde state'leri sıfırla
+  // Reset state on auth changes or tenant changes
   if (
     action.type === 'auth/loginUser/fulfilled' || 
     action.type === 'auth/logoutUser/fulfilled' ||
     action.type === 'auth/refreshUserToken/fulfilled' ||
     action.type === 'auth/fetchCurrentUser/fulfilled'
   ) {
-    // Mevcut ve önceki TenantId'leri karşılaştır
+    // Compare tenant IDs
     const previousTenantId = state?.auth?.tenant?.id;
     const nextState = appReducer(state, action);
     const currentTenantId = nextState.auth?.tenant?.id;
     
-    // Tenant değişimi veya oturum durumu değişimi varsa müşteri state'ini sıfırla
+    // If tenant changed, reset relevant state
     if (previousTenantId !== currentTenantId) {
-      console.log(`Tenant değişikliği algılandı: ${previousTenantId} -> ${currentTenantId}`);
+      console.log(`Tenant change detected: ${previousTenantId} -> ${currentTenantId}`);
+      
       return {
         ...nextState,
         customers: customersReducer(undefined, resetCustomers()),
         employees: employeesReducer(undefined, resetEmployeesFilters()),
-        appointments: appointmentsReducer(undefined, clearAppointments())
+        appointments: appointmentsReducer(undefined, clearAppointments()),
+        // Reset RTK Query cache for tenant-specific data
+        [baseApi.reducerPath]: baseApi.reducer(undefined, baseApi.util.resetApiState()),
       };
     }
     
     return nextState;
   }
 
-  // Diğer tüm durumlarda normal reducer'ı kullan
+  // Handle logout - reset RTK Query cache
+  if (action.type === 'auth/logoutUser/fulfilled') {
+    const nextState = appReducer(state, action);
+    return {
+      ...nextState,
+      [baseApi.reducerPath]: baseApi.reducer(undefined, baseApi.util.resetApiState()),
+    };
+  }
+
   return appReducer(state, action);
 };
 
+// Configure store
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // Ignore these action types as they might contain non-serializable data
+        // Ignore these action types and field paths for RTK Query
+        ignoredActions: [
+          'persist/PERSIST',
+          'persist/REHYDRATE',
+          'persist/PAUSE',
+          'persist/PURGE',
+          'persist/REGISTER',
+        ],
+        ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
+        ignoredPaths: ['api.mutations', 'api.queries'],
       },
-    }),
+    })
+    // Add RTK Query middleware
+    .concat(baseApi.middleware),
 });
 
-// Initialize axios with the store
+// Setup listeners for RTK Query (enables automatic refetching)
+setupListeners(store.dispatch);
+
+// Initialize axios with the store (for non-RTK Query requests)
 initializeAxios(store);
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
 
 export default store;
