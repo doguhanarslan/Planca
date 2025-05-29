@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../../app/store';
-import AppointmentsAPI from './appointmentsAPI';
 import { AppointmentDto } from '../../shared/types';
+import AppointmentsAPI from './api/appointmentsAPI';
 
 // Define the appointments state
 interface AppointmentsState {

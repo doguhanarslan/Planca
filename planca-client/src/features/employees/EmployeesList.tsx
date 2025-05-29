@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { EmployeeDto } from '@/shared/types';
 import { FaSort, FaSortUp, FaSortDown, FaPlus, FaEdit, FaTrash, FaFilter, FaUndo, FaUser, FaClock, FaEnvelope, FaPhone } from 'react-icons/fa';
 import Alert from '@/shared/ui/components/Alert';
-import EmployeeForm from './EmployeeForm';
-
+import { useNavigate } from 'react-router-dom';
 // RTK Query hooks
 import {
   useGetEmployeesQuery,
@@ -15,6 +14,7 @@ interface EmployeesListProps {
 }
 
 const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => {
+  const navigate = useNavigate();
   // Local state for filters and UI
   const [filters, setFilters] = useState({
     pageNumber: 1,
@@ -145,7 +145,7 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
   // Handle edit employee
   const handleEditClick = (employee: EmployeeDto) => {
     setSelectedEmployee(employee);
-    setEditModalOpen(true);
+    navigate(`/employees/${employee.id}`);
   };
 
   // Handle new employee
@@ -157,18 +157,7 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
       setEditModalOpen(true);
     }
   };
-
-  // Handle form close/success
-  const handleFormClose = () => {
-    setEditModalOpen(false);
-    setSelectedEmployee(null);
-  };
-
-  const handleFormSuccess = () => {
-    setEditModalOpen(false);
-    setSelectedEmployee(null);
-    // RTK Query will automatically invalidate and refetch data
-  };
+  
 
   // Get working days count for an employee
   const getWorkingDaysCount = (employee: EmployeeDto): number => {
@@ -491,15 +480,6 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
             </div>
           </div>
         </div>
-      )}
-      
-      {/* Edit/Create Employee Modal */}
-      {editModalOpen && (
-        <EmployeeForm 
-          selectedEmployee={selectedEmployee}
-          onClose={handleFormClose} 
-          onSuccess={handleFormSuccess}
-        />
       )}
     </div>
   );

@@ -17,6 +17,10 @@ moment.locale('tr');
 const localizer = momentLocalizer(moment);
 
 interface AppointmentCalendarProps {
+  selectedDate: Date;
+  currentCalendarMonth: Date;
+  onMonthChange: (date: Date) => void;
+  disabled: boolean;
   onDateSelect: (date: Date) => void;
   timeFrame?: 'day' | 'week' | 'month'; // Added timeFrame prop
   onShowMore?: (date: Date) => void; // Add handler for "show more" events

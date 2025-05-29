@@ -14,7 +14,7 @@ const transformParams = (params: {
   const apiParams: Record<string, any> = {
     PageNumber: params.pageNumber || 1,
     PageSize: params.pageSize || 10,
-    SortBy: params.sortBy ? params.sortBy.charAt(0).toUpperCase() + params.sortBy.slice(1) : 'FullName',
+    SortBy: params.sortBy ? params.sortBy.charAt(0).toUpperCase() + params.sortBy.slice(1) : 'FirstName',
     SortAscending: params.sortAscending ?? true,
     _t: Date.now(), // Cache busting
   };
@@ -182,7 +182,7 @@ export const employeesApi = baseApi.injectEndpoints({
         params: {
           IsActive: true,
           PageSize: 100, // Get all active employees
-          SortBy: 'FullName',
+          SortBy: 'FirstName',
           SortAscending: true,
         },
       }),

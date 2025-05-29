@@ -16,6 +16,7 @@ const Appointments = () => {
   const dispatch = useDispatch<AppDispatch>();
   const appointments = useSelector(selectAppointments);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<Date>(new Date());
   const [showForm, setShowForm] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('month');
@@ -93,6 +94,13 @@ const Appointments = () => {
   // Handle time frame change
   const handleTimeFrameChange = (frame: TimeFrame) => {
     setTimeFrame(frame);
+  };
+  
+  // Handler for month change in the calendar
+  const handleMonthChange = (newMonth: Date) => {
+    setCurrentCalendarMonth(newMonth);
+    // Optionally, fetch appointments for the new month if your logic requires it
+    // refreshAppointments(newMonth); // You might need to adjust refreshAppointments to take a date
   };
   
   // Clear date filter
@@ -257,7 +265,11 @@ const Appointments = () => {
           {/* Calendar or List View with Enhanced Size */}
           <div className={`bg-white rounded-lg shadow-lg w-full ${viewMode === 'calendar' ? 'h-[75vh]' : ''}`}>
             {viewMode === 'calendar' ? (
-              <AppointmentCalendar 
+              <AppointmentCalendar
+                selectedDate={selectedDate}
+                currentCalendarMonth={currentCalendarMonth}
+                onMonthChange={handleMonthChange}
+                disabled={false}
                 onDateSelect={handleDateSelect} 
                 timeFrame={timeFrame}
                 onShowMore={handleShowMore}

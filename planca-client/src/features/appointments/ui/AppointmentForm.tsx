@@ -8,7 +8,7 @@ import { AppointmentDto } from '../../../shared/types';
 // RTK Query hooks
 import { useGetActiveServicesQuery } from '../../services/api/servicesAPI';
 import { useGetActiveEmployeesQuery } from '../../employees/api/employeesAPI';
-
+import { format } from 'date-fns';
 interface AppointmentFormProps {
   selectedDate: Date;
   onClose: () => void;
@@ -179,8 +179,8 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
         </div>
       )}
       
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form className="flex-col" onSubmit={handleSubmit}>
+        <div className="flex flex-col gap-6">
           {/* Customer Selection */}
           <div className="col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -270,11 +270,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 Aktif hizmet bulunamadı
               </p>
             )}
-            {services.length > 0 && !servicesLoading && (
-              <p className="text-sm text-gray-500 mt-1">
-                {services.length} hizmet mevcut
-              </p>
-            )}
+            
           </div>
           
           {/* Employee Selection - Enhanced with RTK Query */}
@@ -342,11 +338,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 Aktif personel bulunamadı
               </p>
             )}
-            {availableEmployees.length > 0 && !employeesLoading && (
-              <p className="text-sm text-gray-500 mt-1">
-                {availableEmployees.length} personel mevcut
-              </p>
-            )}
+           
           </div>
           
           {/* Appointment Date - Custom Calendar */}
@@ -357,13 +349,24 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 Tarih
               </div>
             </label>
-            <AppointmentCalendar 
-              selectedDate={appointmentDate}
-              onDateSelect={setAppointmentDate}
-              currentCalendarMonth={currentCalendarMonth} 
-              onMonthChange={setCurrentCalendarMonth}
+          <div className="relative">
+            <input
+              type="date"
+              className="w-full border border-gray-300 rounded-md py-2 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              value={format(appointmentDate, 'yyyy-MM-dd')}
+              onChange={(e) => {
+                const newDate = new Date(e.target.value);
+                setAppointmentDate(newDate);
+                setAppointmentTime(''); // Reset time when date changes
+              }}
+              min={format(new Date(), 'yyyy-MM-dd')} // Prevent past dates
+              required
               disabled={isLoading}
             />
+            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+              <FiCalendar className="text-gray-400" size={18} />
+            </div>
+          </div>
           </div>
           
           {/* Appointment Time - Dropdown */}
