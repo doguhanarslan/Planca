@@ -1,5 +1,5 @@
 import { baseApi } from '@/shared/api/base/baseApi';
-import { ApiResponse, PaginatedList, EmployeeDto } from '@/shared/types';
+import { PaginatedList, EmployeeDto } from '@/shared/types';
 
 // Transform query params to API format
 const transformParams = (params: {
@@ -14,7 +14,7 @@ const transformParams = (params: {
   const apiParams: Record<string, any> = {
     PageNumber: params.pageNumber || 1,
     PageSize: params.pageSize || 10,
-    SortBy: params.sortBy ? params.sortBy.charAt(0).toUpperCase() + params.sortBy.slice(1) : 'LastName',
+    SortBy: params.sortBy ? params.sortBy.charAt(0).toUpperCase() + params.sortBy.slice(1) : 'FullName',
     SortAscending: params.sortAscending ?? true,
     _t: Date.now(), // Cache busting
   };
@@ -107,8 +107,9 @@ export const employeesApi = baseApi.injectEndpoints({
           return response.data;
         } else if (response?.id) {
           return response;
+        } else {
+          throw new Error('Invalid response format');
         }
-        return response;
       },
       providesTags: (result, error, id) => [{ type: 'Employee', id }],
     }),
@@ -181,7 +182,7 @@ export const employeesApi = baseApi.injectEndpoints({
         params: {
           IsActive: true,
           PageSize: 100, // Get all active employees
-          SortBy: 'LastName',
+          SortBy: 'FullName',
           SortAscending: true,
         },
       }),
@@ -197,36 +198,23 @@ export const employeesApi = baseApi.injectEndpoints({
       providesTags: ['Employee'],
     }),
 
-    // Update employee working hours specifically
-    updateEmployeeWorkingHours: builder.mutation<EmployeeDto, { 
-      id: string; 
-      workingHours: Array<{
-        dayOfWeek: number;
-        startTime: string;
-        endTime: string;
-        isWorkingDay: boolean;
-      }> 
-    }>({
+    // Update employee working hours
+    updateEmployeeWorkingHours: builder.mutation<
+      EmployeeDto,
+      { id: string; workingHours: EmployeeDto['workingHours'] }
+    >({
       query: ({ id, workingHours }) => ({
         url: `/Employees/${id}/working-hours`,
         method: 'PUT',
         body: {
-          WorkingHours: workingHours.map(wh => ({
+          WorkingHours: workingHours?.map(wh => ({
             DayOfWeek: wh.dayOfWeek,
             StartTime: wh.startTime,
             EndTime: wh.endTime,
             IsWorkingDay: wh.isWorkingDay,
-          })),
+          }))
         },
       }),
-      transformResponse: (response: any) => {
-        if (response?.data) {
-          return response.data;
-        } else if (response?.id) {
-          return response;
-        }
-        return response;
-      },
       invalidatesTags: (result, error, { id }) => [
         'Employee',
         { type: 'Employee', id },
@@ -234,25 +222,15 @@ export const employeesApi = baseApi.injectEndpoints({
     }),
 
     // Update employee services
-    updateEmployeeServices: builder.mutation<EmployeeDto, { 
-      id: string; 
-      serviceIds: string[] 
-    }>({
+    updateEmployeeServices: builder.mutation<
+      EmployeeDto,
+      { id: string; serviceIds: string[] }
+    >({
       query: ({ id, serviceIds }) => ({
         url: `/Employees/${id}/services`,
         method: 'PUT',
-        body: {
-          ServiceIds: serviceIds,
-        },
+        body: { ServiceIds: serviceIds },
       }),
-      transformResponse: (response: any) => {
-        if (response?.data) {
-          return response.data;
-        } else if (response?.id) {
-          return response;
-        }
-        return response;
-      },
       invalidatesTags: (result, error, { id }) => [
         'Employee',
         { type: 'Employee', id },

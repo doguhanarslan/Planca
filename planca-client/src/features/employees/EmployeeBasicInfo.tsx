@@ -1,373 +1,317 @@
-import React, { useState, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { updateEmployee } from './employeesSlice';
-import { EmployeeDto, ServiceDto } from '@/shared/types';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import Alert from '@/shared/ui/components/Alert';
-import { fetchServices } from '@/features/services/servicesSlice';
+import React, { useState } from 'react';
+import { EmployeeDto } from '@/shared/types';
+import { useUpdateEmployeeMutation } from './api/employeesAPI';
+import { useGetActiveServicesQuery } from '../services/api/servicesAPI';
 
 interface EmployeeBasicInfoProps {
   employee: EmployeeDto;
 }
 
 const EmployeeBasicInfo: React.FC<EmployeeBasicInfoProps> = ({ employee }) => {
-  const dispatch = useAppDispatch();
-  const [isEditing, setIsEditing] = useState(false);
-  const { loading, error } = useAppSelector(state => state.employees);
-  const { services } = useAppSelector(state => state.services);
-  const [successMessage, setSuccessMessage] = useState('');
-  
-  // Fetch services for the service selection
-  useEffect(() => {
-    dispatch(fetchServices());
-  }, [dispatch]);
-  
-  // Setup form validation
-  const validationSchema = Yup.object({
-    firstName: Yup.string().required('Ad gereklidir'),
-    lastName: Yup.string().required('Soyad gereklidir'),
-    email: Yup.string().email('Geçerli bir e-posta adresi girin').required('E-posta gereklidir'),
-    phoneNumber: Yup.string(),
-    title: Yup.string(),
-    isActive: Yup.boolean(),
-    serviceIds: Yup.array().of(Yup.string())
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: employee.firstName,
+    lastName: employee.lastName,
+    email: employee.email,
+    phoneNumber: employee.phoneNumber || '',
+    title: employee.title || '',
+    isActive: employee.isActive,
+    serviceIds: employee.serviceIds || [],
   });
-  
-  // Setup formik
-  const formik = useFormik({
-    initialValues: {
+
+  // RTK Query hooks
+  const [updateEmployee, { isLoading: isUpdating, error: updateError }] = useUpdateEmployeeMutation();
+  const { data: services = [], isLoading: servicesLoading } = useGetActiveServicesQuery();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'checkbox') {
+      const checkbox = e.target as HTMLInputElement;
+      setFormData(prev => ({ ...prev, [name]: checkbox.checked }));
+      return;
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleServiceChange = (serviceId: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      serviceIds: checked
+        ? [...prev.serviceIds, serviceId]
+        : prev.serviceIds.filter(id => id !== serviceId)
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      await updateEmployee({
+        ...employee,
+        ...formData,
+      }).unwrap();
+      
+      setEditMode(false);
+    } catch (error) {
+      console.error('Employee update failed:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
       firstName: employee.firstName,
       lastName: employee.lastName,
       email: employee.email,
       phoneNumber: employee.phoneNumber || '',
       title: employee.title || '',
       isActive: employee.isActive,
-      serviceIds: employee.serviceIds
-    },
-    validationSchema,
-    onSubmit: async (values) => {
-      try {
-        // Send update request
-        await dispatch(updateEmployee({
-          id: employee.id,
-          employeeData: {
-            ...employee,
-            firstName: values.firstName,
-            lastName: values.lastName,
-            email: values.email,
-            phoneNumber: values.phoneNumber,
-            title: values.title,
-            isActive: values.isActive,
-            serviceIds: values.serviceIds,
-            userId: employee.userId, // Keep existing userId
-          }
-        }));
-        
-        setSuccessMessage('Personel bilgileri başarıyla güncellendi.');
-        setIsEditing(false);
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage('');
-        }, 3000);
-      } catch (err) {
-        console.error('Error updating employee:', err);
-      }
-    },
-  });
-  
-  const handleServiceChange = (serviceId: string) => {
-    const currentServiceIds = [...formik.values.serviceIds];
-    const serviceIndex = currentServiceIds.indexOf(serviceId);
-    
-    if (serviceIndex >= 0) {
-      // Remove service
-      currentServiceIds.splice(serviceIndex, 1);
-    } else {
-      // Add service
-      currentServiceIds.push(serviceId);
-    }
-    
-    formik.setFieldValue('serviceIds', currentServiceIds);
+      serviceIds: employee.serviceIds || [],
+    });
+    setEditMode(false);
   };
-  
-  return (
-    <div>
-      {/* Success message */}
-      {successMessage && (
-        <Alert
-          type="success"
-          message={successMessage}
-        />
-      )}
-      
-      {/* Error message */}
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-        />
-      )}
-      
-      <div className="mb-4 flex justify-end">
-        {!isEditing ? (
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          >
-            Düzenle
-          </button>
-        ) : (
-          <div className="flex space-x-2">
-            <button
-              type="button"
-              onClick={() => {
-                formik.resetForm();
-                setIsEditing(false);
-              }}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              disabled={loading}
-            >
-              İptal
-            </button>
-            <button
-              type="button"
-              onClick={() => formik.handleSubmit()}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              disabled={loading || !formik.isValid}
-            >
-              {loading ? 'Kaydediliyor...' : 'Kaydet'}
-            </button>
+
+  if (editMode) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900">Personel Bilgilerini Düzenle</h3>
+        </div>
+
+        {updateError && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <p>Personel güncellenirken bir hata oluştu.</p>
           </div>
         )}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left column - Personal information */}
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Kişisel Bilgiler</h3>
-          
-          <div className="space-y-4">
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
                 Ad
               </label>
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formik.values.firstName}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`mt-1 block w-full px-3 py-2 border ${
-                      formik.touched.firstName && formik.errors.firstName
-                        ? 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    } rounded-md shadow-sm text-sm`}
-                    disabled={!isEditing || loading}
-                  />
-                  {formik.touched.firstName && formik.errors.firstName && (
-                    <p className="mt-1 text-sm text-red-600">{formik.errors.firstName}</p>
-                  )}
-                </>
-              ) : (
-                <p className="mt-1 text-sm text-gray-900">{employee.firstName}</p>
-              )}
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                required
+                disabled={isUpdating}
+              />
             </div>
-            
+
             <div>
               <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
                 Soyad
               </label>
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formik.values.lastName}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`mt-1 block w-full px-3 py-2 border ${
-                      formik.touched.lastName && formik.errors.lastName
-                        ? 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    } rounded-md shadow-sm text-sm`}
-                    disabled={!isEditing || loading}
-                  />
-                  {formik.touched.lastName && formik.errors.lastName && (
-                    <p className="mt-1 text-sm text-red-600">{formik.errors.lastName}</p>
-                  )}
-                </>
-              ) : (
-                <p className="mt-1 text-sm text-gray-900">{employee.lastName}</p>
-              )}
-            </div>
-            
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                E-posta
-              </label>
-              {isEditing ? (
-                <>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`mt-1 block w-full px-3 py-2 border ${
-                      formik.touched.email && formik.errors.email
-                        ? 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    } rounded-md shadow-sm text-sm`}
-                    disabled={!isEditing || loading}
-                  />
-                  {formik.touched.email && formik.errors.email && (
-                    <p className="mt-1 text-sm text-red-600">{formik.errors.email}</p>
-                  )}
-                </>
-              ) : (
-                <p className="mt-1 text-sm text-gray-900">{employee.email}</p>
-              )}
-            </div>
-            
-            <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
-                Telefon Numarası
-              </label>
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    value={formik.values.phoneNumber}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm"
-                    disabled={!isEditing || loading}
-                  />
-                </>
-              ) : (
-                <p className="mt-1 text-sm text-gray-900">{employee.phoneNumber || '-'}</p>
-              )}
-            </div>
-            
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Ünvan
-              </label>
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={formik.values.title}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 text-sm"
-                    disabled={!isEditing || loading}
-                  />
-                </>
-              ) : (
-                <p className="mt-1 text-sm text-gray-900">{employee.title || '-'}</p>
-              )}
-            </div>
-            
-            <div>
-              <span className="block text-sm font-medium text-gray-700">Durum</span>
-              {isEditing ? (
-                <div className="mt-2">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      checked={formik.values.isActive}
-                      onChange={formik.handleChange}
-                      className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                      disabled={!isEditing || loading}
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Aktif</span>
-                  </label>
-                </div>
-              ) : (
-                <p className="mt-1 text-sm text-gray-900">
-                  {employee.isActive ? (
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      Aktif
-                    </span>
-                  ) : (
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                      Pasif
-                    </span>
-                  )}
-                </p>
-              )}
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                required
+                disabled={isUpdating}
+              />
             </div>
           </div>
-        </div>
-        
-        {/* Right column - Services */}
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Verdiği Hizmetler</h3>
-          
-          {isEditing ? (
-            <div className="space-y-2">
-              {services.length === 0 ? (
-                <p className="text-sm text-gray-500">Henüz hiç hizmet tanımlanmamış.</p>
-              ) : (
-                services.map((service: ServiceDto) => (
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              E-posta
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+              required
+              disabled={isUpdating}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                Telefon
+              </label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                disabled={isUpdating}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                Unvan
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                disabled={isUpdating}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="isActive"
+              name="isActive"
+              checked={formData.isActive}
+              onChange={handleInputChange}
+              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+              disabled={isUpdating}
+            />
+            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
+              Aktif
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hizmetler
+            </label>
+            {servicesLoading ? (
+              <div className="text-sm text-gray-500">Hizmetler yükleniyor...</div>
+            ) : (
+              <div className="space-y-2">
+                {services.map((service) => (
                   <div key={service.id} className="flex items-center">
                     <input
                       type="checkbox"
                       id={`service-${service.id}`}
-                      name={`service-${service.id}`}
-                      checked={formik.values.serviceIds.includes(service.id)}
-                      onChange={() => handleServiceChange(service.id)}
-                      className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                      disabled={!isEditing || loading}
+                      checked={formData.serviceIds.includes(service.id)}
+                      onChange={(e) => handleServiceChange(service.id, e.target.checked)}
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                      disabled={isUpdating}
                     />
-                    <label
-                      htmlFor={`service-${service.id}`}
-                      className="ml-2 block text-sm text-gray-900"
-                    >
+                    <label htmlFor={`service-${service.id}`} className="ml-2 text-sm text-gray-900">
                       {service.name}
                     </label>
                   </div>
-                ))
-              )}
-            </div>
-          ) : (
-            <div>
-              {employee.serviceIds.length === 0 ? (
-                <p className="text-sm text-gray-500">Bu personel henüz hiçbir hizmet vermiyor.</p>
-              ) : (
-                <div className="space-y-1">
-                  {services
-                    .filter(service => employee.serviceIds.includes(service.id))
-                    .map((service: ServiceDto) => (
-                      <p 
-                        key={service.id}
-                        className="text-sm text-gray-900 py-1 px-2 bg-gray-100 rounded inline-block mr-2 mb-2"
-                      >
-                        {service.name}
-                      </p>
-                    ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                ))}
+                {services.length === 0 && (
+                  <div className="text-sm text-gray-500">Henüz hizmet eklenmemiş.</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              disabled={isUpdating}
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Güncelleniyor...' : 'Kaydet'}
+            </button>
+          </div>
+        </form>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium text-gray-900">Personel Bilgileri</h3>
+        <button
+          onClick={() => setEditMode(true)}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        >
+          <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Düzenle
+        </button>
+      </div>
+
+      <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+        <div>
+          <dt className="text-sm font-medium text-gray-500">Ad Soyad</dt>
+          <dd className="mt-1 text-sm text-gray-900">{employee.fullName}</dd>
+        </div>
+
+        <div>
+          <dt className="text-sm font-medium text-gray-500">E-posta</dt>
+          <dd className="mt-1 text-sm text-gray-900">{employee.email}</dd>
+        </div>
+
+        {employee.phoneNumber && (
+          <div>
+            <dt className="text-sm font-medium text-gray-500">Telefon</dt>
+            <dd className="mt-1 text-sm text-gray-900">{employee.phoneNumber}</dd>
+          </div>
+        )}
+
+        {employee.title && (
+          <div>
+            <dt className="text-sm font-medium text-gray-500">Unvan</dt>
+            <dd className="mt-1 text-sm text-gray-900">{employee.title}</dd>
+          </div>
+        )}
+
+        <div>
+          <dt className="text-sm font-medium text-gray-500">Durum</dt>
+          <dd className="mt-1">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              employee.isActive 
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {employee.isActive ? 'Aktif' : 'Pasif'}
+            </span>
+          </dd>
+        </div>
+
+        <div className="sm:col-span-2">
+          <dt className="text-sm font-medium text-gray-500">Hizmetler</dt>
+          <dd className="mt-1">
+            {employee.serviceIds && employee.serviceIds.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {services
+                  .filter(service => employee.serviceIds.includes(service.id))
+                  .map(service => (
+                    <span
+                      key={service.id}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    >
+                      {service.name}
+                    </span>
+                  ))}
+              </div>
+            ) : (
+              <span className="text-sm text-gray-500">Henüz hizmet atanmamış</span>
+            )}
+          </dd>
+        </div>
+      </dl>
     </div>
   );
 };
 
-export default EmployeeBasicInfo; 
+export default EmployeeBasicInfo;

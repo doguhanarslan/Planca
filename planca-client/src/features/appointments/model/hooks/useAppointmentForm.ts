@@ -5,7 +5,9 @@ import { CustomerDto, ServiceDto, EmployeeDto, AppointmentDto, WorkingHoursDto }
 import { createAppointment, updateAppointment } from '../../appointmentsSlice';
 import { AppDispatch, RootState } from '../../../../app/store';
 import CustomersAPI from '../../../customers/customersAPI';
-import EmployeesAPI from '../../../employees/employeesAPI';
+
+// RTK Query hooks
+import { useGetActiveEmployeesQuery, useGetEmployeeByIdQuery } from '../../../employees/api/employeesAPI';
 
 interface UseAppointmentFormProps {
   selectedDate: Date;
@@ -13,6 +15,7 @@ interface UseAppointmentFormProps {
   onClose: () => void;
   onSuccess?: () => void;
   externalServices?: ServiceDto[];
+  externalEmployees?: EmployeeDto[];
 }
 
 export const useAppointmentForm = ({
@@ -21,6 +24,7 @@ export const useAppointmentForm = ({
   onClose,
   onSuccess,
   externalServices,
+  externalEmployees,
 }: UseAppointmentFormProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const tenant = useSelector((state: RootState) => state.auth.tenant);
@@ -38,13 +42,34 @@ export const useAppointmentForm = ({
 
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
   const [services, setServices] = useState<ServiceDto[]>(externalServices || []);
-  const [employees, setEmployees] = useState<EmployeeDto[]>([]);
+  const [employees, setEmployees] = useState<EmployeeDto[]>(externalEmployees || []);
   const [availableEmployees, setAvailableEmployees] = useState<EmployeeDto[]>([]);
   const [selectedServiceDuration, setSelectedServiceDuration] = useState<number>(30);
   const [selectedEmployeeWorkingHours, setSelectedEmployeeWorkingHours] = useState<WorkingHoursDto[]>([]);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // RTK Query hooks
+  const {
+    data: employeesData = [],
+    isLoading: employeesLoading,
+    error: employeesError,
+  } = useGetActiveEmployeesQuery(undefined, {
+    // Skip if external employees are provided
+    skip: Boolean(externalEmployees && externalEmployees.length > 0),
+    refetchOnMountOrArgChange: 300,
+  });
+
+  // Get employee details for working hours
+  const {
+    data: employeeDetails,
+    isLoading: employeeDetailsLoading,
+    error: employeeDetailsError,
+  } = useGetEmployeeByIdQuery(employeeId, {
+    skip: !employeeId,
+    refetchOnMountOrArgChange: 300,
+  });
 
   useEffect(() => {
     if (externalServices) {
@@ -53,33 +78,37 @@ export const useAppointmentForm = ({
   }, [externalServices]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    if (externalEmployees && externalEmployees.length > 0) {
+      setEmployees(externalEmployees);
+      setAvailableEmployees(externalEmployees);
+    } else if (employeesData && employeesData.length > 0) {
+      setEmployees(employeesData);
+      setAvailableEmployees(employeesData);
+    }
+  }, [externalEmployees, employeesData]);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [customerResponse, employeeResponse] = await Promise.all([
-          CustomersAPI.getCustomers({ pageSize: 100, sortBy: 'LastName' }),
-          EmployeesAPI.getEmployees({ tenantId: tenant?.id })
-        ]);
+        const customerResponse = await CustomersAPI.getCustomers({ 
+          pageSize: 100, 
+          sortBy: 'LastName' 
+        });
 
         if (customerResponse && customerResponse.items) {
           setCustomers(customerResponse.items);
         }
-        if (employeeResponse && ('items' in employeeResponse)) {
-          setEmployees(employeeResponse.items);
-          setAvailableEmployees(employeeResponse.items);
-        } else if (employeeResponse && ('data' in employeeResponse) && employeeResponse.data.items) {
-          setEmployees(employeeResponse.data.items);
-          setAvailableEmployees(employeeResponse.data.items);
-        }
       } catch (err) {
-        console.error('Form data loading error (customers/employees):', err);
-        setError('Müşteri veya personel verileri yüklenemedi.');
+        console.error('Form data loading error (customers):', err);
+        setError('Müşteri verileri yüklenemedi.');
       }
       setLoading(false);
     };
+
     if (tenant?.id) {
-      fetchData();
+      fetchCustomers();
     }
   }, [tenant?.id]);
 
@@ -109,7 +138,7 @@ export const useAppointmentForm = ({
     );
     setAvailableEmployees(filtered);
     if (employeeId && !filtered.find(emp => emp.id === employeeId)) {
-        setEmployeeId('');
+      setEmployeeId('');
     }
   }, [serviceId, employees, employeeId]);
 
@@ -127,25 +156,20 @@ export const useAppointmentForm = ({
       setSelectedEmployeeWorkingHours([]);
       return;
     }
-    const employee = employees.find(emp => emp.id === employeeId);
-    if (employee?.workingHours) {
-      setSelectedEmployeeWorkingHours(employee.workingHours);
-    } else if (employeeId && employees.length > 0) {
-      const fetchDetails = async () => {
-        setLoading(true);
-        try {
-          const details = await EmployeesAPI.getEmployeeById(employeeId);
-          setSelectedEmployeeWorkingHours(details?.workingHours || []);
-        } catch (err) {
-          console.error('Error fetching employee details:', err);
-          setSelectedEmployeeWorkingHours([]);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchDetails();
+
+    // Use RTK Query data if available
+    if (employeeDetails?.workingHours) {
+      setSelectedEmployeeWorkingHours(employeeDetails.workingHours);
+    } else {
+      // Fallback to employee data from list
+      const employee = employees.find(emp => emp.id === employeeId);
+      if (employee?.workingHours) {
+        setSelectedEmployeeWorkingHours(employee.workingHours);
+      } else {
+        setSelectedEmployeeWorkingHours([]);
+      }
     }
-  }, [employeeId, employees]);
+  }, [employeeId, employees, employeeDetails]);
 
   const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
@@ -191,6 +215,14 @@ export const useAppointmentForm = ({
     isEditMode, appointmentToEdit, onSuccess, onClose, tenant?.id, isPro
   ]);
 
+  // Combine loading states
+  const isLoadingData = loading || employeesLoading || employeeDetailsLoading;
+  
+  // Combine errors
+  const combinedError = error || 
+    (employeesError ? 'Personeller yüklenirken bir hata oluştu' : null) ||
+    (employeeDetailsError ? 'Personel detayları yüklenirken bir hata oluştu' : null);
+
   return {
     formState: {
       customerId, setCustomerId,
@@ -211,11 +243,11 @@ export const useAppointmentForm = ({
       selectedEmployeeWorkingHours,
     },
     uiState: {
-      loading,
-      error,
+      loading: isLoadingData,
+      error: combinedError,
       isEditMode,
       isPro,
     },
     handleSubmit,
   };
-}; 
+};

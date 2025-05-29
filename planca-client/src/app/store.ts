@@ -3,21 +3,19 @@ import { configureStore, Reducer, AnyAction, combineReducers } from '@reduxjs/to
 import { setupListeners } from '@reduxjs/toolkit/query';
 import authReducer from '@/features/auth/authSlice';
 import customersReducer, { resetCustomers } from '@/features/customers/customersSlice';
-import employeesReducer, { resetFilters as resetEmployeesFilters } from '@/features/employees/employeesSlice';
 import appointmentsReducer, { clearAppointments } from '@/features/appointments/appointmentsSlice';
 import { initializeAxios } from '@/shared/api/base/axios';
 
 // Import RTK Query APIs
 import { baseApi } from '@/shared/api/base/baseApi';
 
-// Note: servicesReducer is now replaced by RTK Query
-// We can remove it once all components are migrated
+// Note: employeesReducer removed - now using RTK Query
+// Note: servicesReducer removed - now using RTK Query
 
 // Combine base reducers
 const appReducer = combineReducers({
   auth: authReducer,
   customers: customersReducer,
-  employees: employeesReducer,
   appointments: appointmentsReducer,
   // Add RTK Query reducer
   [baseApi.reducerPath]: baseApi.reducer,
@@ -44,7 +42,6 @@ const rootReducer: Reducer = (state: RootState | undefined, action: AnyAction) =
       return {
         ...nextState,
         customers: customersReducer(undefined, resetCustomers()),
-        employees: employeesReducer(undefined, resetEmployeesFilters()),
         appointments: appointmentsReducer(undefined, clearAppointments()),
         // Reset RTK Query cache for tenant-specific data
         [baseApi.reducerPath]: baseApi.reducer(undefined, baseApi.util.resetApiState()),
