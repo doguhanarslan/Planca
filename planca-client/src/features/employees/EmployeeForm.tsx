@@ -1,60 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { createEmployee, updateEmployee } from './employeesSlice';
-import { EmployeeDto, ServiceDto, WorkingHoursDto } from '@/shared/types';
+import { useAppSelector } from '@/app/hooks';
+import { EmployeeDto, WorkingHoursDto } from '@/shared/types';
 import Button from '@/shared/ui/components/Button';
-import { fetchServices } from '@/features/services/servicesSlice';
+import Input from '@/shared/ui/components/Input';
+
+// RTK Query hooks
+import {
+  useCreateEmployeeMutation,
+  useUpdateEmployeeMutation
+} from './api/employeesAPI';
+
+// Services RTK Query for getting available services
+import { useGetActiveServicesQuery } from '../services/api/servicesAPI';
 
 interface EmployeeFormProps {
+  selectedEmployee?: EmployeeDto | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
-  const dispatch = useAppDispatch();
-  const { selectedEmployee, loading } = useAppSelector(state => state.employees);
-  const { services } = useAppSelector(state => state.services);
-  const { tenant, user } = useAppSelector(state => state.auth);
+const DAYS_OF_WEEK = [
+  { value: 1, label: 'Pazartesi', shortLabel: 'Pzt' },
+  { value: 2, label: 'Salı', shortLabel: 'Sal' },
+  { value: 3, label: 'Çarşamba', shortLabel: 'Çar' },
+  { value: 4, label: 'Perşembe', shortLabel: 'Per' },
+  { value: 5, label: 'Cuma', shortLabel: 'Cum' },
+  { value: 6, label: 'Cumartesi', shortLabel: 'Cmt' },
+  { value: 7, label: 'Pazar', shortLabel: 'Paz' },
+];
+
+const EmployeeForm: React.FC<EmployeeFormProps> = ({ selectedEmployee, onClose, onSuccess }) => {
+  const { tenant } = useAppSelector(state => state.auth);
   
-  // Initial working hours for each day of the week
-  const initialWorkingHours = [
-    { dayOfWeek: 0, startTime: '09:00:00', endTime: '17:00:00', isWorkingDay: false }, // Sunday
-    { dayOfWeek: 1, startTime: '09:00:00', endTime: '17:00:00', isWorkingDay: true },  // Monday
-    { dayOfWeek: 2, startTime: '09:00:00', endTime: '17:00:00', isWorkingDay: true },  // Tuesday
-    { dayOfWeek: 3, startTime: '09:00:00', endTime: '17:00:00', isWorkingDay: true },  // Wednesday
-    { dayOfWeek: 4, startTime: '09:00:00', endTime: '17:00:00', isWorkingDay: true },  // Thursday
-    { dayOfWeek: 5, startTime: '09:00:00', endTime: '17:00:00', isWorkingDay: true },  // Friday
-    { dayOfWeek: 6, startTime: '09:00:00', endTime: '17:00:00', isWorkingDay: false }, // Saturday
-  ];
+  // RTK Query mutations
+  const [createEmployee, { 
+    isLoading: isCreating, 
+    error: createError 
+  }] = useCreateEmployeeMutation();
   
-  const [formData, setFormData] = useState<Omit<EmployeeDto, 'id' | 'fullName'> & { id?: string }>({
-    userId: user?.id || '',
+  const [updateEmployee, { 
+    isLoading: isUpdating, 
+    error: updateError 
+  }] = useUpdateEmployeeMutation();
+
+  // RTK Query for services
+  const {
+    data: services = [],
+    isLoading: servicesLoading,
+    error: servicesError,
+  } = useGetActiveServicesQuery();
+  
+  // Determine if we're editing
+  const isEditMode = Boolean(selectedEmployee);
+  const isLoading = isCreating || isUpdating;
+  const error = createError || updateError;
+  
+  const [formData, setFormData] = useState<Omit<EmployeeDto, 'id'> & { id?: string }>({
+    userId: '',
     firstName: '',
     lastName: '',
+    fullName: '',
     email: '',
     phoneNumber: '',
     title: '',
     isActive: true,
     serviceIds: [],
-    workingHours: initialWorkingHours
+    workingHours: DAYS_OF_WEEK.map(day => ({
+      dayOfWeek: day.value,
+      startTime: '09:00',
+      endTime: '17:00',
+      isWorkingDay: day.value >= 1 && day.value <= 5, // Monday to Friday
+    })),
+    tenantId: tenant?.id || ''
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  // Load services for service selection
-  useEffect(() => {
-    dispatch(fetchServices());
-  }, [dispatch]);
-
-  // Update userId when user changes
-  useEffect(() => {
-    if (user && !selectedEmployee) {
-      setFormData(prev => ({
-        ...prev,
-        userId: user.id || ''
-      }));
-    }
-  }, [user]);
   
   // Load selected employee data when editing
   useEffect(() => {
@@ -64,19 +84,41 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
         userId: selectedEmployee.userId,
         firstName: selectedEmployee.firstName,
         lastName: selectedEmployee.lastName,
+        fullName: selectedEmployee.fullName,
         email: selectedEmployee.email,
         phoneNumber: selectedEmployee.phoneNumber || '',
         title: selectedEmployee.title || '',
         isActive: selectedEmployee.isActive,
-        serviceIds: selectedEmployee.serviceIds,
-        workingHours: selectedEmployee.workingHours
+        serviceIds: selectedEmployee.serviceIds || [],
+        workingHours: selectedEmployee.workingHours?.length > 0 
+          ? selectedEmployee.workingHours 
+          : DAYS_OF_WEEK.map(day => ({
+              dayOfWeek: day.value,
+              startTime: '09:00',
+              endTime: '17:00',
+              isWorkingDay: day.value >= 1 && day.value <= 5,
+            })),
+        tenantId: selectedEmployee.tenantId || tenant?.id || ''
       });
     }
-  }, [selectedEmployee]);
+  }, [selectedEmployee, tenant]);
+  
+  // Update fullName when firstName or lastName changes
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      fullName: `${prev.firstName} ${prev.lastName}`.trim()
+    }));
+  }, [formData.firstName, formData.lastName]);
   
   // Handle form field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    
+    // Clear field-specific error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
     
     // Handle checkbox
     if (type === 'checkbox') {
@@ -88,57 +130,27 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
     // Handle regular text inputs
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  // Handle service selection
-  const handleServiceChange = (serviceId: string) => {
-    setFormData(prev => {
-      const serviceIds = [...prev.serviceIds];
-      const index = serviceIds.indexOf(serviceId);
-      
-      if (index > -1) {
-        // Remove service if already selected
-        serviceIds.splice(index, 1);
-      } else {
-        // Add service if not selected
-        serviceIds.push(serviceId);
-      }
-      
-      return { ...prev, serviceIds };
-    });
+
+  // Handle service selection changes
+  const handleServiceChange = (serviceId: string, isSelected: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      serviceIds: isSelected 
+        ? [...prev.serviceIds, serviceId]
+        : prev.serviceIds.filter(id => id !== serviceId)
+    }));
   };
-  
+
   // Handle working hours changes
-  const handleWorkingHourChange = (dayOfWeek: number, field: 'startTime' | 'endTime' | 'isWorkingDay', value: string | boolean) => {
-    setFormData((prev:any) => {
-      const workingHours = prev.workingHours.map((day:any) => {
-        if (day.dayOfWeek === dayOfWeek) {
-          if (field === 'startTime' || field === 'endTime') {
-            return { ...day, [field]: value + ':00' }; // Add seconds for backend format
-          }
-          return { ...day, [field]: value };
-        }
-        return day;
-      });
-      
-      return { ...prev, workingHours };
-    });
-  };
-  
-  // Get day name from day number
-  const getDayName = (dayNumber: number): string => {
-    const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-    return days[dayNumber];
-  };
-  
-  // Format time for display
-  const formatTime = (time: string): string => {
-    if (!time) return '';
-    // If time is in format HH:MM:SS, convert to HH:MM
-    if (time.includes(':')) {
-      const parts = time.split(':');
-      return `${parts[0]}:${parts[1]}`;
-    }
-    return time;
+  const handleWorkingHoursChange = (dayOfWeek: number, field: keyof WorkingHoursDto, value: string | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      workingHours: prev.workingHours.map(wh => 
+        wh.dayOfWeek === dayOfWeek 
+          ? { ...wh, [field]: value }
+          : wh
+      )
+    }));
   };
   
   // Validate form
@@ -147,10 +159,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
     
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'Ad gereklidir';
+    } else if (formData.firstName.length > 50) {
+      newErrors.firstName = 'Ad en fazla 50 karakter olmalıdır';
     }
     
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Soyad gereklidir';
+    } else if (formData.lastName.length > 50) {
+      newErrors.lastName = 'Soyad en fazla 50 karakter olmalıdır';
     }
     
     if (!formData.email.trim()) {
@@ -158,6 +174,29 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Geçerli bir e-posta adresi giriniz';
     }
+    
+    if (formData.phoneNumber && formData.phoneNumber.length > 20) {
+      newErrors.phoneNumber = 'Telefon numarası en fazla 20 karakter olmalıdır';
+    }
+    
+    if (formData.title && formData.title.length > 100) {
+      newErrors.title = 'Görev en fazla 100 karakter olmalıdır';
+    }
+    
+    // Validate working hours
+    const hasWorkingDay = formData.workingHours.some(wh => wh.isWorkingDay);
+    if (!hasWorkingDay) {
+      newErrors.workingHours = 'En az bir çalışma günü seçmelisiniz';
+    }
+    
+    // Validate working hours times
+    formData.workingHours.forEach(wh => {
+      if (wh.isWorkingDay) {
+        if (wh.startTime >= wh.endTime) {
+          newErrors.workingHours = 'Başlangıç saati bitiş saatinden önce olmalıdır';
+        }
+      }
+    });
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -172,26 +211,50 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
     }
     
     try {
-      if (formData.id) {
-        // Edit existing employee
-        await dispatch(updateEmployee({ 
-          id: formData.id, 
-          employeeData: formData as EmployeeDto 
-        }));
+      if (isEditMode && formData.id) {
+        // Update existing employee
+        await updateEmployee(formData as EmployeeDto).unwrap();
       } else {
-        // Add new employee - ensure user ID is set
-        const { id, ...newEmployeeData } = formData;
-        const newEmployee = {
-          ...newEmployeeData,
-          userId: user?.id || formData.userId || ''
+        // Create new employee
+        const { id, ...newEmployee } = formData;
+        // Generate userId if not provided (for new employees)
+        const employeeData = {
+          ...newEmployee,
+          userId: newEmployee.userId || `user_${Date.now()}`, // Generate userId if needed
         };
-        await dispatch(createEmployee(newEmployee));
+        await createEmployee(employeeData).unwrap();
       }
       
+      // Success callback
       onSuccess();
     } catch (error) {
+      // Error is handled by RTK Query and will be shown in the UI
       console.error('Form submission error:', error);
     }
+  };
+  
+  // Get error message from RTK Query error
+  const getErrorMessage = (error: any): string => {
+    if (!error) return '';
+    
+    if ('status' in error) {
+      // FetchBaseQueryError
+      if (error.data && typeof error.data === 'object') {
+        if ('message' in error.data) {
+          return error.data.message;
+        }
+        if ('errors' in error.data && Array.isArray(error.data.errors)) {
+          return error.data.errors.join(', ');
+        }
+      }
+      return `Error ${error.status}`;
+    }
+    
+    if ('message' in error) {
+      return error.message;
+    }
+    
+    return 'Bir hata oluştu';
   };
   
   return (
@@ -199,11 +262,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4">
         <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-red-600">
           <h3 className="text-xl font-semibold text-white">
-            {selectedEmployee ? 'Personeli Düzenle' : 'Yeni Personel Ekle'}
+            {isEditMode ? 'Personeli Düzenle' : 'Yeni Personel Ekle'}
           </h3>
           <button
             onClick={onClose}
             className="text-white hover:cursor-pointer hover:text-gray-300 transition-all duration-300 focus:outline-none"
+            disabled={isLoading}
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -211,209 +275,201 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Basic Information Section */}
-          <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-4">Kişisel Bilgiler</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* First Name */}
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  Ad *
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 bg-white border ${
-                    errors.firstName ? 'border-red-500' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm`}
-                />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
-                )}
-              </div>
-              
-              {/* Last Name */}
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Soyad *
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 bg-white border ${
-                    errors.lastName ? 'border-red-500' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm`}
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-                )}
-              </div>
-              
-              {/* Email */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  E-posta *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 bg-white border ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm`}
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-              
-              {/* Phone Number */}
-              <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
-                  Telefon Numarası
-                </label>
-                <input
-                  type="text"
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                />
-              </div>
-              
-              {/* Title */}
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                  Ünvan
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                />
-              </div>
-              
-              {/* Is Active */}
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                />
-                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-                  Aktif
-                </label>
-              </div>
+        {/* Error message */}
+        {error && (
+          <div className="p-4 bg-red-100 border-b border-red-200">
+            <div className="text-red-700 text-sm">
+              {getErrorMessage(error)}
             </div>
           </div>
-          
-          {/* Services Section */}
+        )}
+
+        {/* Services loading/error */}
+        {servicesError && (
+          <div className="p-4 bg-yellow-100 border-b border-yellow-200">
+            <div className="text-yellow-700 text-sm">
+              Hizmetler yüklenirken hata oluştu. Personel oluşturulabilir ancak hizmet ataması yapılamayacak.
+            </div>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input
+              name="firstName"
+              type="text"
+              label="Ad"
+              value={formData.firstName}
+              onChange={handleChange}
+              error={errors.firstName}
+              touched={true}
+              placeholder="Örn. Ahmet"
+              required
+              disabled={isLoading}
+            />
+
+            <Input
+              name="lastName"
+              type="text"
+              label="Soyad"
+              value={formData.lastName}
+              onChange={handleChange}
+              error={errors.lastName}
+              touched={true}
+              placeholder="Örn. Yılmaz"
+              required
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input
+              name="email"
+              type="email"
+              label="E-posta"
+              value={formData.email}
+              onChange={handleChange}
+              error={errors.email}
+              touched={true}
+              placeholder="ornek@mail.com"
+              required
+              disabled={isLoading}
+            />
+
+            <Input
+              name="phoneNumber"
+              type="tel"
+              label="Telefon"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              error={errors.phoneNumber}
+              touched={true}
+              placeholder="+90 xxx xxx xx xx"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input
+              name="title"
+              type="text"
+              label="Görev/Ünvan"
+              value={formData.title}
+              onChange={handleChange}
+              error={errors.title}
+              touched={true}
+              placeholder="Örn. Kuaför, Masöz"
+              disabled={isLoading}
+            />
+
+            <div className="flex items-center pt-8">
+              <input
+                type="checkbox"
+                id="isActive"
+                name="isActive"
+                checked={formData.isActive}
+                onChange={handleChange}
+                className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                disabled={isLoading}
+              />
+              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+                Aktif
+              </label>
+            </div>
+          </div>
+
+          {/* Services */}
           <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-4">Verdiği Hizmetler</h4>
-            <div className="border border-gray-200 rounded-md p-4">
-              {services.length === 0 ? (
-                <p className="text-sm text-gray-500">Henüz hiç hizmet tanımlanmamış.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {services.map((service: ServiceDto) => (
-                    <div key={service.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`service-${service.id}`}
-                        checked={formData.serviceIds.includes(service.id)}
-                        onChange={() => handleServiceChange(service.id)}
-                        className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                      />
-                      <label
-                        htmlFor={`service-${service.id}`}
-                        className="ml-2 block text-sm text-gray-900"
-                      >
-                        {service.name}
-                      </label>
-                    </div>
-                  ))}
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hizmetler
+              {servicesLoading && (
+                <span className="ml-2 text-xs text-blue-600">Yükleniyor...</span>
+              )}
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-3">
+              {servicesLoading ? (
+                <div className="col-span-full text-center py-4 text-gray-500">
+                  Hizmetler yükleniyor...
                 </div>
+              ) : services.length === 0 ? (
+                <div className="col-span-full text-center py-4 text-gray-500">
+                  Hizmet bulunamadı
+                </div>
+              ) : (
+                services.map((service) => (
+                  <div key={service.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`service-${service.id}`}
+                      checked={formData.serviceIds.includes(service.id)}
+                      onChange={(e) => handleServiceChange(service.id, e.target.checked)}
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                      disabled={isLoading}
+                    />
+                    <label htmlFor={`service-${service.id}`} className="ml-2 block text-sm text-gray-700 truncate">
+                      {service.name}
+                    </label>
+                  </div>
+                ))
               )}
             </div>
           </div>
-          
-          {/* Working Hours Section */}
+
+          {/* Working Hours */}
           <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-4">Çalışma Saatleri</h4>
-            <div className="overflow-hidden bg-white shadow sm:rounded-md">
-              <ul role="list" className="divide-y divide-gray-200">
-                {formData.workingHours
-                  .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
-                  .map((day) => (
-                    <li key={day.dayOfWeek}>
-                      <div className="px-4 py-4 sm:px-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`working-day-${day.dayOfWeek}`}
-                              checked={day.isWorkingDay}
-                              onChange={() => handleWorkingHourChange(day.dayOfWeek, 'isWorkingDay', !day.isWorkingDay)}
-                              className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                            />
-                            <label
-                              htmlFor={`working-day-${day.dayOfWeek}`}
-                              className={`ml-3 text-sm font-medium ${day.isWorkingDay ? 'text-gray-900' : 'text-gray-500'}`}
-                            >
-                              {getDayName(day.dayOfWeek)}
-                            </label>
-                          </div>
-                          
-                          <div className="flex items-center space-x-3">
-                            <div>
-                              <label htmlFor={`start-time-${day.dayOfWeek}`} className="sr-only">
-                                Başlangıç Saati
-                              </label>
-                              <input
-                                type="time"
-                                id={`start-time-${day.dayOfWeek}`}
-                                value={formatTime(day.startTime)}
-                                onChange={(e) => handleWorkingHourChange(day.dayOfWeek, 'startTime', e.target.value)}
-                                className="block w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                                disabled={!day.isWorkingDay}
-                              />
-                            </div>
-                            <span className="text-gray-500">-</span>
-                            <div>
-                              <label htmlFor={`end-time-${day.dayOfWeek}`} className="sr-only">
-                                Bitiş Saati
-                              </label>
-                              <input
-                                type="time"
-                                id={`end-time-${day.dayOfWeek}`}
-                                value={formatTime(day.endTime)}
-                                onChange={(e) => handleWorkingHourChange(day.dayOfWeek, 'endTime', e.target.value)}
-                                className="block w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                                disabled={!day.isWorkingDay}
-                              />
-                            </div>
-                          </div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Çalışma Saatleri
+            </label>
+            {errors.workingHours && (
+              <p className="mb-2 text-sm text-red-600">{errors.workingHours}</p>
+            )}
+            <div className="space-y-3">
+              {DAYS_OF_WEEK.map((day) => {
+                const workingHour = formData.workingHours.find(wh => wh.dayOfWeek === day.value);
+                return (
+                  <div key={day.value} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-20">
+                      <input
+                        type="checkbox"
+                        id={`day-${day.value}`}
+                        checked={workingHour?.isWorkingDay || false}
+                        onChange={(e) => handleWorkingHoursChange(day.value, 'isWorkingDay', e.target.checked)}
+                        className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded mr-2"
+                        disabled={isLoading}
+                      />
+                      <label htmlFor={`day-${day.value}`} className="text-sm font-medium text-gray-700">
+                        {day.label}
+                      </label>
+                    </div>
+                    
+                    {workingHour?.isWorkingDay && (
+                      <>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Başlangıç</label>
+                          <input
+                            type="time"
+                            value={workingHour.startTime}
+                            onChange={(e) => handleWorkingHoursChange(day.value, 'startTime', e.target.value)}
+                            className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-red-500 focus:border-red-500"
+                            disabled={isLoading}
+                          />
                         </div>
-                      </div>
-                    </li>
-                  ))}
-              </ul>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Bitiş</label>
+                          <input
+                            type="time"
+                            value={workingHour.endTime}
+                            onChange={(e) => handleWorkingHoursChange(day.value, 'endTime', e.target.value)}
+                            className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-red-500 focus:border-red-500"
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           
@@ -424,17 +480,19 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
               type="button"
               size="md"
               className="bg-gray-200 text-black hover:bg-gray-300 focus:ring-gray-400"
+              disabled={isLoading}
             >
               İptal
             </Button>
             <Button
               type="submit"
               size="md"
-              isLoading={loading}
-              loadingText="Kaydediliyor..."
+              isLoading={isLoading}
+              loadingText={isEditMode ? "Güncelleniyor..." : "Kaydediliyor..."}
               className="bg-red-600 text-white hover:bg-red-900 focus:bg-red-600 hover:cursor-pointer"
+              disabled={isLoading}
             >
-              {selectedEmployee ? 'Güncelle' : 'Kaydet'}
+              {isEditMode ? 'Güncelle' : 'Kaydet'}
             </Button>
           </div>
         </form>
@@ -443,4 +501,4 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSuccess }) => {
   );
 };
 
-export default EmployeeForm; 
+export default EmployeeForm;
