@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { format, startOfDay } from 'date-fns';
 import { CustomerDto, ServiceDto, EmployeeDto, AppointmentDto, WorkingHoursDto } from '../../../../shared/types';
-import { createAppointment, updateAppointment } from '../../appointmentsSlice';
-import { AppDispatch, RootState } from '../../../../app/store';
+import { RootState } from '../../../../app/store';
 import CustomersAPI from '../../../customers/customersAPI';
 
 // RTK Query hooks
+import { 
+  useCreateAppointmentMutation, 
+  useUpdateAppointmentMutation 
+} from '../../api/appointmentsAPI';
 import { useGetActiveEmployeesQuery, useGetEmployeeByIdQuery } from '../../../employees/api/employeesAPI';
 
 interface UseAppointmentFormProps {
@@ -26,7 +29,6 @@ export const useAppointmentForm = ({
   externalServices,
   externalEmployees,
 }: UseAppointmentFormProps) => {
-  const dispatch = useDispatch<AppDispatch>();
   const tenant = useSelector((state: RootState) => state.auth.tenant);
   const isPro = tenant && tenant.subscriptionType === 'Pro';
   const isEditMode = Boolean(appointmentToEdit);
@@ -50,7 +52,7 @@ export const useAppointmentForm = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // RTK Query hooks
+  // RTK Query hooks for employees
   const {
     data: employeesData = [],
     isLoading: employeesLoading,
@@ -70,6 +72,17 @@ export const useAppointmentForm = ({
     skip: !employeeId,
     refetchOnMountOrArgChange: 300,
   });
+
+  // RTK Query mutations
+  const [createAppointment, { 
+    isLoading: isCreating, 
+    error: createError 
+  }] = useCreateAppointmentMutation();
+
+  const [updateAppointment, { 
+    isLoading: isUpdating, 
+    error: updateError 
+  }] = useUpdateAppointmentMutation();
 
   useEffect(() => {
     if (externalServices) {
@@ -177,7 +190,7 @@ export const useAppointmentForm = ({
       setError('Lütfen tüm gerekli alanları doldurun.');
       return;
     }
-    setLoading(true);
+
     setError(null);
 
     const [hours, minutes] = appointmentTime.split(':').map(Number);
@@ -190,6 +203,7 @@ export const useAppointmentForm = ({
       employeeId,
       startTime: startTime.toISOString(),
       notes,
+      tenantId: tenant?.id || '',
     };
 
     if (isPro && customerMessage) {
@@ -198,30 +212,51 @@ export const useAppointmentForm = ({
 
     try {
       if (isEditMode && appointmentToEdit) {
-        await dispatch(updateAppointment({ id: appointmentToEdit.id, ...appointmentData })).unwrap();
+        // Update existing appointment
+        await updateAppointment({ 
+          id: appointmentToEdit.id, 
+          ...appointmentData 
+        }).unwrap();
       } else {
-        await dispatch(createAppointment(appointmentData)).unwrap();
+        // Create new appointment
+        await createAppointment(appointmentData).unwrap();
       }
+      
       onSuccess?.();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(`Appointment submission error (edit: ${isEditMode}):`, err);
-      setError(`Randevu ${isEditMode ? 'güncellenemedi' : 'oluşturulamadı'}.`);
-    } finally {
-      setLoading(false);
+      
+      // Extract error message from RTK Query error
+      let errorMessage = `Randevu ${isEditMode ? 'güncellenemedi' : 'oluşturulamadı'}.`;
+      
+      if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.data?.errors && Array.isArray(err.data.errors)) {
+        errorMessage = err.data.errors.join(', ');
+      } else if (typeof err?.data === 'string') {
+        errorMessage = err.data;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     }
   }, [
-    dispatch, customerId, serviceId, employeeId, appointmentDate, appointmentTime, notes, customerMessage, 
-    isEditMode, appointmentToEdit, onSuccess, onClose, tenant?.id, isPro
+    customerId, serviceId, employeeId, appointmentDate, appointmentTime, notes, customerMessage,
+    isEditMode, appointmentToEdit, onSuccess, onClose, tenant?.id, isPro,
+    createAppointment, updateAppointment
   ]);
 
   // Combine loading states
-  const isLoadingData = loading || employeesLoading || employeeDetailsLoading;
+  const isLoadingData = loading || employeesLoading || employeeDetailsLoading || isCreating || isUpdating;
   
   // Combine errors
   const combinedError = error || 
     (employeesError ? 'Personeller yüklenirken bir hata oluştu' : null) ||
-    (employeeDetailsError ? 'Personel detayları yüklenirken bir hata oluştu' : null);
+    (employeeDetailsError ? 'Personel detayları yüklenirken bir hata oluştu' : null) ||
+    (createError ? 'Randevu oluşturulurken bir hata oluştu' : null) ||
+    (updateError ? 'Randevu güncellenirken bir hata oluştu' : null);
 
   return {
     formState: {

@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, addMinutes, isBefore, setHours, setMinutes } from 'date-fns';
-import { AppointmentDto, EmployeeDto, ServiceDto, WorkingHoursDto } from '../../../../shared/types';
-import AppointmentsAPI from '../../api/appointmentsAPI'; 
+import { AppointmentDto, ServiceDto, WorkingHoursDto } from '../../../../shared/types';
 import { generateAllTimeSlots, filterTimeSlotsByWorkingHours } from '../../lib/timeSlotUtils';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../../app/store';
+
+// RTK Query hook
+import { useGetAppointmentsForDateAndEmployeeQuery } from '../../api/appointmentsAPI';
 
 interface UseAvailableTimeSlotsProps {
   employeeId: string | null;
@@ -25,36 +25,29 @@ export const useAvailableTimeSlots = ({
   isEditMode,
   appointmentToEditId,
 }: UseAvailableTimeSlotsProps) => {
-  const tenant = useSelector((state: RootState) => state.auth.tenant);
-  const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const allTimeSlots = useMemo(() => generateAllTimeSlots(), []);
 
-  useEffect(() => {
-    const fetchAppointmentsForDate = async () => {
-      if (!employeeId || !appointmentDate || !tenant?.id) {
-        setAppointments([]);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const fetchedAppointments = await AppointmentsAPI.getAppointmentsForDateAndEmployee(
-          employeeId,
-          appointmentDate,
-          tenant.id
-        );
-        setAppointments(fetchedAppointments || []);
-      } catch (error) {
-        console.error('Error fetching appointments for availability check:', error);
-        setAppointments([]);
-      }
-      setIsLoading(false);
-    };
-
-    fetchAppointmentsForDate();
-  }, [employeeId, appointmentDate, tenant?.id]);
+  // RTK Query for getting appointments for the specific date and employee
+  const {
+    data: appointments = [],
+    isLoading: isLoadingAppointments,
+    error: appointmentsError,
+  } = useGetAppointmentsForDateAndEmployeeQuery(
+    {
+      employeeId: employeeId || '',
+      date: appointmentDate?.toISOString() || '',
+    },
+    {
+      // Only fetch if we have both employeeId and appointmentDate
+      skip: !employeeId || !appointmentDate,
+      // Refetch on mount if data is older than 2 minutes
+      refetchOnMountOrArgument: 120,
+      // Refetch on focus to ensure fresh data
+      refetchOnFocus: true,
+    }
+  );
 
   useEffect(() => {
     if (!employeeId || !appointmentDate || !selectedServiceDuration) {
@@ -74,11 +67,18 @@ export const useAvailableTimeSlots = ({
       return;
     }
 
+    // Don't process if we're still loading appointments
+    if (isLoadingAppointments) {
+      return;
+    }
+
     const bookedSlots = new Set<string>();
     appointments.forEach(appointment => {
+      // Skip the appointment we're editing
       if (isEditMode && appointmentToEditId === appointment.id) {
         return;
       }
+      
       if (appointment.startTime) {
         const appointmentStartTime = new Date(appointment.startTime);
         const appointmentEndTime = appointment.endTime
@@ -124,19 +124,17 @@ export const useAvailableTimeSlots = ({
     services,
     isEditMode,
     appointmentToEditId,
+    isLoadingAppointments,
   ]);
 
-  return { availableTimeSlots, isLoadingAppointments: isLoading };
+  return { 
+    availableTimeSlots, 
+    isLoadingAppointments,
+    appointmentsError,
+  };
 };
 
 function getServiceDuration(serviceId: string, services: ServiceDto[]): number {
   const service = services.find(s => s.id === serviceId);
   return service ? service.durationMinutes : 30;
 }
-
-// The API file `planca-client/src/features/appointments/api/appointmentsAPI.ts` needs to be created.
-// It should export `getAppointmentsForDateAndEmployee` function similar to the one used in the original `AppointmentForm.tsx`.
-// Example:
-// import { AppointmentDto } from '../../../shared/types';
-// const getAppointmentsForDateAndEmployee = async (employeeId: string, date: Date, tenantId: string | undefined): Promise<AppointmentDto[]> => { ... };
-// export default { getAppointmentsForDateAndEmployee }; 

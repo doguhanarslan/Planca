@@ -1,14 +1,14 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'moment/locale/tr'; // Import Turkish locale
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../calendar-styles.css'; // Import custom calendar styles
 import { AppointmentDto } from '../../../shared/types';
-import { fetchAppointments, selectAppointments, selectCalendarDate, setCalendarDate } from '../appointmentsSlice';
-import { AppDispatch } from '../../../app/store';
-import { FiChevronLeft, FiChevronRight, FiCalendar, FiClock, FiUser, FiTool, FiInfo, FiMoreHorizontal } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiCalendar, FiClock, FiUser, FiTool, FiInfo } from 'react-icons/fi';
+
+// RTK Query hooks
+import { useGetAppointmentsQuery } from '../api/appointmentsAPI';
 
 // Set up Turkish locale for moment
 moment.locale('tr');
@@ -54,13 +54,16 @@ const getEventStyles = (appointment: AppointmentDto) => {
   }
 };
 
-const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: AppointmentCalendarProps) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const appointments = useSelector(selectAppointments) || [];
-  const selectedDate = useSelector(selectCalendarDate);
-  
+const AppointmentCalendar = ({ 
+  selectedDate, 
+  currentCalendarMonth,
+  onMonthChange,
+  onDateSelect, 
+  timeFrame = 'month', 
+  onShowMore 
+}: AppointmentCalendarProps) => {
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
-  const isInitialMount = useRef(true);
+  const [currentDate, setCurrentDate] = useState<Date>(selectedDate || new Date());
   
   // Map timeFrame to react-big-calendar view
   const calendarView = useMemo(() => {
@@ -71,6 +74,72 @@ const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: 
       default: return Views.MONTH;
     }
   }, [timeFrame]);
+  
+  // Calculate date range for RTK Query based on current calendar view
+  const { startDate, endDate } = useMemo(() => {
+    const date = currentDate;
+    let start: Date, end: Date;
+    
+    switch (timeFrame) {
+      case 'day':
+        start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59);
+        break;
+      case 'week':
+        const dayOfWeek = date.getDay();
+        start = new Date(date.getFullYear(), date.getMonth(), date.getDate() - dayOfWeek);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59);
+        break;
+      case 'month':
+      default:
+        start = new Date(date.getFullYear(), date.getMonth(), 1);
+        end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+        break;
+    }
+    
+    return {
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+    };
+  }, [currentDate, timeFrame]);
+  
+  // RTK Query to fetch appointments
+  const {
+    data: appointmentsData,
+    isLoading,
+    error,
+    refetch,
+  } = useGetAppointmentsQuery(
+    {
+      startDate,
+      endDate,
+      pageSize: 200, // Get more appointments for calendar view
+      sortBy: 'StartTime',
+      sortDirection: 'asc',
+    },
+    {
+      // Refetch on mount if data is older than 5 minutes
+      refetchOnMountOrArgChange: 300,
+      // Refetch on window focus
+      refetchOnFocus: true,
+    }
+  );
+  
+  // Process appointments data
+  const appointments = useMemo(() => {
+    if (!appointmentsData) return [];
+    
+    // Handle different response formats
+    if (Array.isArray(appointmentsData)) {
+      return appointmentsData;
+    } else if ('items' in appointmentsData) {
+      return appointmentsData.items || [];
+    } else {
+      return [];
+    }
+  }, [appointmentsData]);
   
   // Convert appointments to calendar events
   useEffect(() => {
@@ -89,46 +158,10 @@ const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: 
     }
   }, [appointments]);
   
-  // Fetch appointments only when component mounts or selectedDate changes intentionally
-  useEffect(() => {
-    // Skip the first render to prevent double fetch
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      
-      const currentDate = selectedDate ? new Date(selectedDate) : new Date();
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-      
-      try {
-        dispatch(fetchAppointments({
-          startDate: startOfMonth.toISOString(),
-          endDate: endOfMonth.toISOString()
-        }));
-      } catch (error) {
-        console.error('Randevular yüklenirken hata:', error);
-      }
-      
-      return;
-    }
-  }, [dispatch, selectedDate]); 
-  
-  // Handle date change in calendar - separate from automatic fetching
+  // Handle date change in calendar
   const handleNavigate = (date: Date) => {
-    // Only update calendar date without automatic fetch
-    dispatch(setCalendarDate(date.toISOString()));
-    
-    // Manually fetch appointments for the new month
-    const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-    const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    
-    try {
-      dispatch(fetchAppointments({
-        startDate: startOfMonth.toISOString(),
-        endDate: endOfMonth.toISOString()
-      }));
-    } catch (error) {
-      console.error('Takvimde gezinirken randevuları yüklerken hata:', error);
-    }
+    setCurrentDate(date);
+    onMonthChange(date);
   };
   
   // Handle date selection in calendar
@@ -194,24 +227,6 @@ const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: 
     );
   };
   
-  // Function to group appointments by date
-  const getAppointmentsByDate = useCallback(() => {
-    const appointmentsByDate: Record<string, AppointmentDto[]> = {};
-    
-    appointments.forEach((appointment: AppointmentDto) => {
-      const dateKey = moment(appointment.startTime).format('YYYY-MM-DD');
-      
-      if (!appointmentsByDate[dateKey]) {
-        appointmentsByDate[dateKey] = [];
-      }
-      
-      appointmentsByDate[dateKey].push(appointment);
-    });
-    
-    return appointmentsByDate;
-  }, [appointments]);
-  
-  
   // Custom time slot wrapper for week/day views
   const TimeSlotWrapper = ({ children }: any) => (
     <div className="rbc-time-slot-modern">
@@ -219,7 +234,7 @@ const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: 
     </div>
   );
 
-  // Custom toolbar component for the calendar - without view switchers
+  // Custom toolbar component for the calendar
   const CustomToolbar = (toolbar: any) => {
     const goToToday = () => {
       const today = new Date();
@@ -234,6 +249,7 @@ const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: 
             onClick={() => toolbar.onNavigate('PREV')}
             className="p-2.5 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
             aria-label="Previous"
+            disabled={isLoading}
           >
             <FiChevronLeft size={20} />
           </button>
@@ -242,6 +258,7 @@ const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: 
             onClick={goToToday}
             className="flex items-center px-4 py-1.5 rounded-full bg-white text-sm hover:bg-gray-50 transition-colors shadow-sm"
             aria-label="Today"
+            disabled={isLoading}
           >
             <FiCalendar className="mr-1.5" size={14} />
             Bugün
@@ -251,13 +268,32 @@ const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: 
             onClick={() => toolbar.onNavigate('NEXT')}
             className="p-2.5 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
             aria-label="Next"
+            disabled={isLoading}
           >
             <FiChevronRight size={20} />
           </button>
         </div>
         
-        <div className="text-xl font-semibold text-gray-800">
-          {toolbar.label}
+        <div className="flex items-center space-x-3">
+          {isLoading && (
+            <div className="flex items-center text-blue-600 text-sm">
+              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+              <span>Yükleniyor...</span>
+            </div>
+          )}
+          
+          {error && (
+            <button
+              onClick={() => refetch()}
+              className="flex items-center px-3 py-1.5 text-sm text-red-600 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
+            >
+              <span>Hata - Tekrar dene</span>
+            </button>
+          )}
+          
+          <div className="text-xl font-semibold text-gray-800">
+            {toolbar.label}
+          </div>
         </div>
       </div>
     );
@@ -304,9 +340,10 @@ const AppointmentCalendar = ({ onDateSelect, timeFrame = 'month', onShowMore }: 
         messages={{
           showMore: (total) => `+${total} randevu`
         }}
+        date={currentDate}
       />
     </div>
   );
 };
 
-export default AppointmentCalendar; 
+export default AppointmentCalendar;

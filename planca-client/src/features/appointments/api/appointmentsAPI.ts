@@ -1,389 +1,356 @@
-import axios from '@/shared/api/base/axios';
-import { AppointmentDto } from '@/shared/types';
+import { baseApi } from '@/shared/api/base/baseApi';
+import { ApiResponse, PaginatedList, AppointmentDto } from '@/shared/types';
 
-class AppointmentsAPI {
-  private static readonly ENDPOINT = '/Appointments';
-  private static appointmentsCache = new Map<string, { data: AppointmentDto[], timestamp: number }>();
-  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+// Transform query params to API format
+const transformParams = (params: {
+  startDate?: string;
+  endDate?: string;
+  employeeId?: string;
+  customerId?: string;
+  status?: string;
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}) => {
+  const apiParams: Record<string, any> = {
+    PageNumber: params.pageNumber || 1,
+    PageSize: params.pageSize || 50,
+    SortBy: params.sortBy || 'StartTime',
+    SortDirection: params.sortDirection || 'asc',
+    _t: Date.now(), // Cache busting
+  };
 
-  /**
-   * Get all appointments with optional filtering
-   */
-  static async getAppointments(params: {
-    startDate?: string;
-    endDate?: string;
-    employeeId?: string;
-    customerId?: string;
-    status?: string;
-    pageNumber?: number;
-    pageSize?: number;
-    sortBy?: string;
-    sortDirection?: 'asc' | 'desc';
-    tenantId?: string;
-  } = {}) {
-    try {
-      // Log request parameters
-      console.log('AppointmentsAPI.getAppointments - Request params:', params);
-      
-      // Headers for tenant ID
-      const headers: Record<string, string> = {};
-      if (params.tenantId) {
-        headers['X-TenantId'] = params.tenantId;
+  if (params.startDate) {
+    apiParams.StartDate = params.startDate;
+  }
+  
+  if (params.endDate) {
+    apiParams.EndDate = params.endDate;
+  }
+  
+  if (params.employeeId) {
+    apiParams.EmployeeId = params.employeeId;
+  }
+  
+  if (params.customerId) {
+    apiParams.CustomerId = params.customerId;
+  }
+  
+  if (params.status) {
+    apiParams.Status = params.status;
+  }
+  
+  return apiParams;
+};
+
+// Transform appointment data for API
+const transformAppointmentForApi = (appointment: Omit<AppointmentDto, 'id'> | AppointmentDto) => ({
+  Id: 'id' in appointment ? appointment.id : undefined,
+  CustomerId: appointment.customerId,
+  EmployeeId: appointment.employeeId,
+  ServiceId: appointment.serviceId,
+  StartTime: appointment.startTime,
+  EndTime: appointment.endTime,
+  Status: appointment.status,
+  Notes: appointment.notes,
+  TenantId: appointment.tenantId,
+});
+
+export const appointmentsApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    // Get paginated appointments list
+    getAppointments: builder.query<
+      PaginatedList<AppointmentDto> | AppointmentDto[], 
+      {
+        startDate?: string;
+        endDate?: string;
+        employeeId?: string;
+        customerId?: string;
+        status?: string;
+        pageNumber?: number;
+        pageSize?: number;
+        sortBy?: string;
+        sortDirection?: 'asc' | 'desc';
       }
-      
-      console.log('AppointmentsAPI.getAppointments - Request headers:', headers);
-      
-      const response = await axios.get(AppointmentsAPI.ENDPOINT, {
-        params,
-        headers,
-        withCredentials: true
-      }).then((response) => {
-        console.log('AppointmentsAPI.getAppointments - Raw response:', response);
-        return response;
-      }).catch((error) => {
-        console.error('Error fetching appointments:', error);
-        throw error;
-      });
-      
-      // Log the raw response structure to understand the data format
-      console.log('AppointmentsAPI.getAppointments - Raw response:', response);
-      
-      // Add data structure analysis
-      if (response.data) {
-        console.log('AppointmentsAPI.getAppointments - Response data type:', typeof response.data);
-        console.log('AppointmentsAPI.getAppointments - Is array?', Array.isArray(response.data));
+    >({
+      query: (params = {}) => ({
+        url: '/Appointments',
+        params: transformParams(params),
+      }),
+      transformResponse: (response: any) => {
+        console.log('RTK Query Appointments Response:', response);
         
-        if (typeof response.data === 'object' && !Array.isArray(response.data)) {
-          console.log('AppointmentsAPI.getAppointments - Object keys:', Object.keys(response.data));
-          
-          // API returns a paginated list structure with 'items' array
-          if (response.data.items && Array.isArray(response.data.items)) {
-            console.log('AppointmentsAPI.getAppointments - Found items array with length:', response.data.items.length);
-            
-            if (response.data.items.length > 0) {
-              console.log('AppointmentsAPI.getAppointments - Sample item:', response.data.items[0]);
-            }
-            
-            // Return the entire response structure
-            return response.data;
-          }
-        } else if (Array.isArray(response.data)) {
-          console.log('AppointmentsAPI.getAppointments - Array length:', response.data.length);
-          if (response.data.length > 0) {
-            console.log('AppointmentsAPI.getAppointments - Sample item:', response.data[0]);
-          }
+        // Handle different response formats
+        if (response?.data?.items) {
+          // ApiResponse<PaginatedList> format
+          return response.data;
+        } else if (response?.items) {
+          // Direct PaginatedList format
+          return response;
+        } else if (Array.isArray(response?.data)) {
+          // Direct array format
+          return response.data;
+        } else if (Array.isArray(response)) {
+          // Direct array format
+          return response;
+        } else {
+          // Fallback
+          return {
+            items: [],
+            pageNumber: 1,
+            totalPages: 0,
+            totalCount: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          };
         }
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      throw error;
-    }
-  }
+      },
+      providesTags: (result, error, arg) => [
+        'Appointment',
+        // Add individual tags for each appointment for more granular invalidation
+        ...(Array.isArray(result) 
+          ? result.map(({ id }) => ({ type: 'Appointment' as const, id }))
+          : 'items' in result 
+            ? result.items?.map(({ id }) => ({ type: 'Appointment' as const, id })) || []
+            : []
+        ),
+      ],
+    }),
 
-  /**
-   * Get appointment by ID
-   */
-  static async getAppointment(id: string) {
-    try {
-      const response = await axios.get(`${AppointmentsAPI.ENDPOINT}/${id}`, {
-        withCredentials: true
-      });
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching appointment ${id}:`, error);
-      throw error;
-    }
-  }
+    // Get single appointment by ID
+    getAppointmentById: builder.query<AppointmentDto, string>({
+      query: (id) => ({
+        url: `/Appointments/${id}`,
+      }),
+      transformResponse: (response: ApiResponse<AppointmentDto>) => {
+        return response.data;
+      },
+      providesTags: (result, error, id) => [{ type: 'Appointment', id }],
+    }),
 
-  /**
-   * Get appointments for a specific employee
-   */
-  static async getEmployeeAppointments(employeeId: string, startDate: string, endDate: string, tenantId?: string) {
-    try {
-      const cacheKey = `employee_${employeeId}_${startDate}_${endDate}`;
-      const cachedData = this.getCachedAppointments(cacheKey);
-      
-      if (cachedData) {
-        return cachedData;
-      }
-      
-      // Headers for tenant ID
-      const headers: Record<string, string> = {};
-      if (tenantId) {
-        headers['X-TenantId'] = tenantId;
-      }
-      
-      const response = await axios.get<AppointmentDto[]>(
-        `${AppointmentsAPI.ENDPOINT}/employee/${employeeId}`, {
-          params: { startDate, endDate },
-          headers,
-          withCredentials: true
+    // Get appointments for specific employee
+    getEmployeeAppointments: builder.query<
+      AppointmentDto[], 
+      { employeeId: string; startDate: string; endDate: string }
+    >({
+      query: ({ employeeId, startDate, endDate }) => ({
+        url: `/Appointments/employee/${employeeId}`,
+        params: { startDate, endDate },
+      }),
+      transformResponse: (response: any) => {
+        if (response?.data && Array.isArray(response.data)) {
+          return response.data;
+        } else if (Array.isArray(response)) {
+          return response;
+        } else {
+          return [];
         }
-      );
-      
-      this.cacheAppointments(cacheKey, response.data);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching appointments for employee ${employeeId}:`, error);
-      throw error;
-    }
-  }
+      },
+      providesTags: (result, error, { employeeId }) => [
+        { type: 'Appointment', id: `employee-${employeeId}` },
+        ...(result?.map(({ id }) => ({ type: 'Appointment' as const, id })) || []),
+      ],
+    }),
 
-  /**
-   * Get appointments for a specific customer
-   */
-  static async getCustomerAppointments(customerId: string, startDate?: string, endDate?: string, tenantId?: string) {
-    try {
-      // Generate cache key if dates provided
-      const dateParams = startDate && endDate ? `_${startDate}_${endDate}` : '';
-      const cacheKey = `customer_${customerId}${dateParams}`;
-      const cachedData = this.getCachedAppointments(cacheKey);
-      
-      if (cachedData) {
-        return cachedData;
-      }
-      
-      // Headers for tenant ID
-      const headers: Record<string, string> = {};
-      if (tenantId) {
-        headers['X-TenantId'] = tenantId;
-      }
-      
-      // Prepare params
-      const params: Record<string, string> = {};
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
-      
-      console.log(`Fetching appointments for customer ${customerId}:`, { params, headers });
-      
-      const response = await axios.get<AppointmentDto[]>(
-        `${AppointmentsAPI.ENDPOINT}/customer/${customerId}`, {
+    // Get appointments for specific customer
+    getCustomerAppointments: builder.query<
+      AppointmentDto[], 
+      { customerId: string; startDate?: string; endDate?: string }
+    >({
+      query: ({ customerId, startDate, endDate }) => {
+        const params: Record<string, string> = {};
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
+        
+        return {
+          url: `/Appointments/customer/${customerId}`,
           params,
-          headers,
-          withCredentials: true
+        };
+      },
+      transformResponse: (response: any) => {
+        if (response?.data && Array.isArray(response.data)) {
+          return response.data;
+        } else if (Array.isArray(response)) {
+          return response;
+        } else {
+          return [];
         }
-      );
-      
-      console.log(`Received ${response.data.length} appointments for customer:`, response.data);
-      
-      // Cache the result
-      this.cacheAppointments(cacheKey, response.data);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching appointments for customer ${customerId}:`, error);
-      throw error;
-    }
-  }
+      },
+      providesTags: (result, error, { customerId }) => [
+        { type: 'Appointment', id: `customer-${customerId}` },
+        ...(result?.map(({ id }) => ({ type: 'Appointment' as const, id })) || []),
+      ],
+    }),
 
-  /**
-   * Create a new appointment
-   */
-  static async createAppointment(appointmentData: {
-    customerId: string;
-    employeeId: string;
-    serviceId: string;
-    startTime: string;
-    notes?: string;
-    tenantId?: string;
-  }) {
-    try {
-      // Extract tenantId from the data (if provided)
-      const { tenantId, ...data } = appointmentData;
-      
-      // Headers for tenant ID
-      const headers: Record<string, string> = {};
-      if (tenantId) {
-        headers['X-TenantId'] = tenantId;
-      }
-      
-      const response = await axios.post(
-        AppointmentsAPI.ENDPOINT,
-        data,
-        { 
-          withCredentials: true,
-          headers 
+    // Get appointments for date and employee (for availability checking)
+    getAppointmentsForDateAndEmployee: builder.query<
+      AppointmentDto[], 
+      { employeeId: string; date: string }
+    >({
+      query: ({ employeeId, date }) => {
+        // Create start and end of the requested day
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        
+        const endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+        
+        return {
+          url: `/Appointments/employee/${employeeId}`,
+          params: { 
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        };
+      },
+      transformResponse: (response: any) => {
+        if (response?.data && Array.isArray(response.data)) {
+          return response.data;
+        } else if (Array.isArray(response)) {
+          return response;
+        } else {
+          return [];
         }
-      );
-      
-      // Clear cache when creating a new appointment
-      this.clearCache();
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error creating appointment:', error);
-      throw error;
-    }
-  }
+      },
+      providesTags: (result, error, { employeeId, date }) => [
+        { type: 'Appointment', id: `employee-${employeeId}-${date}` },
+      ],
+    }),
 
-  /**
-   * Update an existing appointment
-   */
-  static async updateAppointment(id: string, appointmentData: Partial<{
-    customerId: string;
-    employeeId: string;
-    serviceId: string;
-    startTime: string;
-    notes?: string;
-    tenantId?: string;
-  }>) {
-    try {
-      // Extract tenantId from the data (if provided)
-      const { tenantId, ...data } = appointmentData;
-      
-      // Headers for tenant ID
-      const headers: Record<string, string> = {};
-      if (tenantId) {
-        headers['X-TenantId'] = tenantId;
-      }
-      
-      const response = await axios.put(
-        `${AppointmentsAPI.ENDPOINT}/${id}`,
-        { id, ...data },
-        { 
-          withCredentials: true,
-          headers 
+    // Create new appointment
+    createAppointment: builder.mutation<AppointmentDto, Omit<AppointmentDto, 'id'>>({
+      query: (appointmentData) => ({
+        url: '/Appointments',
+        method: 'POST',
+        body: transformAppointmentForApi(appointmentData),
+      }),
+      transformResponse: (response: any) => {
+        console.log('Create Appointment Response:', response);
+        
+        // Handle different response formats
+        if (response?.data) {
+          return response.data;
+        } else if (response?.id) {
+          return response;
+        } else {
+          throw new Error('Invalid response format');
         }
-      );
-      
-      // Clear cache when updating an appointment
-      this.clearCache();
-      
-      return response.data;
-    } catch (error) {
-      console.error(`Error updating appointment ${id}:`, error);
-      throw error;
-    }
-  }
+      },
+      invalidatesTags: [
+        'Appointment', // Invalidate all appointments to refresh lists
+      ],
+    }),
 
-  /**
-   * Cancel an appointment
-   */
-  static async cancelAppointment(id: string, reason?: string) {
-    try {
-      const response = await axios.post(
-        `${AppointmentsAPI.ENDPOINT}/${id}/cancel`,
-        { id, reason },
-        { withCredentials: true }
-      );
-      
-      // Clear cache when canceling an appointment
-      this.clearCache();
-      
-      return response.data;
-    } catch (error) {
-      console.error(`Error canceling appointment ${id}:`, error);
-      throw error;
-    }
-  }
+    // Update existing appointment
+    updateAppointment: builder.mutation<AppointmentDto, AppointmentDto>({
+      query: (appointmentData) => ({
+        url: `/Appointments/${appointmentData.id}`,
+        method: 'PUT',
+        body: transformAppointmentForApi(appointmentData),
+      }),
+      transformResponse: (response: any) => {
+        console.log('Update Appointment Response:', response);
+        
+        if (response?.data) {
+          return response.data;
+        } else if (response?.id) {
+          return response;
+        } else {
+          // If API doesn't return the updated appointment, return the input data
+          return response;
+        }
+      },
+      invalidatesTags: (result, error, { id }) => [
+        'Appointment', // Invalidate all appointments
+        { type: 'Appointment', id }, // Invalidate specific appointment
+      ],
+    }),
 
-  /**
-   * Confirm an appointment
-   */
-  static async confirmAppointment(id: string) {
-    try {
-      const response = await axios.post(
-        `${AppointmentsAPI.ENDPOINT}/${id}/confirm`,
-        {},
-        { withCredentials: true }
-      );
-      
-      // Clear cache when confirming an appointment
-      this.clearCache();
-      
-      return response.data;
-    } catch (error) {
-      console.error(`Error confirming appointment ${id}:`, error);
-      throw error;
-    }
-  }
+    // Cancel appointment
+    cancelAppointment: builder.mutation<AppointmentDto, { id: string; reason?: string }>({
+      query: ({ id, reason }) => ({
+        url: `/Appointments/${id}/cancel`,
+        method: 'POST',
+        body: { id, reason },
+      }),
+      transformResponse: (response: any) => {
+        if (response?.data) {
+          return response.data;
+        } else if (response?.id) {
+          return response;
+        } else {
+          return response;
+        }
+      },
+      invalidatesTags: (result, error, { id }) => [
+        'Appointment',
+        { type: 'Appointment', id },
+      ],
+    }),
 
-  /**
-   * Delete an appointment
-   */
-  static async deleteAppointment(id: string) {
-    try {
-      const response = await axios.delete(
-        `${AppointmentsAPI.ENDPOINT}/${id}`,
-        { withCredentials: true }
-      );
-      
-      // Clear cache when deleting an appointment
-      this.clearCache();
-      
-      return response.data;
-    } catch (error) {
-      console.error(`Error deleting appointment ${id}:`, error);
-      throw error;
-    }
-  }
+    // Confirm appointment
+    confirmAppointment: builder.mutation<AppointmentDto, string>({
+      query: (id) => ({
+        url: `/Appointments/${id}/confirm`,
+        method: 'POST',
+        body: {},
+      }),
+      transformResponse: (response: any) => {
+        if (response?.data) {
+          return response.data;
+        } else if (response?.id) {
+          return response;
+        } else {
+          return response;
+        }
+      },
+      invalidatesTags: (result, error, id) => [
+        'Appointment',
+        { type: 'Appointment', id },
+      ],
+    }),
 
-  /**
-   * Get cached appointments
-   */
-  private static getCachedAppointments(cacheKey: string): AppointmentDto[] | null {
-    const cacheEntry = this.appointmentsCache.get(cacheKey);
-    
-    if (!cacheEntry) {
-      return null;
-    }
-    
-    const now = Date.now();
-    if (now - cacheEntry.timestamp > this.CACHE_DURATION) {
-      // Cache expired
-      this.appointmentsCache.delete(cacheKey);
-      return null;
-    }
-    
-    return cacheEntry.data;
-  }
-  
-  /**
-   * Cache appointments
-   */
-  private static cacheAppointments(cacheKey: string, data: AppointmentDto[]): void {
-    this.appointmentsCache.set(cacheKey, {
-      data,
-      timestamp: Date.now()
-    });
-  }
-  
-  /**
-   * Clear all cached appointments
-   */
-  private static clearCache(): void {
-    this.appointmentsCache.clear();
-  }
+    // Delete appointment
+    deleteAppointment: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/Appointments/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, id) => [
+        'Appointment', // Invalidate all appointments
+        { type: 'Appointment', id }, // Invalidate specific appointment
+      ],
+    }),
+  }),
+});
 
-  /**
-   * Get appointments for a given date and employee to check availability
-   */
-  static async getAppointmentsForDateAndEmployee(employeeId: string, date: Date, tenantId?: string) {
-    try {
-      if (!employeeId) {
-        return [];
-      }
-      
-      // Create start and end of the requested day
-      const startDate = new Date(date);
-      startDate.setHours(0, 0, 0, 0);
-      
-      const endDate = new Date(date);
-      endDate.setHours(23, 59, 59, 999);
-      
-      // Use the existing employee appointments endpoint with the day's date range
-      return await this.getEmployeeAppointments(
-        employeeId,
-        startDate.toISOString(),
-        endDate.toISOString(),
-        tenantId
-      );
-    } catch (error) {
-      console.error(`Error fetching appointments for date and employee:`, error);
-      throw error;
-    }
-  }
-}
+// Export hooks for use in components
+export const {
+  useGetAppointmentsQuery,
+  useGetAppointmentByIdQuery,
+  useGetEmployeeAppointmentsQuery,
+  useGetCustomerAppointmentsQuery,
+  useGetAppointmentsForDateAndEmployeeQuery,
+  useCreateAppointmentMutation,
+  useUpdateAppointmentMutation,
+  useCancelAppointmentMutation,
+  useConfirmAppointmentMutation,
+  useDeleteAppointmentMutation,
+  useLazyGetAppointmentsQuery,
+  useLazyGetEmployeeAppointmentsQuery,
+  useLazyGetCustomerAppointmentsQuery,
+} = appointmentsApi;
 
-export default AppointmentsAPI; 
+// Export endpoints for use in other places
+export const {
+  getAppointments,
+  getAppointmentById,
+  getEmployeeAppointments,
+  getCustomerAppointments,
+  createAppointment,
+  updateAppointment,
+  cancelAppointment,
+  confirmAppointment,
+  deleteAppointment,
+} = appointmentsApi.endpoints;

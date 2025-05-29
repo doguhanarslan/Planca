@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import { FiCalendar, FiClock, FiUser, FiTool, FiBriefcase, FiMessageSquare, FiX } from 'react-icons/fi';
-import AppointmentCalendar from './AppointmentCalendar';
 import { useAvailableTimeSlots } from '../model/hooks/useAvailableTimeSlots';
 import { useAppointmentForm } from '../model/hooks/useAppointmentForm';
 import { AppointmentDto } from '../../../shared/types';
+import { format } from 'date-fns';
 
 // RTK Query hooks
 import { useGetActiveServicesQuery } from '../../services/api/servicesAPI';
 import { useGetActiveEmployeesQuery } from '../../employees/api/employeesAPI';
-import { format } from 'date-fns';
+
 interface AppointmentFormProps {
   selectedDate: Date;
   onClose: () => void;
@@ -66,7 +66,6 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
     appointmentTime, setAppointmentTime,
     notes, setNotes,
     customerMessage, setCustomerMessage,
-    currentCalendarMonth, setCurrentCalendarMonth 
   } = formState;
 
   const {
@@ -83,7 +82,11 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
     isPro,
   } = uiState;
 
-  const { availableTimeSlots, isLoadingAppointments } = useAvailableTimeSlots({
+  const { 
+    availableTimeSlots, 
+    isLoadingAppointments,
+    appointmentsError 
+  } = useAvailableTimeSlots({
     employeeId,
     appointmentDate,
     selectedServiceDuration,
@@ -96,7 +99,8 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
   // Combine errors from different sources
   const error = formError || 
     (servicesError ? 'Hizmetler yüklenirken bir hata oluştu' : null) ||
-    (employeesError ? 'Personeller yüklenirken bir hata oluştu' : null);
+    (employeesError ? 'Personeller yüklenirken bir hata oluştu' : null) ||
+    (appointmentsError ? 'Randevu verileri yüklenirken bir hata oluştu' : null);
   
   const isLoading = formLoading || servicesLoading || employeesLoading;
 
@@ -104,8 +108,6 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
     if (!isLoadingAppointments) {
       if (availableTimeSlots.length > 0 && !availableTimeSlots.includes(appointmentTime)) {
         setAppointmentTime(availableTimeSlots[0]);
-      } else if (availableTimeSlots.length === 0 && appointmentTime !== '') {
-        // Keep existing behavior or clear time
       }
     }
   }, [availableTimeSlots, isLoadingAppointments, appointmentTime, setAppointmentTime]);
@@ -239,7 +241,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                     <option value="">Hizmet seçin</option>
                     {services.map((service) => (
                       <option key={service.id} value={service.id}>
-                        {service.name} (₺{service.price})
+                        {service.name} (₺{service.price.toLocaleString()})
                       </option>
                     ))}
                   </>
@@ -270,7 +272,6 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 Aktif hizmet bulunamadı
               </p>
             )}
-            
           </div>
           
           {/* Employee Selection - Enhanced with RTK Query */}
@@ -338,10 +339,9 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 Aktif personel bulunamadı
               </p>
             )}
-           
           </div>
           
-          {/* Appointment Date - Custom Calendar */}
+          {/* Appointment Date */}
           <div className="col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <div className="flex items-center">
@@ -349,24 +349,24 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 Tarih
               </div>
             </label>
-          <div className="relative">
-            <input
-              type="date"
-              className="w-full border border-gray-300 rounded-md py-2 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              value={format(appointmentDate, 'yyyy-MM-dd')}
-              onChange={(e) => {
-                const newDate = new Date(e.target.value);
-                setAppointmentDate(newDate);
-                setAppointmentTime(''); // Reset time when date changes
-              }}
-              min={format(new Date(), 'yyyy-MM-dd')} // Prevent past dates
-              required
-              disabled={isLoading}
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-              <FiCalendar className="text-gray-400" size={18} />
+            <div className="relative">
+              <input
+                type="date"
+                className="w-full border border-gray-300 rounded-md py-2 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                value={format(appointmentDate, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  const newDate = new Date(e.target.value);
+                  setAppointmentDate(newDate);
+                  setAppointmentTime(''); // Reset time when date changes
+                }}
+                min={format(new Date(), 'yyyy-MM-dd')} // Prevent past dates
+                required
+                disabled={isLoading}
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <FiCalendar className="text-gray-400" size={18} />
+              </div>
             </div>
-          </div>
           </div>
           
           {/* Appointment Time - Dropdown */}

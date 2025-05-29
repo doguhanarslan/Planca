@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useState, useEffect, useMemo } from 'react';
 import { format, parseISO, isWithinInterval } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { FiClock, FiUser, FiTool, FiCalendar, FiX, FiEdit, FiCheckCircle, FiAlertCircle, FiTrash2, FiInfo } from 'react-icons/fi';
-import { selectAppointmentsStatus, removeAppointment } from './appointmentsSlice';
-import { RootState } from '../../app/store';
 import { AppointmentDto } from '../../shared/types';
-import { AppDispatch } from '../../app/store';
 import LoadingSpinner from '../../shared/ui/components/LoadingSpinner';
+
+// RTK Query hooks
+import { 
+  useGetAppointmentsQuery, 
+  useDeleteAppointmentMutation 
+} from './api/appointmentsAPI';
 
 interface AppointmentListProps {
   viewMode?: 'day' | 'week' | 'month';
@@ -24,12 +26,62 @@ const AppointmentList = ({
   appointments: propAppointments,
   searchQuery = '' 
 }: AppointmentListProps) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const defaultAppointments = useSelector((state: RootState) => state.appointments.appointments);
-  const appointments = propAppointments || defaultAppointments;
-  const status = useSelector(selectAppointmentsStatus);
   const [filteredAppointments, setFilteredAppointments] = useState<AppointmentDto[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+  // RTK Query for appointments (only if not provided via props)
+  const {
+    data: queryAppointments = [],
+    isLoading,
+    error,
+    refetch,
+  } = useGetAppointmentsQuery(
+    {
+      // For month view, get appointments for the entire month
+      startDate: !propAppointments ? (() => {
+        const date = selectedDate;
+        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+        return startOfMonth.toISOString();
+      })() : undefined,
+      endDate: !propAppointments ? (() => {
+        const date = selectedDate;
+        const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+        return endOfMonth.toISOString();
+      })() : undefined,
+      pageSize: 100, // Get more appointments for list view
+      sortBy: 'StartTime',
+      sortDirection: 'asc',
+    },
+    {
+      // Skip query if appointments are provided via props
+      skip: Boolean(propAppointments),
+      // Refetch on mount if data is older than 2 minutes
+      refetchOnMountOrArgChange: 120,
+      // Refetch on window focus
+      refetchOnFocus: true,
+    }
+  );
+
+  // RTK Query mutation for deleting appointments
+  const [deleteAppointment, { 
+    isLoading: isDeleting 
+  }] = useDeleteAppointmentMutation();
+
+  // Use either provided appointments or query results
+  const appointments = useMemo(() => {
+    if (propAppointments) {
+      return propAppointments;
+    }
+    
+    // Handle different response formats from RTK Query
+    if (Array.isArray(queryAppointments)) {
+      return queryAppointments;
+    } else if (queryAppointments && 'items' in queryAppointments) {
+      return queryAppointments.items || [];
+    } else {
+      return [];
+    }
+  }, [propAppointments, queryAppointments]);
 
   // Filter appointments based on date range and search term
   useEffect(() => {
@@ -43,7 +95,7 @@ const AppointmentList = ({
     // First filter by date range based on viewMode
     let dateFilteredAppointments = [...appointments];
     
-    // Apply date filtering based on viewMode
+    // Apply date filtering based on viewMode (only if not using propAppointments)
     if (viewMode !== 'month' && !propAppointments) {
       const today = selectedDate;
       let startDate: Date, endDate: Date;
@@ -94,35 +146,38 @@ const AppointmentList = ({
     }
   }, [appointments, viewMode, selectedDate, searchQuery, propAppointments]);
 
-  // Debug groupedAppointments calculation
-  let groupedAppointments: Record<string, AppointmentDto[]> = {};
-  let sortedDates: string[] = [];
-  
-  try {
-    // Group appointments by date
-    groupedAppointments = filteredAppointments.reduce((acc, appointment) => {
-      try {
+  // Group appointments by date
+  const { groupedAppointments, sortedDates } = useMemo(() => {
+    const grouped: Record<string, AppointmentDto[]> = {};
+    
+    try {
+      filteredAppointments.forEach((appointment) => {
         if (!appointment.startTime) {
           console.warn('Missing startTime in appointment:', appointment);
-          return acc;
+          return;
         }
         
-        const date = format(parseISO(appointment.startTime), 'yyyy-MM-dd');
-        if (!acc[date]) {
-          acc[date] = [];
+        try {
+          const date = format(parseISO(appointment.startTime), 'yyyy-MM-dd');
+          if (!grouped[date]) {
+            grouped[date] = [];
+          }
+          grouped[date].push(appointment);
+        } catch (err) {
+          console.error('Error processing appointment:', appointment, err);
         }
-        acc[date].push(appointment);
-      } catch (err) {
-        console.error('Error processing appointment:', appointment, err);
-      }
-      return acc;
-    }, {} as Record<string, AppointmentDto[]>);
+      });
+    } catch (err) {
+      console.error('Error grouping appointments:', err);
+    }
 
-    // Sort dates
-    sortedDates = Object.keys(groupedAppointments).sort();
-  } catch (err) {
-    console.error('Error grouping appointments:', err);
-  }
+    const sorted = Object.keys(grouped).sort();
+    
+    return {
+      groupedAppointments: grouped,
+      sortedDates: sorted,
+    };
+  }, [filteredAppointments]);
 
   // Status badge component
   const StatusBadge = ({ status }: { status: string }) => {
@@ -154,7 +209,7 @@ const AppointmentList = ({
     );
   };
   
-  console.log('AppointmentList render - Status:', status);
+  console.log('AppointmentList render - Loading:', isLoading);
   console.log('AppointmentList render - filteredAppointments:', filteredAppointments.length);
 
   // Handle delete appointment
@@ -166,15 +221,21 @@ const AppointmentList = ({
   const confirmDelete = async () => {
     if (showDeleteConfirm) {
       try {
-        await dispatch(removeAppointment(showDeleteConfirm));
+        await deleteAppointment(showDeleteConfirm).unwrap();
         setShowDeleteConfirm(null);
+        
+        // Refetch appointments if using query (not props)
+        if (!propAppointments) {
+          refetch();
+        }
       } catch (error) {
         console.error('Error deleting appointment:', error);
       }
     }
   };
 
-  if (status === 'loading' && appointments?.length === 0) {
+  // Show loading spinner only if we're loading and have no appointments
+  if (isLoading && appointments.length === 0) {
     return (
       <div className="p-16">
         <LoadingSpinner text="Randevular yükleniyor..." />
@@ -182,10 +243,43 @@ const AppointmentList = ({
     );
   }
 
+  // Show error if there's an error and no cached data
+  if (error && appointments.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+          <FiCalendar size={24} className="text-red-500" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Randevular yüklenemedi</h3>
+        <p className="text-gray-500 mb-4">
+          Randevuları yüklerken bir hata oluştu.
+        </p>
+        {!propAppointments && (
+          <button
+            onClick={() => refetch()}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            Tekrar Dene
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white overflow-hidden">
+      {/* Loading indicator for background refetching */}
+      {isLoading && appointments.length > 0 && (
+        <div className="p-2 bg-blue-50 border-b border-blue-200">
+          <div className="flex items-center text-blue-700 text-sm">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+            <span>Randevular güncelleniyor...</span>
+          </div>
+        </div>
+      )}
+      
       {/* Empty state */}
-      {filteredAppointments.length === 0 && (
+      {filteredAppointments.length === 0 && !isLoading && (
         <div className="p-8 text-center">
           <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <FiCalendar size={24} className="text-gray-400" />
@@ -263,6 +357,7 @@ const AppointmentList = ({
                               <button
                                 onClick={() => onEditAppointment(appointment)}
                                 className="inline-flex items-center px-3.5 py-1.5 shadow-sm text-xs leading-4 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors"
+                                disabled={isDeleting}
                               >
                                 <FiEdit className="mr-1.5" size={14} />
                                 Düzenle
@@ -271,9 +366,10 @@ const AppointmentList = ({
                             <button
                               onClick={(e) => handleDeleteClick(e, appointment.id)}
                               className="inline-flex items-center px-3.5 py-1.5 shadow-sm text-xs leading-4 font-medium rounded-full text-red-600 bg-white hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors"
+                              disabled={isDeleting}
                             >
                               <FiTrash2 className="mr-1.5" size={14} />
-                              Sil
+                              {isDeleting && showDeleteConfirm === appointment.id ? 'Siliniyor...' : 'Sil'}
                             </button>
                           </div>
                         </div>
@@ -298,14 +394,16 @@ const AppointmentList = ({
               <button
                 onClick={() => setShowDeleteConfirm(null)}
                 className="px-4 py-2 rounded-full shadow-sm text-gray-700 hover:bg-gray-50"
+                disabled={isDeleting}
               >
                 İptal
               </button>
               <button
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-600 rounded-full shadow-sm text-white hover:bg-red-700"
+                disabled={isDeleting}
               >
-                Sil
+                {isDeleting ? 'Siliniyor...' : 'Sil'}
               </button>
             </div>
           </div>
@@ -315,4 +413,4 @@ const AppointmentList = ({
   );
 };
 
-export default AppointmentList; 
+export default AppointmentList;
