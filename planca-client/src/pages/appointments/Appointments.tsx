@@ -48,7 +48,7 @@ const Appointments = () => {
     {
       startDate,
       endDate,
-      pageSize: 200, // Get more appointments
+      pageSize: 99, // Get more appointments
       sortBy: 'StartTime',
       sortDirection: 'asc',
     },

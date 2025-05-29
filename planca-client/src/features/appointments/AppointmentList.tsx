@@ -48,7 +48,7 @@ const AppointmentList = ({
         const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
         return endOfMonth.toISOString();
       })() : undefined,
-      pageSize: 100, // Get more appointments for list view
+      pageSize: 99, // Get more appointments for list view
       sortBy: 'StartTime',
       sortDirection: 'asc',
     },

@@ -115,7 +115,7 @@ const AppointmentCalendar = ({
     {
       startDate,
       endDate,
-      pageSize: 200, // Get more appointments for calendar view
+      pageSize: 99, // Get more appointments for calendar view
       sortBy: 'StartTime',
       sortDirection: 'asc',
     },
