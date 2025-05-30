@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import * as React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Formik, Form, FormikHelpers } from 'formik';
 import { loginUser, clearError, fetchCurrentUser } from '@/features/auth/authSlice';

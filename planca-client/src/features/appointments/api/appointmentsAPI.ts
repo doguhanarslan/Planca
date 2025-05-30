@@ -111,7 +111,7 @@ export const appointmentsApi = baseApi.injectEndpoints({
         // Add individual tags for each appointment for more granular invalidation
         ...(Array.isArray(result) 
           ? result.map(({ id }) => ({ type: 'Appointment' as const, id }))
-          : 'items' in result 
+          : (result && 'items' in result)
             ? result.items?.map(({ id }) => ({ type: 'Appointment' as const, id })) || []
             : []
         ),

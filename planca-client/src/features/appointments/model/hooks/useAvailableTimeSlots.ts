@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, addMinutes, isBefore, setHours, setMinutes } from 'date-fns';
-import { AppointmentDto, ServiceDto, WorkingHoursDto } from '../../../../shared/types';
+import { ServiceDto, WorkingHoursDto } from '../../../../shared/types';
 import { generateAllTimeSlots, filterTimeSlotsByWorkingHours } from '../../lib/timeSlotUtils';
 
 // RTK Query hook
@@ -43,7 +43,7 @@ export const useAvailableTimeSlots = ({
       // Only fetch if we have both employeeId and appointmentDate
       skip: !employeeId || !appointmentDate,
       // Refetch on mount if data is older than 2 minutes
-      refetchOnMountOrArgument: 120,
+      refetchOnMountOrArgChange: 120,
       // Refetch on focus to ensure fresh data
       refetchOnFocus: true,
     }

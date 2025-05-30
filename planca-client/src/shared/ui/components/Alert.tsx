@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC, ReactNode } from 'react';
 import {
   FaInfoCircle,
   FaCheckCircle,
@@ -8,12 +8,12 @@ import {
 } from 'react-icons/fa';
 
 interface AlertProps {
-  type: 'info' | 'success' | 'warning' | 'error';
+  type?: 'info' | 'success' | 'warning' | 'error';
   message: string;
   dismissible?: boolean;
   onDismiss?: () => void;
   className?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 }
 
 /**
@@ -27,7 +27,7 @@ interface AlertProps {
  *   onDismiss={() => console.log('dismissed')}
  * />
  */
-const Alert: React.FC<AlertProps> = ({
+const Alert: FC<AlertProps> = ({
   type = 'info',
   message,
   dismissible = false,

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import * as React from 'react';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
 import ServicesList from '@/features/services/ServicesList';
 import ServiceForm from '@/features/services/ServiceForm';

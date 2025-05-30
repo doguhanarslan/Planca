@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { logoutUser } from '@/features/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { AppLayoutProps, NavigationItem } from '@/shared/types';
 import Sidebar from '@/widgets/sidebar/Sidebar';
 
-const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+const AppLayout: FC<AppLayoutProps> = ({ children }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();

@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, useState } from 'react';
+import { Suspense, FC } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -45,7 +45,7 @@ import AuthInitializer from '@/app/providers/AuthInitializer';
 import { useAuthRedirects } from '@/features/auth/hooks/useAuthRedirects';
 
 // Main application content
-const AppContent: React.FC = () => {
+const AppContent: FC = () => {
   useAuthRedirects(); // Use the custom hook for redirects
 
   return (

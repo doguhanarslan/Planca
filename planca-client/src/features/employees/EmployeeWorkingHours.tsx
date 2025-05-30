@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import * as React from 'react';
 import { EmployeeDto, WorkingHoursDto } from '@/shared/types';
 import { useUpdateEmployeeWorkingHoursMutation } from './api/employeesAPI';
 

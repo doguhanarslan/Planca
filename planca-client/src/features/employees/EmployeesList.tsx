@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import * as React from 'react';
 import { EmployeeDto } from '@/shared/types';
 import { FaSort, FaSortUp, FaSortDown, FaPlus, FaEdit, FaTrash, FaFilter, FaUndo, FaUser, FaClock, FaEnvelope, FaPhone } from 'react-icons/fa';
 import Alert from '@/shared/ui/components/Alert';
@@ -24,7 +25,6 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
     sortBy: 'lastName',
     sortAscending: true,
   });
-  
   const [showFilters, setShowFilters] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -124,7 +124,7 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
       sortAscending: true,
     });
   };
-
+ 
   // Handle delete employee
   const handleDeleteClick = (id: string) => {
     setShowDeleteConfirm(id);

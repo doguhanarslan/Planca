@@ -1,17 +1,17 @@
-import React from 'react';
+import { FC, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 interface BusinessTypeCardProps {
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   link: string;
 }
 
 /**
  * Modern BusinessTypeCard component with enhanced visual effects
  */
-const BusinessTypeCard: React.FC<BusinessTypeCardProps> = ({ title, description, icon, link }) => {
+const BusinessTypeCard: FC<BusinessTypeCardProps> = ({ title, description, icon, link }) => {
   return (
     <div className="flex flex-col items-center rounded-xl shadow-md 
                     bg-white border border-gray-100 dark:bg-secondary-800 dark:border-gray-700

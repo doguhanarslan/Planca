@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 import Button from '@/shared/ui/components/Button';
@@ -6,7 +6,7 @@ import Button from '@/shared/ui/components/Button';
 /**
  * Modern responsive Header component with enhanced interactions
  */
-const Header: React.FC = () => {
+const Header: FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();

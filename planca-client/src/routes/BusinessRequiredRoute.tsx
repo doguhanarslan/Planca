@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 
@@ -7,7 +7,7 @@ import { useAppSelector } from '@/app/hooks';
  * Redirects to create-business if authenticated but no business
  * Redirects to login if not authenticated
  */
-const BusinessRequiredRoute: React.FC = () => {
+const BusinessRequiredRoute: FC = () => {
   const { isAuthenticated, isBusinessRegistered, loading } = useAppSelector((state)=>state.auth);
   const location = useLocation();
 

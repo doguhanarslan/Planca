@@ -118,16 +118,13 @@ namespace Planca.Infrastructure.Persistence.Context
 
         private void ApplyGlobalFilters(ModelBuilder modelBuilder)
         {
-            // Add global query filter for multi-tenancy
+            // Add global query filter for multi-tenancy and soft delete
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 // Check if the entity type is implementing ITenantEntity
                 if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType) &&
                     entityType.ClrType != typeof(Tenant)) // Skip Tenant entity itself
                 {
-                    // EF Core sorguyu çalıştırdığında tenant ID'yi dinamik olarak alacak şekilde değiştir
-                    // Bu, static olarak tenant ID'yi saklamak yerine, her sorgu çalıştırıldığında çalışma zamanında
-                    // güncel tenant ID değerini alacak bir metot çağrısı oluşturur.
                     var parameter = Expression.Parameter(entityType.ClrType, "e");
                     var tenantIdProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
                     
@@ -141,12 +138,25 @@ namespace Planca.Infrastructure.Persistence.Context
                         Expression.Constant(this),  // "this" (DbContext) instance'ı
                         getTenantIdMethod);         // Çağrılacak metot 
                     
-                    // 3. Property == Method() şeklinde bir lambda oluştur
-                    var filter = Expression.Lambda(
-                        Expression.Equal(tenantIdProperty, callExpression), 
-                        parameter);
+                    // 3. Tenant filter: Property == Method()
+                    var tenantFilter = Expression.Equal(tenantIdProperty, callExpression);
+                    
+                    Expression combinedFilter = tenantFilter;
+                    
+                    // 4. Check if entity inherits from BaseEntity for soft delete
+                    if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+                    {
+                        var isDeletedProperty = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
+                        var softDeleteFilter = Expression.Equal(isDeletedProperty, Expression.Constant(false));
+                        
+                        // Combine tenant filter and soft delete filter with AND
+                        combinedFilter = Expression.AndAlso(tenantFilter, softDeleteFilter);
+                    }
+                    
+                    // 5. Create lambda expression
+                    var filter = Expression.Lambda(combinedFilter, parameter);
 
-                    // 4. Entity tipi için query filter'ı uygula
+                    // 6. Entity tipi için query filter'ı uygula
                     modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
                 }
             }

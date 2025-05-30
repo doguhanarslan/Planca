@@ -1,119 +1,37 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { useState } from 'react';
+import * as React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import CustomersList from '@/features/customers/CustomersList';
-import CustomerDetail from '@/features/customers/CustomerDetail';
-import CustomerForm from '@/features/customers/CustomerForm';
+import { CustomersList, CustomerDetail, CustomerForm } from '@/features/customers/ui';
+import { CustomerDto, CustomerStats } from '@/features/customers/model';
+import { useGetCustomersQuery } from '@/features/customers/api';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
-import { clearSelectedCustomer, fetchCustomerById, fetchCustomers, removeCustomer } from '@/features/customers/customersSlice';
-import { CustomerDto } from '@/shared/types';
 import { FiUsers, FiPlus, FiArrowLeft, FiTrendingUp, FiCalendar, FiStar, FiEdit } from 'react-icons/fi';
 
 const Customers: React.FC = () => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { customerId } = useParams<{ customerId?: string }>();
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  
+  // Modal states
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<string | null>(null);
   
-  // Cache optimization
-  const lastFetchTimeRef = useRef<number>(0);
-  const minimumFetchInterval = 30000; // 30 seconds
-  
   // Detail view tracking
-  const isDetailView = Boolean(selectedCustomerId);
+  const isDetailView = Boolean(customerId);
   
-  // API request tracking
-  const customersData = useAppSelector(state => state.customers.customersList);
-  const { loading } = useAppSelector(state => state.customers);
-  const hasFetchedData = useRef(false);
-  
-  // Fetch customers with params - optimized
-  const fetchCustomersWithParams = useCallback((params: { 
-    forceRefresh?: boolean;
-    silentRefresh?: boolean;
-    suppressErrors?: boolean;
-    [key: string]: any; 
-  } = {}) => {
-    const now = Date.now();
-    
-    if (now - lastFetchTimeRef.current < minimumFetchInterval && 
-        hasFetchedData.current && 
-        !params.forceRefresh) {
-      console.log('Skipping fetch, using cached data');
-      return Promise.resolve(customersData);
-    }
-    
-    lastFetchTimeRef.current = now;
-    
-    return dispatch(fetchCustomers({
-      pageNumber: 1,
-      pageSize: 6,
-      sortBy: 'LastName',
-      sortAscending: true,
-      ...params
-    }));
-  }, [dispatch, customersData]);
-  
-  // Initial data fetch
-  useEffect(() => {
-    console.log('Customers component mounted, fetching customer list');
-    
-    if (!hasFetchedData.current || !customersData) {
-      console.log('Initial data fetch triggered');
-      fetchCustomersWithParams()
-        .then(() => {
-          hasFetchedData.current = true;
-        });
-    }
-    
-    // Periodic refresh - every 2 minutes
-    const refreshInterval = setInterval(() => {
-      if (hasFetchedData.current) {
-        fetchCustomersWithParams({ 
-          silentRefresh: true,
-          forceRefresh: false,
-          suppressErrors: true
-        }).catch(error => {
-          console.error('Silent refresh error:', error);
-        });
-      }
-    }, 2 * 60 * 1000);
-    
-    return () => clearInterval(refreshInterval);
-  }, [fetchCustomersWithParams]);
-  
-  // Handle URL parameter changes
-  useEffect(() => {
-    if (!customerId) {
-      if (selectedCustomerId !== null) {
-        setSelectedCustomerId(null);
-        dispatch(clearSelectedCustomer());
-      }
-      return;
-    }
-    
-    if (selectedCustomerId === customerId) {
-      console.log(`Customer ${customerId} is already selected, skipping fetch`);
-      return;
-    }
-    
-    setSelectedCustomerId(customerId);
-    
-    dispatch(fetchCustomerById(customerId))
-      .catch(error => {
-        console.error('Error fetching customer details:', error);
-        setSelectedCustomerId(null);
-        dispatch(clearSelectedCustomer());
-        navigate('/customers', { replace: true });
-      });
-  }, [customerId, dispatch, selectedCustomerId, customersData?.items, navigate]);
+  // RTK Query for basic stats (using the first page with minimal params)
+  const { data: customersData } = useGetCustomersQuery({ 
+    pageNumber: 1, 
+    pageSize: 1 
+  }, {
+    selectFromResult: ({ data, ...otherProps }) => ({
+      data: data ? { totalCount: data.totalCount } : undefined,
+      ...otherProps
+    })
+  });
   
   // Handle customer selection
   const handleSelectCustomer = (customerId: string) => {
-    if (selectedCustomerId === customerId) return;
     navigate(`/customers/${customerId}`);
   };
   
@@ -125,8 +43,6 @@ const Customers: React.FC = () => {
   // Handle close customer detail
   const handleCloseCustomerDetail = () => {
     navigate('/customers', { replace: true });
-    dispatch(clearSelectedCustomer());
-    setSelectedCustomerId(null);
   };
   
   // Handle add customer
@@ -137,9 +53,7 @@ const Customers: React.FC = () => {
   // Handle customer added
   const handleCustomerAdded = (customer: CustomerDto) => {
     setShowAddCustomerModal(false);
-    fetchCustomersWithParams({ forceRefresh: true }).then(() => {
-      navigate(`/customers/${customer.id}`, { replace: true });
-    });
+    navigate(`/customers/${customer.id}`, { replace: true });
   };
   
   // Handle cancel add customer
@@ -154,17 +68,10 @@ const Customers: React.FC = () => {
   };
 
   // Handle delete customer
-  const handleDeleteCustomer = async (customerId: string) => {
-    try {
-      await dispatch(removeCustomer(customerId)).unwrap();
-      // Navigate back to customers list if the deleted customer was selected
-      if (selectedCustomerId === customerId) {
-        navigate('/customers', { replace: true });
-      }
-      // Refresh customer list
-      fetchCustomersWithParams({ forceRefresh: true });
-    } catch (error) {
-      console.error('Error deleting customer:', error);
+  const handleDeleteCustomer = (customerId: string) => {
+    // Navigate back to customers list if the deleted customer was selected
+    if (customerId === customerId) {
+      navigate('/customers', { replace: true });
     }
   };
 
@@ -172,8 +79,7 @@ const Customers: React.FC = () => {
   const handleCustomerEdited = (customer: CustomerDto) => {
     setShowEditCustomerModal(false);
     setCustomerToEdit(null);
-    // Refresh customer list and stay on current customer
-    fetchCustomersWithParams({ forceRefresh: true });
+    // Stay on current customer view
   };
 
   // Handle cancel edit customer
@@ -182,12 +88,12 @@ const Customers: React.FC = () => {
     setCustomerToEdit(null);
   };
 
-  // Get customer stats
-  const customerStats = {
+  // Get customer stats (you can make this more sophisticated with separate queries)
+  const customerStats: CustomerStats = {
     total: customersData?.totalCount || 0,
-    growth: '+12%', // This would come from API
-    activeToday: 5, // This would come from API
-    avgRating: 4.8 // This would come from API
+    growth: '+12%', // This would come from a separate API call
+    activeToday: 5, // This would come from a separate API call
+    avgRating: 4.8 // This would come from a separate API call
   };
   
   return (
@@ -324,10 +230,10 @@ const Customers: React.FC = () => {
             <CustomersList 
               onSelectCustomer={handleSelectCustomer}
               onAddCustomer={handleAddCustomer}
-              isDetailViewActive={isDetailView}
-              selectedCustomerId={selectedCustomerId}
               onEditCustomer={handleEditCustomer}
               onDeleteCustomer={handleDeleteCustomer}
+              isDetailViewActive={isDetailView}
+              selectedCustomerId={customerId || null}
             />
           </div>
           
@@ -335,6 +241,7 @@ const Customers: React.FC = () => {
           {isDetailView && (
             <div className="lg:col-span-7 xl:col-span-8 animate-in slide-in-from-right-5 duration-300">
               <CustomerDetail 
+                customerId={customerId || null}
                 onCreateAppointment={handleCreateAppointment}
                 onClose={handleCloseCustomerDetail}
                 onEditCustomer={handleEditCustomer}
@@ -433,18 +340,6 @@ const Customers: React.FC = () => {
                   onCancel={handleCancelEditCustomer} 
                 />
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Loading Overlay */}
-      {loading && hasFetchedData.current && (
-        <div className="fixed top-4 right-4 z-40">
-          <div className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl px-4 py-3 shadow-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-4 h-4 border-2 border-slate-300 border-t-indigo-500 rounded-full animate-spin" />
-              <span className="text-sm font-medium text-slate-700">Güncelleniyor...</span>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import { ReactNode, ButtonHTMLAttributes, ChangeEvent, FocusEvent, HTMLAttributes } from 'react';
 
 // User Types
 export interface User {
@@ -147,7 +147,7 @@ export interface DashboardStats {
 export interface NavigationItem {
   name: string;
   href: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   badge?: string | number; // Bildirim badgeleri için
   submenu?: NavigationItem[]; // Alt menüler için
 }
@@ -173,51 +173,44 @@ export type RadiusSize = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 export type PaddingSize = 'none' | 'sm' | 'normal' | 'lg' | 'xl';
 
 // Component Props Types
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children?: React.ReactNode;
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children?: ReactNode;
   className?: string;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success' | 'warning' | 'ghost' | 'link' | 'glass';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+  size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   loadingText?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   fullWidth?: boolean;
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
 export interface InputProps {
-  type?: string;
-  name: string;
-  id?: string;
   label?: string;
   placeholder?: string;
-  value?: string | number;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  error?: string;
-  touched?: boolean;
+  value?: string;
+  name?: string;
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
   required?: boolean;
   disabled?: boolean;
-  readOnly?: boolean;
+  error?: string;
   className?: string;
-  containerClassName?: string;
+  inputClassName?: string;
   labelClassName?: string;
   helpText?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
   maxLength?: number;
   autoComplete?: string;
-  autoFocus?: boolean;
-  description?: string; // Alan açıklaması
-  validation?: 'success' | 'warning' | 'error'; // Doğrulama durumu
-  showCharCount?: boolean; // Karakter sayısını göster
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
 }
 
 export interface AlertProps {
   type?: 'info' | 'success' | 'warning' | 'error';
   title?: string;
-  message: string | React.ReactNode;
+  message: string | ReactNode;
   onClose?: () => void;
   className?: string;
   autoClose?: boolean;
@@ -228,14 +221,14 @@ export interface AlertProps {
   variant?: 'solid' | 'outline' | 'light'; // Stil varyantları
 }
 
-export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
-  children: React.ReactNode;
+export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+  children: ReactNode;
   className?: string;
-  title?: React.ReactNode;
+  title?: ReactNode;
   titleClassName?: string;
-  subtitle?: React.ReactNode;
-  footer?: React.ReactNode;
-  actions?: React.ReactNode;
+  subtitle?: ReactNode;
+  footer?: ReactNode;
+  actions?: ReactNode;
   shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'glow';
   padding?: 'none' | 'sm' | 'normal' | 'lg' | 'xl';
   border?: boolean;
@@ -246,7 +239,7 @@ export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 't
 }
 
 export interface AppLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 // Add these new interfaces to the types file

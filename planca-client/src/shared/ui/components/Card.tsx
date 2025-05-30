@@ -1,10 +1,10 @@
-import React from 'react';
+import { FC } from 'react';
 import { CardProps } from '@/shared/types';
 
 /**
  * Modern Card component with enhanced visual effects including glass morphism
  */
-const Card: React.FC<CardProps> = ({ 
+const Card: FC<CardProps> = ({ 
   children, 
   className = '', 
   title, 

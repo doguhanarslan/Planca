@@ -61,6 +61,13 @@ namespace Planca.Infrastructure.Persistence.Interceptors
 
                     // Use "System" as fallback when UserId is null
                     entry.Entity.LastModifiedBy = _currentUserService.UserId ?? "System";
+                    
+                    // Handle soft delete
+                    if (entry.Entity.IsDeleted && entry.Entity.DeletedAt == null)
+                    {
+                        entry.Entity.DeletedAt = _dateTime.UtcNow;
+                        entry.Entity.DeletedBy = _currentUserService.UserId ?? "System";
+                    }
                 }
             }
         }

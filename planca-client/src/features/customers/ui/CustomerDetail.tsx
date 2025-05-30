@@ -1,36 +1,58 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
 import { FiUser, FiMail, FiPhone, FiMessageSquare, FiCalendar, FiClock, FiTool, FiEdit, FiTrash2, FiX, FiPlus, FiStar, FiActivity, FiMoreVertical, FiCheckCircle, FiXCircle, FiAlertCircle } from 'react-icons/fi';
-import { useAppSelector } from '@/app/hooks';
+import { CustomerDetailProps, formatCustomerName, getCustomerInitials } from '../model';
+import { useGetCustomerByIdQuery, useDeleteCustomerMutation } from '../api/customersAPI';
+import { useGetCustomerAppointmentsQuery, useDeleteAppointmentMutation, useCancelAppointmentMutation } from '../../appointments/api/appointmentsAPI';
 import Button from '@/shared/ui/components/Button';
+import Alert from '@/shared/ui/components/Alert';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
-// RTK Query hooks
-import { 
-  useGetCustomerAppointmentsQuery, 
-  useDeleteAppointmentMutation,
-  useCancelAppointmentMutation 
-} from '../appointments/api/appointmentsAPI';
-
-interface CustomerDetailProps {
-  onCreateAppointment: (customerId: string) => void;
-  onClose: () => void;
-  onEditCustomer?: (customerId: string) => void;
-  onDeleteCustomer?: (customerId: string) => void;
+interface CustomerDetailPropsWithId extends CustomerDetailProps {
+  customerId: string | null;
 }
 
-const CustomerDetail: React.FC<CustomerDetailProps> = ({ 
+const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({ 
+  customerId,
   onCreateAppointment, 
   onClose, 
   onEditCustomer, 
   onDeleteCustomer 
 }) => {
-  const { selectedCustomer } = useAppSelector((state) => state.customers);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showDeleteCustomerConfirm, setShowDeleteCustomerConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'appointments' | 'history'>('info');
   const [showMoreActions, setShowMoreActions] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // RTK Query hooks
+  const {
+    data: selectedCustomer,
+    isLoading: isLoadingCustomer,
+    error: customerError,
+  } = useGetCustomerByIdQuery(customerId || '', {
+    skip: !customerId,
+  });
+
+  const {
+    data: appointments = [],
+    isLoading: isLoadingAppointments,
+    error: appointmentsError,
+    refetch: refetchAppointments,
+  } = useGetCustomerAppointmentsQuery(
+    { customerId: customerId || '' },
+    {
+      skip: !customerId,
+      refetchOnMountOrArgChange: 120,
+      refetchOnFocus: true,
+    }
+  );
+
+  // RTK Query mutations
+  const [deleteAppointment, { isLoading: isDeletingAppointment }] = useDeleteAppointmentMutation();
+  const [cancelAppointment, { isLoading: isCancellingAppointment }] = useCancelAppointmentMutation();
+  const [deleteCustomer, { isLoading: isDeletingCustomer }] = useDeleteCustomerMutation();
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -45,32 +67,6 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  // RTK Query for customer appointments
-  const {
-    data: appointments = [],
-    isLoading: isLoadingAppointments,
-    error: appointmentsError,
-    refetch: refetchAppointments,
-  } = useGetCustomerAppointmentsQuery(
-    {
-      customerId: selectedCustomer?.id || '',
-    },
-    {
-      skip: !selectedCustomer?.id,
-      refetchOnMountOrArgChange: 120,
-      refetchOnFocus: true,
-    }
-  );
-
-  // RTK Query mutations
-  const [deleteAppointment, { 
-    isLoading: isDeletingAppointment 
-  }] = useDeleteAppointmentMutation();
-
-  const [cancelAppointment, { 
-    isLoading: isCancellingAppointment 
-  }] = useCancelAppointmentMutation();
 
   // Handle delete appointment
   const handleDeleteAppointment = async (appointmentId: string) => {
@@ -95,9 +91,19 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({
   };
 
   // Handle delete customer
-  const handleDeleteCustomer = () => {
-    if (onDeleteCustomer && selectedCustomer) {
-      onDeleteCustomer(selectedCustomer.id);
+  const handleDeleteCustomer = async () => {
+    if (!selectedCustomer) return;
+    
+    try {
+      await deleteCustomer(selectedCustomer.id).unwrap();
+      setShowDeleteCustomerConfirm(false);
+      
+      // Call parent handler if provided
+      if (onDeleteCustomer) {
+        onDeleteCustomer(selectedCustomer.id);
+      }
+    } catch (error) {
+      console.error('Error deleting customer:', error);
       setShowDeleteCustomerConfirm(false);
     }
   };
@@ -123,6 +129,33 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({
         return { icon: FiAlertCircle, color: 'text-amber-600', bg: 'bg-amber-100', label: 'Beklemede' };
     }
   };
+
+  // Loading state
+  if (isLoadingCustomer) {
+    return (
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full border-4 border-slate-200"></div>
+            <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
+          </div>
+          <p className="text-slate-600 font-medium">Müşteri bilgileri yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (customerError) {
+    return (
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
+        <Alert 
+          type="error" 
+          message="Müşteri bilgileri yüklenirken bir hata oluştu. Lütfen tekrar deneyin."
+        />
+      </div>
+    );
+  }
 
   if (!selectedCustomer) {
     return (
@@ -151,7 +184,9 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({
               <div className="flex items-center space-x-6">
                 <div className="relative">
                   <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-2xl">
-                    <FiUser className="w-9 h-9 text-white" />
+                    <span className="text-white text-xl font-bold">
+                      {getCustomerInitials(selectedCustomer)}
+                    </span>
                   </div>
                   <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
                     <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -159,7 +194,9 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({
                 </div>
                 
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{selectedCustomer.fullName}</h1>
+                  <h1 className="text-3xl font-bold text-white mb-2">
+                    {formatCustomerName(selectedCustomer)}
+                  </h1>
                   <div className="flex items-center space-x-4 text-indigo-100">
                     <div className="flex items-center">
                       <FiCalendar className="w-4 h-4 mr-2" />
@@ -277,7 +314,9 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({
                       </div>
                       <div className="flex-1">
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Ad Soyad</p>
-                        <p className="text-base font-semibold text-slate-900">{selectedCustomer.fullName}</p>
+                        <p className="text-base font-semibold text-slate-900">
+                          {formatCustomerName(selectedCustomer)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -549,22 +588,24 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({
             </div>
             
             <p className="text-slate-600 mb-8">
-              <strong>{selectedCustomer?.fullName}</strong> isimli müşteriyi silmek istediğinizden emin misiniz? 
+              <strong>{formatCustomerName(selectedCustomer)}</strong> isimli müşteriyi silmek istediğinizden emin misiniz? 
               Bu müşteriye ait tüm randevular da silinecektir.
             </p>
             
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowDeleteCustomerConfirm(false)}
+                disabled={isDeletingCustomer}
                 className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors duration-200"
               >
                 İptal
               </button>
               <button
                 onClick={handleDeleteCustomer}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors duration-200"
+                disabled={isDeletingCustomer}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors duration-200 disabled:opacity-50"
               >
-                Müşteriyi Sil
+                {isDeletingCustomer ? 'Siliniyor...' : 'Müşteriyi Sil'}
               </button>
             </div>
           </div>
@@ -574,4 +615,4 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({
   );
 };
 
-export default CustomerDetail;
+export default CustomerDetail; 

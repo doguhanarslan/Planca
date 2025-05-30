@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, ChangeEvent } from 'react';
 import { FiCalendar, FiClock, FiUser, FiTool, FiBriefcase, FiMessageSquare, FiX } from 'react-icons/fi';
 import { useAvailableTimeSlots } from '../model/hooks/useAvailableTimeSlots';
 import { useAppointmentForm } from '../model/hooks/useAppointmentForm';
@@ -112,7 +112,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
     }
   }, [availableTimeSlots, isLoadingAppointments, appointmentTime, setAppointmentTime]);
 
-  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleServiceChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setServiceId(e.target.value);
     setEmployeeId(''); // Reset employee when service changes
   };

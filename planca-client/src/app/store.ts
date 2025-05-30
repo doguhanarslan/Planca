@@ -2,12 +2,12 @@
 import { configureStore, Reducer, AnyAction, combineReducers } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import authReducer from '@/features/auth/authSlice';
-import customersReducer, { resetCustomers } from '@/features/customers/customersSlice';
-import { initializeAxios } from '@/shared/api/base/axios';
 
 // Import RTK Query APIs
 import { baseApi } from '@/shared/api/base/baseApi';
+import '@/features/customers/api/customersAPI'; // Ensure customers API is registered
 
+// Note: customersReducer removed - now using RTK Query
 // Note: appointmentsSlice removed - now using RTK Query
 // Note: employeesReducer removed - now using RTK Query  
 // Note: servicesReducer removed - now using RTK Query
@@ -15,7 +15,6 @@ import { baseApi } from '@/shared/api/base/baseApi';
 // Combine base reducers
 const appReducer = combineReducers({
   auth: authReducer,
-  customers: customersReducer,
   // Add RTK Query reducer
   [baseApi.reducerPath]: baseApi.reducer,
 });
@@ -40,7 +39,6 @@ const rootReducer: Reducer = (state: RootState | undefined, action: AnyAction) =
       
       return {
         ...nextState,
-        customers: customersReducer(undefined, resetCustomers()),
         // Reset RTK Query cache for tenant-specific data
         [baseApi.reducerPath]: baseApi.reducer(undefined, baseApi.util.resetApiState()),
       };
@@ -85,9 +83,6 @@ const store = configureStore({
 
 // Setup listeners for RTK Query (enables automatic refetching)
 setupListeners(store.dispatch);
-
-// Initialize axios with the store (for non-RTK Query requests like customers)
-initializeAxios(store);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

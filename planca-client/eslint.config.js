@@ -1,4 +1,5 @@
 import globals from 'globals'
+import js from '@eslint/js'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import typescriptPlugin from '@typescript-eslint/eslint-plugin'
@@ -34,6 +35,9 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+      // Modern JSX transform rules - disable React import requirements
+      'react/jsx-uses-react': 'off',
+      'react/react-in-jsx-scope': 'off',
     },
   },
 ]

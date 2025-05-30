@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { FC, ReactNode, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FaCheckCircle, FaExclamationCircle, FaExclamationTriangle, FaInfoCircle, FaTimes } from 'react-icons/fa';
 
@@ -13,7 +13,7 @@ export interface ToastProps {
 /**
  * Modern Toast notification component
  */
-const Toast: React.FC<ToastProps> = ({ 
+const Toast: FC<ToastProps> = ({ 
   id, 
   message, 
   type = 'info', 
@@ -160,8 +160,8 @@ const Toast: React.FC<ToastProps> = ({
 };
 
 // ToastContainer component for positioning
-export const ToastContainer: React.FC<{
-  children: React.ReactNode;
+export const ToastContainer: FC<{
+  children: ReactNode;
   position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
 }> = ({ 
   children,

@@ -1,5 +1,5 @@
 // src/utils/themeUtils.ts
-import { ColorVariant, ButtonStyle } from '../types';
+import { ColorVariant, ButtonStyle } from '../../types';
 
 type ColorSet = {
   light: string;

@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 
@@ -6,7 +6,7 @@ import { useAppSelector } from '@/app/hooks';
  * Modern Protected route component with enhanced loading state
  * Redirects to login if not authenticated
  */
-const ProtectedRoute: React.FC = () => {
+const ProtectedRoute: FC = () => {
   const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
   const location = useLocation();
 

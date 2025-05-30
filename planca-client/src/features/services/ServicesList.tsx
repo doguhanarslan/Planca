@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import * as React from 'react';
 import { ServiceDto } from '@/shared/types';
 import { FaSort, FaSortUp, FaSortDown, FaPlus, FaEdit, FaTrash, FaFilter, FaUndo } from 'react-icons/fa';
 import Alert from '@/shared/ui/components/Alert';

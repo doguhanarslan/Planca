@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import { FC, ReactNode } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 
 type ThemeContextType = {
   applyTheme: () => void;
@@ -10,7 +11,7 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export const useTheme = () => useContext(ThemeContext);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ThemeProvider: FC<{ children: ReactNode }> = ({ children }) => {
   // Apply the theme (light only now)
   const applyTheme = () => {
     // Remove dark class from document element

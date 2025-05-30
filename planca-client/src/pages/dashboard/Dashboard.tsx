@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { FC, useEffect, useState, useCallback, useMemo, ReactNode, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
@@ -10,7 +10,7 @@ import { tr } from 'date-fns/locale';
 import { DashboardService } from '@/services/dashboardService';
 
 // Skeleton loader component for stats cards
-const StatCardSkeleton = React.memo(() => {
+const StatCardSkeleton = memo(() => {
   return (
     <Card 
       className="animate-pulse overflow-hidden transition-all duration-300" 
@@ -30,7 +30,7 @@ const StatCardSkeleton = React.memo(() => {
 });
 
 // Skeleton loader component for appointments
-const AppointmentSkeleton = React.memo(() => (
+const AppointmentSkeleton = memo(() => (
   <div className="px-4 sm:px-6 py-4 flex items-center space-x-3 sm:space-x-4 transition-colors duration-200 border-b border-gray-200/50">
     <div className="flex-shrink-0">
       <div className="flex items-center justify-center h-10 w-10 rounded-full bg-gray-200"></div>
@@ -49,14 +49,14 @@ const AppointmentSkeleton = React.memo(() => (
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon: React.ReactNode;
+  icon: ReactNode;
   change?: number;
   color?: 'primary' | 'secondary' | 'success' | 'warning';
   loading?: boolean;
 }
 
 // Memoized StatCard component for better performance
-const StatCard = React.memo<StatCardProps>(({ title, value, icon, change, color = 'primary', loading = false }) => {
+const StatCard = memo<StatCardProps>(({ title, value, icon, change, color = 'primary', loading = false }) => {
   const colorClasses: Record<string, string> = {
     primary: 'bg-primary-100/80 text-primary-800',
     secondary: 'bg-emerald-100/80 text-emerald-800',
@@ -106,12 +106,12 @@ const StatCard = React.memo<StatCardProps>(({ title, value, icon, change, color 
 
 // Business Info Item Component
 interface BusinessInfoItemProps {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
-  value: string | React.ReactNode;
+  value: string | ReactNode;
 }
 
-const BusinessInfoItem = React.memo<BusinessInfoItemProps>(({ icon, label, value }) => (
+const BusinessInfoItem = memo<BusinessInfoItemProps>(({ icon, label, value }) => (
   <div className="flex items-start space-x-3 p-3 bg-gray-50/50 rounded-lg transition-all hover:bg-gray-100/50">
     <div className="flex-shrink-0 text-gray-500 mt-0.5">
       {icon}
@@ -130,7 +130,7 @@ interface AppointmentItemProps {
   isLast: boolean;
 }
 
-const AppointmentItem = React.memo<AppointmentItemProps>(({ appointment, index, isLast }) => {
+const AppointmentItem = memo<AppointmentItemProps>(({ appointment, index, isLast }) => {
   const getInitials = useCallback((fullName: string) => {
     if (!fullName) return '';
     return fullName
@@ -211,7 +211,7 @@ const AppointmentItem = React.memo<AppointmentItemProps>(({ appointment, index, 
   );
 });
 
-const Dashboard: React.FC = () => {
+const Dashboard: FC = () => {
   const navigate = useNavigate();
   const { user, tenant } = useAppSelector((state) => state.auth);
   const [stats, setStats] = useState<DashboardStats>({
@@ -280,7 +280,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="mt-3 sm:mt-0 flex space-x-3">
             <Button
-              variant="glass"
+              variant="ghost"
               size="sm"
               rounded="lg"
               icon={

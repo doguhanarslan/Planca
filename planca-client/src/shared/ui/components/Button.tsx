@@ -1,11 +1,11 @@
-import React from 'react';
+import { FC } from 'react';
 import { ButtonProps } from '@/shared/types';
 import { componentThemes } from '@/styles/designSystem';
 
 /**
  * Modern Button component with enhanced visual effects and glass morphism
  */
-const Button: React.FC<ButtonProps> = ({
+const Button: FC<ButtonProps> = ({
   type = 'button',
   className = '',
   disabled = false,

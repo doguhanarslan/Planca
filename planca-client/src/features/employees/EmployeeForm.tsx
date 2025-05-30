@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { useAppSelector } from '@/app/hooks';
 import { EmployeeDto, WorkingHoursDto } from '@/shared/types';
 import Button from '@/shared/ui/components/Button';

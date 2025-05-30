@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, FormEvent } from 'react';
 import { useSelector } from 'react-redux';
 import { format, startOfDay } from 'date-fns';
-import { CustomerDto, ServiceDto, EmployeeDto, AppointmentDto, WorkingHoursDto } from '../../../../shared/types';
+import { ServiceDto, EmployeeDto, AppointmentDto } from '../../../../shared/types';
 import { RootState } from '../../../../app/store';
-import CustomersAPI from '../../../customers/customersAPI';
+import { useGetCustomersQuery } from '../../../customers/api/customersAPI';
 
 // RTK Query hooks
 import { 
@@ -42,14 +42,6 @@ export const useAppointmentForm = ({
   const [customerMessage, setCustomerMessage] = useState<string>('');
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState<Date>(startOfDay(selectedDate));
 
-  const [customers, setCustomers] = useState<CustomerDto[]>([]);
-  const [services, setServices] = useState<ServiceDto[]>(externalServices || []);
-  const [employees, setEmployees] = useState<EmployeeDto[]>(externalEmployees || []);
-  const [availableEmployees, setAvailableEmployees] = useState<EmployeeDto[]>([]);
-  const [selectedServiceDuration, setSelectedServiceDuration] = useState<number>(30);
-  const [selectedEmployeeWorkingHours, setSelectedEmployeeWorkingHours] = useState<WorkingHoursDto[]>([]);
-
-  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   // RTK Query hooks for employees
@@ -60,6 +52,19 @@ export const useAppointmentForm = ({
   } = useGetActiveEmployeesQuery(undefined, {
     // Skip if external employees are provided
     skip: Boolean(externalEmployees && externalEmployees.length > 0),
+    refetchOnMountOrArgChange: 300,
+  });
+
+  // RTK Query hook for customers
+  const {
+    data: customersResponse,
+    isLoading: customersLoading,
+    error: customersError,
+  } = useGetCustomersQuery({
+    pageSize: 100,
+    sortBy: 'LastName'
+  }, {
+    skip: !tenant?.id,
     refetchOnMountOrArgChange: 300,
   });
 
@@ -84,47 +89,60 @@ export const useAppointmentForm = ({
     error: updateError 
   }] = useUpdateAppointmentMutation();
 
-  useEffect(() => {
-    if (externalServices) {
-      setServices(externalServices);
-    }
+  // Memoized customers array
+  const customers = useMemo(() => {
+    return customersResponse?.items || [];
+  }, [customersResponse?.items]);
+
+  // Memoized services array
+  const services = useMemo(() => {
+    return externalServices || [];
   }, [externalServices]);
 
-  useEffect(() => {
+  // Memoized employees array
+  const employees = useMemo(() => {
     if (externalEmployees && externalEmployees.length > 0) {
-      setEmployees(externalEmployees);
-      setAvailableEmployees(externalEmployees);
-    } else if (employeesData && employeesData.length > 0) {
-      setEmployees(employeesData);
-      setAvailableEmployees(employeesData);
+      return externalEmployees;
     }
+    return employeesData || [];
   }, [externalEmployees, employeesData]);
 
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const customerResponse = await CustomersAPI.getCustomers({ 
-          pageSize: 100, 
-          sortBy: 'LastName' 
-        });
-
-        if (customerResponse && customerResponse.items) {
-          setCustomers(customerResponse.items);
-        }
-      } catch (err) {
-        console.error('Form data loading error (customers):', err);
-        setError('Müşteri verileri yüklenemedi.');
-      }
-      setLoading(false);
-    };
-
-    if (tenant?.id) {
-      fetchCustomers();
+  // Memoized available employees based on selected service
+  const availableEmployees = useMemo(() => {
+    if (!serviceId || !employees.length) {
+      return employees;
     }
-  }, [tenant?.id]);
+    return employees.filter(
+      (emp) => emp.serviceIds && emp.serviceIds.includes(serviceId)
+    );
+  }, [serviceId, employees]);
 
+  // Memoized selected service duration
+  const selectedServiceDuration = useMemo(() => {
+    if (!serviceId || !services.length) {
+      return 30;
+    }
+    const service = services.find(s => s.id === serviceId);
+    return service?.durationMinutes || 30;
+  }, [serviceId, services]);
+
+  // Memoized selected employee working hours
+  const selectedEmployeeWorkingHours = useMemo(() => {
+    if (!employeeId) {
+      return [];
+    }
+
+    // Use RTK Query data if available
+    if (employeeDetails?.workingHours) {
+      return employeeDetails.workingHours;
+    }
+
+    // Fallback to employee data from list
+    const employee = employees.find(emp => emp.id === employeeId);
+    return employee?.workingHours || [];
+  }, [employeeId, employees, employeeDetails?.workingHours]);
+
+  // Initialize form data when editing
   useEffect(() => {
     if (appointmentToEdit) {
       setCustomerId(appointmentToEdit.customerId || '');
@@ -140,51 +158,19 @@ export const useAppointmentForm = ({
     }
   }, [appointmentToEdit]);
 
+  // Reset employee when service changes and employee is not available for the service
   useEffect(() => {
-    if (!serviceId) {
-      setAvailableEmployees(employees);
-      setEmployeeId('');
-      return;
-    }
-    const filtered = employees.filter(
-      (emp) => emp.serviceIds && emp.serviceIds.includes(serviceId)
-    );
-    setAvailableEmployees(filtered);
-    if (employeeId && !filtered.find(emp => emp.id === employeeId)) {
-      setEmployeeId('');
-    }
-  }, [serviceId, employees, employeeId]);
-
-  useEffect(() => {
-    if (serviceId && services.length > 0) {
-      const service = services.find(s => s.id === serviceId);
-      setSelectedServiceDuration(service?.durationMinutes || 30);
-    } else {
-      setSelectedServiceDuration(30);
-    }
-  }, [serviceId, services]);
-
-  useEffect(() => {
-    if (!employeeId) {
-      setSelectedEmployeeWorkingHours([]);
-      return;
-    }
-
-    // Use RTK Query data if available
-    if (employeeDetails?.workingHours) {
-      setSelectedEmployeeWorkingHours(employeeDetails.workingHours);
-    } else {
-      // Fallback to employee data from list
-      const employee = employees.find(emp => emp.id === employeeId);
-      if (employee?.workingHours) {
-        setSelectedEmployeeWorkingHours(employee.workingHours);
-      } else {
-        setSelectedEmployeeWorkingHours([]);
+    if (employeeId && serviceId && availableEmployees.length > 0) {
+      const isEmployeeAvailable = availableEmployees.find(emp => emp.id === employeeId);
+      if (!isEmployeeAvailable) {
+        setEmployeeId('');
       }
+    } else if (employeeId && !serviceId) {
+      // If no service is selected, any employee is valid, so don't reset
     }
-  }, [employeeId, employees, employeeDetails]);
+  }, [serviceId, employeeId, availableEmployees]);
 
-  const handleSubmit = useCallback(async (event: React.FormEvent) => {
+  const handleSubmit = useCallback(async (event: FormEvent) => {
     event.preventDefault();
     if (!customerId || !serviceId || !employeeId || !appointmentDate || !appointmentTime) {
       setError('Lütfen tüm gerekli alanları doldurun.');
@@ -249,10 +235,11 @@ export const useAppointmentForm = ({
   ]);
 
   // Combine loading states
-  const isLoadingData = loading || employeesLoading || employeeDetailsLoading || isCreating || isUpdating;
+  const isLoadingData = employeesLoading || customersLoading || employeeDetailsLoading || isCreating || isUpdating;
   
   // Combine errors
   const combinedError = error || 
+    (customersError ? 'Müşteri verileri yüklenirken bir hata oluştu' : null) ||
     (employeesError ? 'Personeller yüklenirken bir hata oluştu' : null) ||
     (employeeDetailsError ? 'Personel detayları yüklenirken bir hata oluştu' : null) ||
     (createError ? 'Randevu oluşturulurken bir hata oluştu' : null) ||

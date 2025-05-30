@@ -1,10 +1,10 @@
-import React from 'react';
+import { FC } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { NavigationItem, SidebarProps, User } from '@/shared/types';
 
 
 
-const Sidebar: React.FC<SidebarProps> = ({
+const Sidebar: FC<SidebarProps> = ({
   sidebarOpen,
   setSidebarOpen,
   sidebarCollapsed,

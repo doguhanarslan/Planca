@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import * as React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
 import EmployeesList from '@/features/employees/EmployeesList';

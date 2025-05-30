@@ -1,10 +1,10 @@
-import React from 'react';
+import { FC } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/widgets/header/Header';
 import Footer from '@/shared/ui/layouts/Footer';
 import Button from '@/shared/ui/components/Button';
 
-const HomePage: React.FC = () => {
+const HomePage: FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />

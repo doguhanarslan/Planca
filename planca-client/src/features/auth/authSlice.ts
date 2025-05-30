@@ -259,7 +259,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-        const userData = action.payload?.data || action.payload;
+        const userData = action.payload;
         if(userData) {
           state.user = formatUserData(userData);
           state.tenant = formatTenantData(userData);

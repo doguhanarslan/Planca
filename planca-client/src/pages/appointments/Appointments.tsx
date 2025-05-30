@@ -5,7 +5,6 @@ import AppointmentCalendar from '@/features/appointments/ui/AppointmentCalendar'
 import AppointmentList from '@/features/appointments/AppointmentList';
 import AppointmentForm from '@/features/appointments/ui/AppointmentForm';
 import { AppointmentDto } from '../../shared/types';
-import AppLayout from '@/shared/ui/layouts/AppLayout';
 
 // RTK Query hooks
 import { useGetAppointmentsQuery } from '@/features/appointments/api/appointmentsAPI';
@@ -143,7 +142,6 @@ const Appointments = () => {
   }, [appointments, filterDate]);
 
   return (
-    <AppLayout>
       <div className="flex flex-col h-full">
         {/* Main Content Area with Enhanced Calendar Size */}
         <div className="flex-1 bg-gray-50 overflow-auto">
@@ -348,7 +346,6 @@ const Appointments = () => {
           </div>
         )}
       </div>
-    </AppLayout>
   );
 };
 

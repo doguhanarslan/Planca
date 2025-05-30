@@ -54,6 +54,13 @@ namespace Planca.Infrastructure.Persistence.Repositories
 
         public async Task DeleteAsync(T entity)
         {
+            entity.IsDeleted = true;
+            _dbContext.Entry(entity).State = EntityState.Modified;
+            await Task.CompletedTask;
+        }
+
+        public async Task HardDeleteAsync(T entity)
+        {
             _dbContext.Set<T>().Remove(entity);
             await Task.CompletedTask;
         }
@@ -71,6 +78,29 @@ namespace Planca.Infrastructure.Persistence.Repositories
         public IQueryable<T> GetQuery(ISpecification<T> spec)
         {
             return ApplySpecification(spec);
+        }
+
+        public async Task<T> GetByIdIncludeDeletedAsync(Guid id)
+        {
+            return await _dbContext.Set<T>()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        public async Task<IReadOnlyList<T>> ListAllIncludeDeletedAsync()
+        {
+            return await _dbContext.Set<T>()
+                .IgnoreQueryFilters()
+                .ToListAsync();
+        }
+
+        public async Task RestoreAsync(T entity)
+        {
+            entity.IsDeleted = false;
+            entity.DeletedAt = null;
+            entity.DeletedBy = null;
+            _dbContext.Entry(entity).State = EntityState.Modified;
+            await Task.CompletedTask;
         }
 
         protected IQueryable<T> ApplySpecification(ISpecification<T> spec)

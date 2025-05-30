@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, MouseEvent } from 'react';
 import { format, parseISO, isWithinInterval } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { FiClock, FiUser, FiTool, FiCalendar, FiX, FiEdit, FiCheckCircle, FiAlertCircle, FiTrash2, FiInfo } from 'react-icons/fi';
@@ -213,7 +213,7 @@ const AppointmentList = ({
   console.log('AppointmentList render - filteredAppointments:', filteredAppointments.length);
 
   // Handle delete appointment
-  const handleDeleteClick = (e: React.MouseEvent, appointmentId: string) => {
+  const handleDeleteClick = (e: MouseEvent, appointmentId: string) => {
     e.stopPropagation();
     setShowDeleteConfirm(appointmentId);
   };

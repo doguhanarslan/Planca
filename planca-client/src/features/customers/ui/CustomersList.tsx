@@ -1,166 +1,119 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { FiUser, FiPlus, FiSearch, FiFilter, FiPhone, FiMail, FiCalendar, FiMoreVertical, FiTrash2, FiEdit, FiEye, FiX, FiChevronRight } from 'react-icons/fi';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { fetchCustomers, setSearchString, setSortBy, setSortDirection, removeCustomer } from './customersSlice';
-import { isHandling401Error } from '@/shared/api/base/axios';
-import { debounce } from 'lodash';
-import { CustomerDto } from '@/shared/types';
+import { FC, useState, useCallback, Fragment, ChangeEvent } from 'react';
+import { FiUser, FiPlus, FiSearch, FiFilter, FiPhone, FiMail, FiCalendar, FiTrash2, FiEdit, FiX, FiChevronRight } from 'react-icons/fi';
+import { CustomersListProps, CUSTOMER_SORT_OPTIONS, formatCustomerName, formatPhoneNumber } from '../model';
+import { useCustomersFilters } from '../lib/hooks/useCustomersFilters';
+import { useGetCustomersQuery, useDeleteCustomerMutation } from '../api/customersAPI';
+import { useGetCustomerAppointmentsQuery, useDeleteAppointmentMutation } from '../../appointments/api/appointmentsAPI';
 import Button from '@/shared/ui/components/Button';
 import Alert from '@/shared/ui/components/Alert';
 
-// RTK Query hooks for appointments
-import { 
-  useGetCustomerAppointmentsQuery, 
-  useDeleteAppointmentMutation 
-} from '../appointments/api/appointmentsAPI';
-
-interface CustomersListProps {
-  onSelectCustomer: (customerId: string) => void;
-  onAddCustomer: () => void;
-  isDetailViewActive?: boolean;
-  selectedCustomerId?: string;
-}
- const CustomersList: React.FC<CustomersListProps> = ({
+const CustomersList: FC<CustomersListProps> = ({
   onSelectCustomer,
   onAddCustomer,
+  onEditCustomer,
+  onDeleteCustomer,
   isDetailViewActive = false,
   selectedCustomerId
 }) => {
-  const dispatch = useAppDispatch();
-  const { 
-    customersList, 
-    loading, 
-    error, 
-    searchString, 
-    sortBy, 
-    sortDirection 
-  } = useAppSelector((state) => state.customers);
+  // Filter and pagination management
+  const {
+    filters,
+    queryParams,
+    setSearchString,
+    handleSortChange,
+    clearFilters,
+    nextPage,
+    prevPage,
+    hasSearch,
+    isFirstPage
+  } = useCustomersFilters();
 
-  // Local state
+  // Local UI state
   const [showFilters, setShowFilters] = useState(false);
+  const [searchInput, setSearchInput] = useState(filters.searchString);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [selectedCustomerForAppointments, setSelectedCustomerForAppointments] = useState<string | null>(null);
 
-  // RTK Query mutations
-  const [deleteAppointment, { 
-    isLoading: isDeletingAppointment 
-  }] = useDeleteAppointmentMutation();
+  // RTK Query hooks
+  const {
+    data: customersData,
+    isLoading,
+    error,
+    isFetching
+  } = useGetCustomersQuery(queryParams, {
+    refetchOnMountOrArgChange: 30, // 30 seconds
+    refetchOnFocus: true,
+  });
+
+  const [deleteCustomer, { isLoading: isDeletingCustomer }] = useDeleteCustomerMutation();
+  const [deleteAppointment, { isLoading: isDeletingAppointment }] = useDeleteAppointmentMutation();
 
   // RTK Query for customer appointments (conditionally)
   const {
     data: customerAppointments = [],
     isLoading: isLoadingAppointments,
     error: appointmentsError,
-    refetch: refetchAppointments,
   } = useGetCustomerAppointmentsQuery(
-    {
-      customerId: selectedCustomerForAppointments || '',
-    },
-    {
-      skip: !selectedCustomerForAppointments,
-      refetchOnMountOrArgChange: 120,
-    }
-  );
-
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce((searchTerm: string) => {
-      dispatch(setSearchString(searchTerm));
-      dispatch(fetchCustomers({ 
-        pageNumber: 1, 
-        pageSize: 6, 
-        searchString: searchTerm,
-        sortBy,
-        sortAscending: sortDirection === 'asc'
-      }));
-    }, 300),
-    [dispatch, sortBy, sortDirection]
+    { customerId: selectedCustomerForAppointments || '' },
+    { skip: !selectedCustomerForAppointments }
   );
 
   // Handle search input change
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    debouncedSearch(value);
-  };
+    setSearchInput(value);
+    setSearchString(value); // This is debounced
+  }, [setSearchString]);
 
-  // Handle sort change
-  const handleSortChange = (field: string) => {
-    const newDirection = (sortBy === field && sortDirection === 'asc') ? 'desc' : 'asc';
-    dispatch(setSortBy(field));
-    dispatch(setSortDirection(newDirection as any));
-    
-    dispatch(fetchCustomers({
-      pageNumber: 1,
-      pageSize: 6,
-      searchString,
-      sortBy: field,
-      sortAscending: newDirection === 'asc'
-    }));
-  };
-
-  // Handle customer appointments view
-  const handleViewAppointments = (customerId: string) => {
+  // Handle customer appointments view toggle
+  const handleViewAppointments = useCallback((customerId: string) => {
     setSelectedCustomerForAppointments(
       selectedCustomerForAppointments === customerId ? null : customerId
     );
-  };
+  }, [selectedCustomerForAppointments]);
 
   // Handle delete appointment
-  const handleDeleteAppointment = async (appointmentId: string) => {
+  const handleDeleteAppointment = useCallback(async (appointmentId: string) => {
     try {
       await deleteAppointment(appointmentId).unwrap();
-      if (selectedCustomerForAppointments) {
-        refetchAppointments();
-      }
     } catch (error) {
       console.error('Error deleting appointment:', error);
     }
-  };
+  }, [deleteAppointment]);
 
   // Handle delete customer
-  const handleDeleteCustomer = async (customerId: string) => {
+  const handleDeleteCustomer = useCallback(async (customerId: string) => {
     try {
-      await dispatch(removeCustomer(customerId)).unwrap();
+      await deleteCustomer(customerId).unwrap();
       setShowDeleteConfirm(null);
+      
+      // Call parent handler if provided
+      if (onDeleteCustomer) {
+        onDeleteCustomer(customerId);
+      }
     } catch (error) {
       console.error('Error deleting customer:', error);
+      setShowDeleteConfirm(null);
     }
-  };
+  }, [deleteCustomer, onDeleteCustomer]);
 
-  // Clear filters
-  const handleClearFilters = () => {
-    dispatch(setSearchString(''));
-    dispatch(setSortBy('lastName'));
-    dispatch(setSortDirection(true));
-    dispatch(fetchCustomers({ 
-      pageNumber: 1, 
-      pageSize: 6, 
-      searchString: '',
-      sortBy: 'lastName',
-      sortAscending: true
-    }));
-  };
+  // Handle clear filters
+  const handleClearFilters = useCallback(() => {
+    setSearchInput('');
+    clearFilters();
+  }, [clearFilters]);
 
-  // Fetch customers on component mount
-  useEffect(() => {
-    if (!customersList || customersList.items.length === 0) {
-      dispatch(fetchCustomers({ 
-        pageNumber: 1, 
-        pageSize: 6, 
-        sortBy: 'lastName',
-        sortAscending: true
-      }));
-    }
-  }, [dispatch, customersList]);
-
-  // Memoized customers list
-  const customers = useMemo(() => {
-    return customersList?.items || [];
-  }, [customersList]);
+  const customers = customersData?.items || [];
+  const pagination = customersData ? {
+    pageNumber: customersData.pageNumber,
+    totalPages: customersData.totalPages,
+    totalCount: customersData.totalCount,
+    hasNextPage: customersData.hasNextPage,
+    hasPreviousPage: customersData.hasPreviousPage
+  } : null;
 
   // Loading state
-  if (loading && customers.length === 0) {
+  if (isLoading && customers.length === 0) {
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-8 shadow-lg">
         <div className="flex flex-col items-center justify-center space-y-4">
@@ -175,12 +128,12 @@ interface CustomersListProps {
   }
 
   // Error state
-  if (error && !isHandling401Error()) {
+  if (error) {
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-8 shadow-lg">
         <Alert 
           type="error" 
-          message={Array.isArray(error) ? error.join(', ') : error}
+          message="Müşteriler yüklenirken bir hata oluştu. Lütfen tekrar deneyin."
         />
       </div>
     );
@@ -198,10 +151,10 @@ interface CustomersListProps {
             <div>
               <h2 className="text-xl font-bold text-slate-900">Müşteriler</h2>
               <p className="text-sm text-slate-500">
-                {customersList?.totalCount ? `${customersList.totalCount} müşteri` : 'Müşteri listesi'}
+                {pagination?.totalCount ? `${pagination.totalCount} müşteri` : 'Müşteri listesi'}
               </p>
             </div>
-            {loading && customers.length > 0 && (
+            {isFetching && customers.length > 0 && (
               <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full">
                 <div className="w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-xs font-medium">Güncelleniyor</span>
@@ -245,8 +198,8 @@ interface CustomersListProps {
                 <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  defaultValue={searchString}
-                  onChange={handleSearchChange}
+                  value={searchInput}
+                  onChange={handleSearchInputChange}
                   placeholder="İsim, email veya telefon ile ara..."
                   className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-sm"
                 />
@@ -258,19 +211,19 @@ interface CustomersListProps {
                 Sıralama
               </label>
               <select
-                value={`${sortBy}-${sortDirection}`}
+                value={`${filters.sortBy}-${filters.sortAscending ? 'asc' : 'desc'}`}
                 onChange={(e) => {
-                  const [field, direction] = e.target.value.split('-');
+                  const [field] = e.target.value.split('-');
                   handleSortChange(field);
                 }}
                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-sm"
               >
-                <option value="lastName-asc">Soyisme göre (A-Z)</option>
-                <option value="lastName-desc">Soyisme göre (Z-A)</option>
-                <option value="firstName-asc">İsme göre (A-Z)</option>
-                <option value="firstName-desc">İsme göre (Z-A)</option>
-                <option value="email-asc">E-postaya göre (A-Z)</option>
-                <option value="email-desc">E-postaya göre (Z-A)</option>
+                {CUSTOMER_SORT_OPTIONS.map((option) => (
+                  <Fragment key={option.value}>
+                    <option value={`${option.value}-asc`}>{option.label} ({option.ascending})</option>
+                    <option value={`${option.value}-desc`}>{option.label} ({option.descending})</option>
+                  </Fragment>
+                ))}
               </select>
             </div>
           </div>
@@ -289,21 +242,21 @@ interface CustomersListProps {
       
       {/* Modern Customer List */}
       <div className="divide-y divide-slate-200/60">
-        {customers.length === 0 && !loading ? (
+        {customers.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
               <FiUser className="w-8 h-8 text-slate-400" />
             </div>
             <h3 className="text-lg font-semibold text-slate-900 mb-2">
-              {searchString ? 'Müşteri bulunamadı' : 'Henüz müşteri yok'}
+              {hasSearch ? 'Müşteri bulunamadı' : 'Henüz müşteri yok'}
             </h3>
             <p className="text-slate-500 mb-6">
-              {searchString 
+              {hasSearch 
                 ? 'Arama kriterlerinize uygun müşteri bulunamadı.' 
                 : 'Başlamak için ilk müşterinizi ekleyin.'
               }
             </p>
-            {!searchString && (
+            {!hasSearch && (
               <button
                 onClick={onAddCustomer}
                 className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
@@ -314,7 +267,7 @@ interface CustomersListProps {
             )}
           </div>
         ) : (
-          customers.map((customer: CustomerDto) => (
+          customers.map((customer) => (
             <div
               key={customer.id}
               className={`relative px-6 py-5 cursor-pointer transition-all duration-200 hover:bg-slate-50/50 group ${
@@ -341,7 +294,7 @@ interface CustomersListProps {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
                     <h3 className="text-base font-semibold text-slate-900 truncate">
-                      {customer.fullName}
+                      {formatCustomerName(customer)}
                     </h3>
                   </div>
                   
@@ -355,7 +308,7 @@ interface CustomersListProps {
                     {customer.phoneNumber && (
                       <div className="flex items-center text-slate-500">
                         <FiPhone className="w-3.5 h-3.5 mr-1.5" />
-                        <span className="text-sm">{customer.phoneNumber}</span>
+                        <span className="text-sm">{formatPhoneNumber(customer.phoneNumber)}</span>
                       </div>
                     )}
                   </div>
@@ -371,6 +324,28 @@ interface CustomersListProps {
                     className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all duration-200"
                   >
                     <FiCalendar className="w-4 h-4 text-slate-600" />
+                  </button>
+                  
+                  {onEditCustomer && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditCustomer(customer.id);
+                      }}
+                      className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all duration-200"
+                    >
+                      <FiEdit className="w-4 h-4 text-slate-600" />
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDeleteConfirm(customer.id);
+                    }}
+                    className="p-2 rounded-lg hover:bg-red-50 hover:shadow-sm border border-transparent hover:border-red-200 transition-all duration-200"
+                  >
+                    <FiTrash2 className="w-4 h-4 text-red-600" />
                   </button>
                   
                   <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-indigo-100 transition-colors duration-200">
@@ -463,35 +438,23 @@ interface CustomersListProps {
       </div>
       
       {/* Modern Pagination */}
-      {customersList && customersList.totalPages > 1 && (
+      {pagination && pagination.totalPages > 1 && (
         <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-200/60">
           <div className="flex items-center justify-between">
             <div className="text-sm text-slate-600">
-              <span className="font-medium">{customersList.totalCount}</span> müşteri
-              {customersList.totalPages > 1 && (
-                <span className="ml-2">
-                  (Sayfa <span className="font-medium">{customersList.pageNumber}</span> / 
-                  <span className="font-medium">{customersList.totalPages}</span>)
-                </span>
-              )}
+              <span className="font-medium">{pagination.totalCount}</span> müşteri
+              <span className="ml-2">
+                (Sayfa <span className="font-medium">{pagination.pageNumber}</span> / 
+                <span className="font-medium">{pagination.totalPages}</span>)
+              </span>
             </div>
             
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => {
-                  if (customersList.pageNumber > 1) {
-                    dispatch(fetchCustomers({
-                      pageNumber: customersList.pageNumber - 1,
-                      pageSize: 6,
-                      searchString,
-                      sortBy,
-                      sortAscending: sortDirection === 'asc'
-                    }));
-                  }
-                }}
-                disabled={customersList.pageNumber <= 1 || loading}
+                onClick={prevPage}
+                disabled={isFirstPage || isFetching}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  customersList.pageNumber <= 1 || loading
+                  isFirstPage || isFetching
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                     : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:shadow-sm'
                 }`}
@@ -499,20 +462,10 @@ interface CustomersListProps {
                 Önceki
               </button>
               <button
-                onClick={() => {
-                  if (customersList.pageNumber < customersList.totalPages) {
-                    dispatch(fetchCustomers({
-                      pageNumber: customersList.pageNumber + 1,
-                      pageSize: 6,
-                      searchString,
-                      sortBy,
-                      sortAscending: sortDirection === 'asc'
-                    }));
-                  }
-                }}
-                disabled={customersList.pageNumber >= customersList.totalPages || loading}
+                onClick={nextPage}
+                disabled={!pagination.hasNextPage || isFetching}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  customersList.pageNumber >= customersList.totalPages || loading
+                  !pagination.hasNextPage || isFetching
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                     : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:shadow-sm'
                 }`}
@@ -545,17 +498,17 @@ interface CustomersListProps {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowDeleteConfirm(null)}
-                disabled={loading}
+                disabled={isDeletingCustomer}
                 className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors duration-200"
               >
                 İptal
               </button>
               <button
                 onClick={() => showDeleteConfirm && handleDeleteCustomer(showDeleteConfirm)}
-                disabled={loading}
+                disabled={isDeletingCustomer}
                 className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors duration-200 disabled:opacity-50"
               >
-                {loading ? 'Siliniyor...' : 'Sil'}
+                {isDeletingCustomer ? 'Siliniyor...' : 'Sil'}
               </button>
             </div>
           </div>
@@ -565,4 +518,4 @@ interface CustomersListProps {
   );
 };
 
-export default CustomersList;
+export default CustomersList; 
