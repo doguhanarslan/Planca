@@ -20,7 +20,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onSuccess, onCancel, initia
   const [formData, setFormData] = useState<Partial<CustomerDto>>({
     id: initialData?.id || '',
     firstName: initialData?.firstName || '',
-    lastName: initialData?.lastName || '',
+    lastName: initialData?.lastName || '' ,
     email: initialData?.email || '',
     phoneNumber: initialData?.phoneNumber || '',
     notes: initialData?.notes || '',

@@ -2,6 +2,48 @@ import axios from '@/shared/api/base/axios';
 import { ApiResponse, PaginatedList, CustomerDto, AppointmentDto } from '@/shared/types';
 
 /**
+ * Valid SortBy values for Customers API (based on debug info)
+ */
+const VALID_CUSTOMER_SORT_VALUES = {
+  'firstName': 'FirstName',
+  'firstname': 'FirstName',
+  'FirstName': 'FirstName',
+  'lastName': 'LastName', 
+  'lastname': 'LastName',
+  'LastName': 'LastName',
+  'email': 'Email',
+  'Email': 'Email',
+  'createdAt': 'CreatedAt',
+  'createdat': 'CreatedAt',
+  'CreatedAt': 'CreatedAt',
+  // Default fallback for invalid values
+  'name': 'LastName', // Map invalid 'name' to valid 'LastName' for customers
+  'Name': 'LastName',
+  'fullName': 'LastName',
+  'fullname': 'LastName',
+} as const;
+
+/**
+ * Valid SortBy values for Appointments API
+ */
+const VALID_APPOINTMENT_SORT_VALUES = {
+  'startTime': 'StartTime',
+  'starttime': 'StartTime',
+  'StartTime': 'StartTime', 
+  'endTime': 'EndTime',
+  'endtime': 'EndTime',
+  'EndTime': 'EndTime',
+  'createdAt': 'CreatedAt',
+  'createdat': 'CreatedAt',
+  'CreatedAt': 'CreatedAt',
+  'status': 'Status',
+  'Status': 'Status',
+  // Default fallback
+  'name': 'StartTime',
+  'Name': 'StartTime',
+} as const;
+
+/**
  * Customers API endpoints and methods
  */
 class CustomersAPI {
@@ -30,6 +72,40 @@ class CustomersAPI {
   
   // Cache süresi (ms) - 2 dakika
   private static readonly CACHE_DURATION = 2 * 60 * 1000;
+
+  /**
+   * Transform and validate SortBy parameter for Customers API
+   */
+  private static transformCustomerSortBy(sortBy?: string): string {
+    if (!sortBy) return 'LastName'; // Default for customers
+    
+    // Check if the sortBy value is valid
+    const validValue = VALID_CUSTOMER_SORT_VALUES[sortBy as keyof typeof VALID_CUSTOMER_SORT_VALUES];
+    if (validValue) {
+      return validValue;
+    }
+    
+    // Default fallback
+    console.warn(`Invalid SortBy value for customers: ${sortBy}. Using LastName instead.`);
+    return 'LastName';
+  }
+
+  /**
+   * Transform and validate SortBy parameter for Appointments API
+   */
+  private static transformAppointmentSortBy(sortBy?: string): string {
+    if (!sortBy) return 'StartTime'; // Default for appointments
+    
+    // Check if the sortBy value is valid
+    const validValue = VALID_APPOINTMENT_SORT_VALUES[sortBy as keyof typeof VALID_APPOINTMENT_SORT_VALUES];
+    if (validValue) {
+      return validValue;
+    }
+    
+    // Default fallback
+    console.warn(`Invalid SortBy value for appointments: ${sortBy}. Using StartTime instead.`);
+    return 'StartTime';
+  }
 
   /**
    * Önbelleği tamamen temizle ve son tenantId'yi sıfırla
@@ -111,7 +187,8 @@ class CustomersAPI {
       const apiParams: Record<string, any> = {
         PageNumber: params.pageNumber || 1,
         PageSize: params.pageSize || 10,
-        SortBy: params.sortBy || 'LastName',
+        // FIX: Use validated SortBy parameter
+        SortBy: this.transformCustomerSortBy(params.sortBy),
         SortAscending: params.sortAscending !== false
       };
       
@@ -142,6 +219,8 @@ class CustomersAPI {
       }
       
       console.log('>> API CALL: Customers verileri API\'den getiriliyor... [TenantId:', params.tenantId, ']');
+      console.log('API Params:', apiParams); // Debug log for API params
+      
       const response = await axios.get<PaginatedList<CustomerDto>>(
         CustomersAPI.ENDPOINT,
         { 
@@ -181,7 +260,7 @@ class CustomersAPI {
             id: customer.id || customerAny.Id || '',
             userId: customer.userId || customerAny.UserId || null,
             firstName: customer.firstName || customerAny.FirstName || '',
-            lastName: customer.lastName || customerAny.LastName || '',
+            lastName: customer.lastName || customerAny.LastName || '' || 'LastName' || 'lastName',
             fullName: customer.fullName || customerAny.FullName || 
                      `${customer.firstName || customerAny.FirstName || ''} ${customer.lastName || customerAny.LastName || ''}`,
             email: customer.email || customerAny.Email || '',
@@ -209,7 +288,8 @@ class CustomersAPI {
         const apiParams: Record<string, any> = {
           PageNumber: params.pageNumber || 1,
           PageSize: params.pageSize || 10,
-          SortBy: params.sortBy || 'LastName',
+          // FIX: Use validated SortBy parameter in fallback too
+          SortBy: this.transformCustomerSortBy(params.sortBy),
           SortAscending: params.sortAscending !== false
         };
         
@@ -363,8 +443,8 @@ class CustomersAPI {
     try {
       // Create a clean object with ONLY PascalCase properties
       const transformedData = {
-        FirstName: customerData.firstName,
-        LastName: customerData.lastName,
+        FirstName: customerData.firstName || 'FirstName',
+        LastName: customerData.lastName || 'LastName',
         Email: customerData.email,
         PhoneNumber: customerData.phoneNumber,
         Notes: customerData.notes,
@@ -515,6 +595,7 @@ class CustomersAPI {
     futureOnly?: boolean;
     pastOnly?: boolean;
     sortAscending?: boolean;
+    sortBy?: string;
     tenantId?: string;
     skipCache?: boolean;
   } = {}) {
@@ -545,12 +626,19 @@ class CustomersAPI {
       if (params.pastOnly) apiParams.pastOnly = params.pastOnly;
       if (params.sortAscending !== undefined) apiParams.sortAscending = params.sortAscending;
       
+      // FIX: Use validated SortBy parameter for appointments
+      if (params.sortBy) {
+        apiParams.sortBy = this.transformAppointmentSortBy(params.sortBy);
+      }
+
       const headers: Record<string, string> = {};
       if (params.tenantId) {
         headers['X-TenantId'] = params.tenantId;
       }
       
       console.log(`Making API call for appointments - customer ${customerId}`);
+      console.log('Appointments API Params:', apiParams); // Debug log for API params
+      
       const response = await axios.get<AppointmentDto[]>(
         `/Appointments/customer/${customerId}`,
         { 
@@ -572,4 +660,4 @@ class CustomersAPI {
   }
 }
 
-export default CustomersAPI; 
+export default CustomersAPI;

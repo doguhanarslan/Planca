@@ -1,21 +1,53 @@
 import { baseApi } from '@/shared/api/base/baseApi';
 import { ApiResponse, PaginatedList, EmployeeDto } from '@/shared/types';
 
+// Valid SortBy values for Employees API (based on debug info)
+const VALID_EMPLOYEE_SORT_VALUES = {
+  'firstName': 'FirstName',
+  'firstname': 'FirstName',
+  'FirstName': 'FirstName',
+  'lastName': 'LastName', 
+  'lastname': 'LastName',
+  'LastName': 'LastName',
+  'email': 'Email',
+  'Email': 'Email',
+  'createdAt': 'CreatedAt',
+  'createdat': 'CreatedAt',
+  'CreatedAt': 'CreatedAt',
+  // Default fallback
+  'name': 'FirstName', // Map invalid 'name' to valid 'FirstName'
+  'Name': 'FirstName',
+} as const;
+
 // Transform query params to API format
 const transformParams = (params: {
   pageNumber?: number;
   pageSize?: number;
   searchString?: string;
   isActive?: boolean;
-  serviceId?: string;
   sortBy?: string;
   sortAscending?: boolean;
   tenantId?: string;
 }) => {
+  // Get valid SortBy value or use default
+  const getSortBy = (sortBy?: string): string => {
+    if (!sortBy) return 'FirstName';
+    
+    // Check if the sortBy value is valid
+    const validValue = VALID_EMPLOYEE_SORT_VALUES[sortBy as keyof typeof VALID_EMPLOYEE_SORT_VALUES];
+    if (validValue) {
+      return validValue;
+    }
+    
+    // Default fallback
+    console.warn(`Invalid SortBy value for employees: ${sortBy}. Using FirstName instead.`);
+    return 'FirstName';
+  };
+
   const apiParams: Record<string, any> = {
     PageNumber: params.pageNumber || 1,
     PageSize: params.pageSize || 10,
-    SortBy: params.sortBy ? params.sortBy.charAt(0).toUpperCase() + params.sortBy.slice(1) : 'LastName',
+    SortBy: getSortBy(params.sortBy),
     SortAscending: params.sortAscending ?? true,
     _t: Date.now(), // Cache busting
   };
@@ -28,10 +60,7 @@ const transformParams = (params: {
     apiParams.IsActive = params.isActive;
   }
   
-  if (params.serviceId) {
-    apiParams.ServiceId = params.serviceId;
-  }
-  
+  console.log('Employees API params:', apiParams);
   return apiParams;
 };
 
@@ -65,7 +94,6 @@ export const employeesApi = baseApi.injectEndpoints({
         pageSize?: number;
         searchString?: string;
         isActive?: boolean;
-        serviceId?: string;
         sortBy?: string;
         sortAscending?: boolean;
       }
@@ -112,56 +140,6 @@ export const employeesApi = baseApi.injectEndpoints({
         return response.data;
       },
       providesTags: (result, error, id) => [{ type: 'Employee', id }],
-    }),
-
-    // Get active employees for dropdown/select (simplified, active only)
-    getActiveEmployees: builder.query<EmployeeDto[], void>({
-      query: () => ({
-        url: '/Employees',
-        params: {
-          IsActive: true,
-          PageSize: 100, // Get all active employees
-          SortBy: 'LastName',
-          SortAscending: true,
-        },
-      }),
-      transformResponse: (response: any) => {
-        if (response?.data?.items) {
-          return response.data.items;
-        } else if (response?.items) {
-          return response.items;
-        } else {
-          return [];
-        }
-      },
-      providesTags: ['Employee'],
-    }),
-
-    // Get employees by service ID
-    getEmployeesByService: builder.query<EmployeeDto[], string>({
-      query: (serviceId) => ({
-        url: '/Employees',
-        params: {
-          ServiceId: serviceId,
-          IsActive: true,
-          PageSize: 100,
-          SortBy: 'LastName',
-          SortAscending: true,
-        },
-      }),
-      transformResponse: (response: any) => {
-        if (response?.data?.items) {
-          return response.data.items;
-        } else if (response?.items) {
-          return response.items;
-        } else {
-          return [];
-        }
-      },
-      providesTags: (result, error, serviceId) => [
-        { type: 'Employee', id: `service-${serviceId}` },
-        ...(result?.map(({ id }) => ({ type: 'Employee' as const, id })) || []),
-      ],
     }),
 
     // Create new employee
@@ -213,9 +191,46 @@ export const employeesApi = baseApi.injectEndpoints({
       ],
     }),
 
+    // Delete employee
+    deleteEmployee: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/Employees/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, id) => [
+        'Employee', // Invalidate all employees
+        { type: 'Employee', id }, // Invalidate specific employee
+      ],
+    }),
+
+    // Get active employees for dropdown/select (simplified, active only)
+    getActiveEmployees: builder.query<EmployeeDto[], void>({
+      query: () => ({
+        url: '/Employees',
+        params: {
+          IsActive: true,
+          PageSize: 100,
+          SortBy: 'FirstName', // Use valid value directly
+          SortAscending: true,
+          _t: Date.now(),
+        },
+      }),
+      transformResponse: (response: any) => {
+        console.log('getActiveEmployees response:', response);
+        if (response?.data?.items) {
+          return response.data.items;
+        } else if (response?.items) {
+          return response.items;
+        } else {
+          return [];
+        }
+      },
+      providesTags: ['Employee'],
+    }),
+
     // Update employee working hours
     updateEmployeeWorkingHours: builder.mutation<
-      EmployeeDto, 
+      EmployeeDto,
       { id: string; workingHours: EmployeeDto['workingHours'] }
     >({
       query: ({ id, workingHours }) => ({
@@ -247,7 +262,7 @@ export const employeesApi = baseApi.injectEndpoints({
 
     // Update employee services
     updateEmployeeServices: builder.mutation<
-      EmployeeDto, 
+      EmployeeDto,
       { id: string; serviceIds: string[] }
     >({
       query: ({ id, serviceIds }) => ({
@@ -269,60 +284,6 @@ export const employeesApi = baseApi.injectEndpoints({
         { type: 'Employee', id },
       ],
     }),
-
-    // Deactivate employee (soft delete)
-    deactivateEmployee: builder.mutation<EmployeeDto, string>({
-      query: (id) => ({
-        url: `/Employees/${id}/deactivate`,
-        method: 'PUT',
-      }),
-      transformResponse: (response: any) => {
-        if (response?.data) {
-          return response.data;
-        } else if (response?.id) {
-          return response;
-        } else {
-          return response;
-        }
-      },
-      invalidatesTags: (result, error, id) => [
-        'Employee',
-        { type: 'Employee', id },
-      ],
-    }),
-
-    // Activate employee
-    activateEmployee: builder.mutation<EmployeeDto, string>({
-      query: (id) => ({
-        url: `/Employees/${id}/activate`,
-        method: 'PUT',
-      }),
-      transformResponse: (response: any) => {
-        if (response?.data) {
-          return response.data;
-        } else if (response?.id) {
-          return response;
-        } else {
-          return response;
-        }
-      },
-      invalidatesTags: (result, error, id) => [
-        'Employee',
-        { type: 'Employee', id },
-      ],
-    }),
-
-    // Delete employee (hard delete)
-    deleteEmployee: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `/Employees/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: (result, error, id) => [
-        'Employee', // Invalidate all employees
-        { type: 'Employee', id }, // Invalidate specific employee
-      ],
-    }),
   }),
 });
 
@@ -330,32 +291,24 @@ export const employeesApi = baseApi.injectEndpoints({
 export const {
   useGetEmployeesQuery,
   useGetEmployeeByIdQuery,
-  useGetActiveEmployeesQuery,
-  useGetEmployeesByServiceQuery,
   useCreateEmployeeMutation,
   useUpdateEmployeeMutation,
+  useDeleteEmployeeMutation,
+  useGetActiveEmployeesQuery,
   useUpdateEmployeeWorkingHoursMutation,
   useUpdateEmployeeServicesMutation,
-  useDeactivateEmployeeMutation,
-  useActivateEmployeeMutation,
-  useDeleteEmployeeMutation,
   useLazyGetEmployeesQuery,
   useLazyGetEmployeeByIdQuery,
-  useLazyGetActiveEmployeesQuery,
-  useLazyGetEmployeesByServiceQuery,
 } = employeesApi;
 
 // Export endpoints for use in other places
 export const {
   getEmployees,
   getEmployeeById,
-  getActiveEmployees,
-  getEmployeesByService,
   createEmployee,
   updateEmployee,
+  deleteEmployee,
+  getActiveEmployees,
   updateEmployeeWorkingHours,
   updateEmployeeServices,
-  deactivateEmployee,
-  activateEmployee,
-  deleteEmployee,
 } = employeesApi.endpoints;
