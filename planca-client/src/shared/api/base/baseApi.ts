@@ -1,5 +1,5 @@
 // src/shared/api/baseApi.ts
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery, BaseQueryApi, FetchArgs } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '@/app/store';
 
 // Base query with authentication
@@ -22,7 +22,7 @@ const baseQuery = fetchBaseQuery({
 });
 
 // Base query with token refresh logic
-const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
+const baseQueryWithReauth = async (args: string | FetchArgs, api: BaseQueryApi, extraOptions: object) => {
   let result = await baseQuery(args, api, extraOptions);
   
   if (result.error && result.error.status === 401) {

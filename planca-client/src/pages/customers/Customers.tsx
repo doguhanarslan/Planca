@@ -76,7 +76,7 @@ const Customers: React.FC = () => {
   };
 
   // Handle customer edited
-  const handleCustomerEdited = (customer: CustomerDto) => {
+  const handleCustomerEdited = () => {
     setShowEditCustomerModal(false);
     setCustomerToEdit(null);
     // Stay on current customer view

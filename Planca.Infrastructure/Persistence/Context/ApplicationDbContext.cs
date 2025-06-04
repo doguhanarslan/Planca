@@ -31,6 +31,8 @@ namespace Planca.Infrastructure.Persistence.Context
             _auditableEntitySaveChangesInterceptor = auditableEntitySaveChangesInterceptor;
         }
 
+        public DbSet<Setting> Settings => Set<Setting>();
+
         public DbSet<Tenant> Tenants => Set<Tenant>();
         public DbSet<Employee> Employees => Set<Employee>();
         public DbSet<Customer> Customers => Set<Customer>();

@@ -1,13 +1,26 @@
-import { FC, useEffect, useState, useCallback, useMemo, ReactNode, memo } from 'react';
+// src/pages/dashboard/Dashboard.tsx - Alternative Implementation
+import { FC, useCallback, useMemo, ReactNode, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
 import Card from '@/shared/ui/components/Card';
 import Button from '@/shared/ui/components/Button';
-import { DashboardStats, AppointmentDto } from '@/shared/types';
+import { AppointmentDto } from '@/shared/types';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { DashboardService } from '@/services/dashboardService';
+
+// Import from existing features - Using existing APIs directly
+import { useGetCustomersQuery } from '@/features/customers/api';
+import { useGetAppointmentsQuery } from '@/features/appointments/api/appointmentsAPI';
+
+// Import dashboard utilities
+import { 
+  DashboardStatsCardProps,
+  TodayAppointmentItemProps,
+  BusinessInfoItemProps,
+  formatDashboardValue,
+  getTrendInfo
+} from '@/features/dashboard';
 
 // Skeleton loader component for stats cards
 const StatCardSkeleton = memo(() => {
@@ -45,18 +58,15 @@ const AppointmentSkeleton = memo(() => (
   </div>
 ));
 
-// Stat card props
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: ReactNode;
-  change?: number;
-  color?: 'primary' | 'secondary' | 'success' | 'warning';
-  loading?: boolean;
-}
-
-// Memoized StatCard component for better performance
-const StatCard = memo<StatCardProps>(({ title, value, icon, change, color = 'primary', loading = false }) => {
+// Memoized StatCard component
+const StatCard = memo<DashboardStatsCardProps>(({ 
+  title, 
+  value, 
+  icon, 
+  change, 
+  color = 'primary', 
+  loading = false 
+}) => {
   const colorClasses: Record<string, string> = {
     primary: 'bg-primary-100/80 text-primary-800',
     secondary: 'bg-emerald-100/80 text-emerald-800',
@@ -67,6 +77,8 @@ const StatCard = memo<StatCardProps>(({ title, value, icon, change, color = 'pri
   if (loading) {
     return <StatCardSkeleton />;
   }
+
+  const trendInfo = change !== undefined ? getTrendInfo(change) : null;
 
   return (
     <Card 
@@ -84,18 +96,20 @@ const StatCard = memo<StatCardProps>(({ title, value, icon, change, color = 'pri
           <dl>
             <dt className="truncate text-sm font-medium text-gray-500">{title}</dt>
             <dd>
-              <div className="text-xl font-semibold text-gray-900">{value}</div>
+              <div className="text-xl font-semibold text-gray-900">
+                {typeof value === 'number' && title.includes('Gelir') 
+                  ? formatDashboardValue(value, 'currency')
+                  : value
+                }
+              </div>
             </dd>
           </dl>
         </div>
       </div>
-      {change !== undefined && (
+      {trendInfo && (
         <div className="bg-gray-50/50 px-5 py-3 border-t border-gray-200/50 text-sm">
-          <span className={change >= 0 
-            ? 'text-green-600 font-medium' 
-            : 'text-red-600 font-medium'
-          }>
-            {change >= 0 ? `+${change}%` : `${change}%`}
+          <span className={`${trendInfo.color} font-medium`}>
+            {trendInfo.label}
           </span>
           <span className="text-gray-500 ml-1">geçen aya göre</span>
         </div>
@@ -105,12 +119,6 @@ const StatCard = memo<StatCardProps>(({ title, value, icon, change, color = 'pri
 });
 
 // Business Info Item Component
-interface BusinessInfoItemProps {
-  icon: ReactNode;
-  label: string;
-  value: string | ReactNode;
-}
-
 const BusinessInfoItem = memo<BusinessInfoItemProps>(({ icon, label, value }) => (
   <div className="flex items-start space-x-3 p-3 bg-gray-50/50 rounded-lg transition-all hover:bg-gray-100/50">
     <div className="flex-shrink-0 text-gray-500 mt-0.5">
@@ -124,13 +132,7 @@ const BusinessInfoItem = memo<BusinessInfoItemProps>(({ icon, label, value }) =>
 ));
 
 // Appointment item component
-interface AppointmentItemProps {
-  appointment: AppointmentDto;
-  index: number;
-  isLast: boolean;
-}
-
-const AppointmentItem = memo<AppointmentItemProps>(({ appointment, index, isLast }) => {
+const AppointmentItem = memo<TodayAppointmentItemProps>(({ appointment, index, isLast }) => {
   const getInitials = useCallback((fullName: string) => {
     if (!fullName) return '';
     return fullName
@@ -146,7 +148,6 @@ const AppointmentItem = memo<AppointmentItemProps>(({ appointment, index, isLast
     return format(new Date(timeString), 'HH:mm');
   }, []);
 
-  // Calculate the time status
   const getTimeStatus = useCallback((timeString: string) => {
     if (!timeString) return { label: 'Bilinmiyor', color: 'bg-gray-100 text-gray-800' };
     
@@ -214,15 +215,136 @@ const AppointmentItem = memo<AppointmentItemProps>(({ appointment, index, isLast
 const Dashboard: FC = () => {
   const navigate = useNavigate();
   const { user, tenant } = useAppSelector((state) => state.auth);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalAppointments: 0,
-    upcomingAppointments: 0,
-    customersCount: 0,
-    revenueThisMonth: 0
-  });
-  const [loading, setLoading] = useState<boolean>(true);
-  const [todayAppointments, setTodayAppointments] = useState<AppointmentDto[]>([]);
-  const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(true);
+  
+  // Date calculations
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+  
+  // Use existing APIs directly instead of dashboard API
+  
+  // Total appointments
+  const {
+    data: totalAppointmentsData,
+    isLoading: isLoadingTotalAppointments,
+    error: totalAppointmentsError,
+    refetch: refetchTotalAppointments
+  } = useGetAppointmentsQuery(
+    {
+      pageNumber: 1,
+      pageSize: 1,
+    },
+    { 
+      skip: !tenant?.id,
+      refetchOnMountOrArgChange: 300,
+    }
+  );
+
+  // Today's appointments
+  const {
+    data: todayAppointmentsData,
+    isLoading: isLoadingTodayAppointments,
+    error: todayAppointmentsError,
+    refetch: refetchTodayAppointments
+  } = useGetAppointmentsQuery(
+    {
+      pageNumber: 1,
+      pageSize: 10,
+      startDate: startOfDay.toISOString(),
+      endDate: endOfDay.toISOString(),
+      sortBy: 'StartTime',
+      sortDirection: 'asc',
+    },
+    { 
+      skip: !tenant?.id,
+      refetchOnMountOrArgChange: 120,
+    }
+  );
+
+  // Upcoming appointments (from today onwards)
+  const {
+    data: upcomingAppointmentsData,
+    isLoading: isLoadingUpcomingAppointments,
+  } = useGetAppointmentsQuery(
+    {
+      pageNumber: 1,
+      pageSize: 1,
+      startDate: startOfDay.toISOString(),
+    },
+    { 
+      skip: !tenant?.id,
+      refetchOnMountOrArgChange: 300,
+    }
+  );
+
+  // Customers count
+  const {
+    data: customersData,
+    isLoading: isLoadingCustomers,
+  } = useGetCustomersQuery(
+    {
+      pageNumber: 1,
+      pageSize: 1,
+    },
+    { 
+      skip: !tenant?.id,
+      refetchOnMountOrArgChange: 300,
+    }
+  );
+
+  // Completed appointments this month (for revenue calculation)
+  const {
+    data: completedAppointmentsData,
+    isLoading: isLoadingCompletedAppointments,
+  } = useGetAppointmentsQuery(
+    {
+      pageNumber: 1,
+      pageSize: 100,
+      startDate: startOfMonth.toISOString(),
+      endDate: endOfMonth.toISOString(),
+      status: 'Completed',
+    },
+    { 
+      skip: !tenant?.id,
+      refetchOnMountOrArgChange: 300,
+    }
+  );
+  
+  // Calculate dashboard stats
+  const dashboardStats = useMemo(() => {
+    const totalAppointments = totalAppointmentsData?.totalCount || 0;
+    const upcomingAppointments = upcomingAppointmentsData?.totalCount || 0;
+    const customersCount = customersData?.totalCount || 0;
+    
+    // Calculate revenue from completed appointments
+    const completedAppointments = completedAppointmentsData?.items || [];
+    const revenueThisMonth = completedAppointments.reduce((total, appointment) => {
+      const price = appointment.price || appointment.servicePrice || 150; // Default price
+      return total + price;
+    }, 0);
+
+    return {
+      totalAppointments,
+      upcomingAppointments,
+      customersCount,
+      revenueThisMonth,
+    };
+  }, [totalAppointmentsData, upcomingAppointmentsData, customersData, completedAppointmentsData]);
+
+  // Get today's appointments list
+  const todayAppointments = useMemo(() => {
+    return todayAppointmentsData?.items || [];
+  }, [todayAppointmentsData]);
+
+  // Loading state
+  const isLoading = isLoadingTotalAppointments || isLoadingTodayAppointments || 
+                   isLoadingUpcomingAppointments || isLoadingCustomers || 
+                   isLoadingCompletedAppointments;
+  
+  // Error state
+  const hasError = totalAppointmentsError || todayAppointmentsError;
   
   // Function to navigate to appointment creation form
   const handleCreateAppointment = useCallback(() => {
@@ -233,42 +355,24 @@ const Dashboard: FC = () => {
   const handleViewAllAppointments = useCallback(() => {
     navigate('/appointments');
   }, [navigate]);
-  
-  // Function to fetch dashboard data
-  const fetchDashboardData = useCallback(async () => {
-    if (!tenant?.id) return;
-    
-    try {
-      // Fetch statistics
-      const dashboardStats = await DashboardService.getDashboardStats(tenant.id);
-      setStats(dashboardStats);
-      setLoading(false);
-      
-      // Fetch today's appointments
-      const appointments = await DashboardService.getTodayAppointments(tenant.id);
-      setTodayAppointments(appointments);
-      setAppointmentsLoading(false);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setLoading(false);
-      setAppointmentsLoading(false);
-    }
-  }, [tenant?.id]);
-  
-  // Fetch data when component mounts
-  useEffect(() => {
-    if (tenant?.id) {
-      fetchDashboardData();
-    } else {
-      setLoading(false);
-      setAppointmentsLoading(false);
-    }
-  }, [tenant?.id, fetchDashboardData]);
+
+  // Handle retry for failed requests
+  const handleRetry = useCallback(() => {
+    refetchTotalAppointments();
+    refetchTodayAppointments();
+  }, [refetchTotalAppointments, refetchTodayAppointments]);
 
   const currentDate = useMemo(() => {
     const date = new Date();
     return format(date, 'EEEE, d MMMM yyyy', { locale: tr });
   }, []);
+
+  // Mock trend data (in real app, this would come from comparing periods)
+  const mockTrends = {
+    appointments: 12,
+    customers: 5,
+    revenue: -3
+  };
 
   return (
     <AppLayout>
@@ -295,6 +399,28 @@ const Dashboard: FC = () => {
           </div>
         </div>
 
+        {/* Error Handling */}
+        {hasError && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <svg className="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm font-medium text-red-800">
+                  Dashboard verileri yüklenirken hata oluştu
+                </span>
+              </div>
+              <button
+                onClick={handleRetry}
+                className="text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                Tekrar Dene
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="animate-fadeIn">
           <h3 className="text-lg leading-6 font-medium text-gray-800 mb-5">
             Genel Bakış
@@ -302,49 +428,49 @@ const Dashboard: FC = () => {
           <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard 
               title="Toplam Randevu" 
-              value={stats.totalAppointments} 
+              value={dashboardStats.totalAppointments} 
               icon={
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               }
-              change={12}
-              loading={loading}
+              change={mockTrends.appointments}
+              loading={isLoading}
             />
             <StatCard 
               title="Yaklaşan Randevular" 
-              value={stats.upcomingAppointments} 
+              value={dashboardStats.upcomingAppointments} 
               color="warning"
               icon={
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               }
-              loading={loading}
+              loading={isLoading}
             />
             <StatCard 
               title="Toplam Müşteri" 
-              value={stats.customersCount} 
+              value={dashboardStats.customersCount} 
               color="secondary"
               icon={
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               }
-              change={5}
-              loading={loading}
+              change={mockTrends.customers}
+              loading={isLoading}
             />
             <StatCard 
               title="Aylık Gelir" 
-              value={`₺${stats.revenueThisMonth.toLocaleString()}`} 
+              value={dashboardStats.revenueThisMonth} 
               color="success"
               icon={
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               }
-              change={-3}
-              loading={loading}
+              change={mockTrends.revenue}
+              loading={isLoading}
             />
           </div>
         </div>
@@ -459,7 +585,7 @@ const Dashboard: FC = () => {
             }
           >
             <div className="overflow-hidden -mx-2 sm:-mx-3 px-2">
-              {appointmentsLoading ? (
+              {isLoadingTodayAppointments ? (
                 <>
                   <AppointmentSkeleton />
                   <AppointmentSkeleton />

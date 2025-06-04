@@ -120,6 +120,7 @@ namespace Planca.Infrastructure
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
+            services.AddScoped<ISettingsRepository, SettingsRepository>();
             
             // Servis Repository'si için logger ekleyerek kayıt
             services.AddScoped<IServiceRepository>(provider => 

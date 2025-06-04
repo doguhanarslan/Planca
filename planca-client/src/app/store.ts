@@ -5,9 +5,13 @@ import authReducer from '@/features/auth/authSlice';
 
 // Import RTK Query APIs
 import { baseApi } from '@/shared/api/base/baseApi';
-import '@/features/customers/api/customersAPI'; // Ensure customers API is registered
 
-// Note: customersReducer removed - now using RTK Query
+// Import feature APIs to ensure they are registered
+import '@/features/customers/api/customersAPI';
+import '@/features/appointments/api/appointmentsAPI';
+import '@/features/employees/api/employeesAPI';
+import '@/features/services/api/servicesAPI';
+import '@/features/dashboard/api/dashboardAPI'; // Add dashboard API import
 // Note: appointmentsSlice removed - now using RTK Query
 // Note: employeesReducer removed - now using RTK Query  
 // Note: servicesReducer removed - now using RTK Query
