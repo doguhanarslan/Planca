@@ -113,22 +113,7 @@ const Customers: React.FC = () => {
                 </button>
               )}
               
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                  <FiUsers className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-slate-900">
-                    {isDetailView ? 'Müşteri Detayları' : 'Müşteriler'}
-                  </h1>
-                  <p className="text-slate-600 mt-1">
-                    {isDetailView 
-                      ? 'Müşteri bilgileri ve randevu geçmişi'
-                      : 'Tüm müşterilerinizi buradan yönetin'
-                    }
-                  </p>
-                </div>
-              </div>
+              
             </div>
             
             {/* Actions */}
@@ -136,7 +121,7 @@ const Customers: React.FC = () => {
               {!isDetailView && (
                 <button
                   onClick={handleAddCustomer}
-                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                 >
                   <FiPlus className="w-5 h-5 mr-2" />
                   Yeni Müşteri
@@ -154,8 +139,8 @@ const Customers: React.FC = () => {
                     <p className="text-sm font-medium text-slate-600 mb-1">Toplam Müşteri</p>
                     <p className="text-2xl font-bold text-slate-900">{customerStats.total}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                    <FiUsers className="w-5 h-5 text-indigo-600" />
+                  <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                    <FiUsers className="w-5 h-5 text-red-600" />
                   </div>
                 </div>
                 <div className="flex items-center mt-3">
@@ -201,12 +186,12 @@ const Customers: React.FC = () => {
                     <p className="text-sm font-medium text-slate-600 mb-1">Ortalama Puan</p>
                     <p className="text-2xl font-bold text-slate-900">{customerStats.avgRating}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                    <FiStar className="w-5 h-5 text-purple-600" />
+                  <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                    <FiStar className="w-5 h-5 text-red-600" />
                   </div>
                 </div>
                 <div className="flex items-center mt-3">
-                  <span className="text-purple-600 text-sm font-medium">Mükemmel</span>
+                  <span className="text-red-600 text-sm font-medium">Mükemmel</span>
                 </div>
               </div>
             </div>
@@ -270,7 +255,7 @@ const Customers: React.FC = () => {
                 {/* Modal Header */}
                 <div className="flex items-center justify-between px-8 py-6 border-b border-slate-200/60">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
                       <FiPlus className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -316,7 +301,7 @@ const Customers: React.FC = () => {
                 {/* Modal Header */}
                 <div className="flex items-center justify-between px-8 py-6 border-b border-slate-200/60">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
                       <FiEdit className="w-5 h-5 text-white" />
                     </div>
                     <div>

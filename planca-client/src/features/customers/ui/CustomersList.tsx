@@ -119,7 +119,7 @@ const CustomersList: FC<CustomersListProps> = ({
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="relative">
             <div className="w-12 h-12 rounded-full border-4 border-slate-200"></div>
-            <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
+            <div className="w-12 h-12 rounded-full border-4 border-red-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
           </div>
           <p className="text-slate-600 font-medium">Müşteriler yükleniyor...</p>
         </div>
@@ -145,11 +145,11 @@ const CustomersList: FC<CustomersListProps> = ({
       <div className="px-6 py-5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
               <FiUser className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Müşteriler</h2>
+              <h2 className="text-xl font-bold text-slate-900">Müşteri Listesi</h2>
               <p className="text-sm text-slate-500">
                 {pagination?.totalCount ? `${pagination.totalCount} müşteri` : 'Müşteri listesi'}
               </p>
@@ -167,7 +167,7 @@ const CustomersList: FC<CustomersListProps> = ({
               onClick={() => setShowFilters(!showFilters)}
               className={`inline-flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                 showFilters 
-                  ? 'bg-indigo-100 text-indigo-700 shadow-sm' 
+                  ? 'bg-red-100 text-red-700 shadow-sm' 
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -177,7 +177,7 @@ const CustomersList: FC<CustomersListProps> = ({
             
             <button
               onClick={onAddCustomer}
-              className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-600 text-white font-medium text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
             >
               <FiPlus className="w-4 h-4 mr-2" />
               Yeni Müşteri
@@ -188,7 +188,7 @@ const CustomersList: FC<CustomersListProps> = ({
       
       {/* Modern Filters */}
       {showFilters && (
-        <div className="px-6 py-5 bg-slate-50/50 border-b border-slate-200/60">
+        <div className="px-6 py-5 bg-slate-50/50 border-b  border-slate-200/60">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
@@ -201,7 +201,7 @@ const CustomersList: FC<CustomersListProps> = ({
                   value={searchInput}
                   onChange={handleSearchInputChange}
                   placeholder="İsim, email veya telefon ile ara..."
-                  className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-sm"
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all duration-200 text-sm"
                 />
               </div>
             </div>
@@ -216,7 +216,7 @@ const CustomersList: FC<CustomersListProps> = ({
                   const [field] = e.target.value.split('-');
                   handleSortChange(field);
                 }}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-sm"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all duration-200 text-sm"
               >
                 {CUSTOMER_SORT_OPTIONS.map((option) => (
                   <Fragment key={option.value}>
@@ -259,7 +259,7 @@ const CustomersList: FC<CustomersListProps> = ({
             {!hasSearch && (
               <button
                 onClick={onAddCustomer}
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
               >
                 <FiPlus className="w-4 h-4 mr-2" />
                 İlk Müşteriyi Ekle
@@ -272,27 +272,27 @@ const CustomersList: FC<CustomersListProps> = ({
               key={customer.id}
               className={`relative px-6 py-5 cursor-pointer transition-all duration-200 hover:bg-slate-50/50 group ${
                 selectedCustomerId === customer.id 
-                  ? 'bg-indigo-50/50 border-r-4 border-indigo-500' 
+                  ? 'bg-red-50/50 border-r-4 border-red-500' 
                   : ''
               }`}
               onClick={() => onSelectCustomer(customer.id)}
             >
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col md:flex-row items-center space-x-4">
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md">
                     <FiUser className="w-5 h-5 text-white" />
                   </div>
                   {selectedCustomerId === customer.id && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                   )}
                 </div>
                 
                 {/* Customer Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
+                <div className="flex-1 min-w-0 ">
+                  <div className="flex justify-center items-center space-x-2 mt-3">
                     <h3 className="text-base font-semibold text-slate-900 truncate">
                       {formatCustomerName(customer)}
                     </h3>
@@ -315,7 +315,7 @@ const CustomersList: FC<CustomersListProps> = ({
                 </div>
                 
                 {/* Actions */}
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="flex mt-3 items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -348,8 +348,8 @@ const CustomersList: FC<CustomersListProps> = ({
                     <FiTrash2 className="w-4 h-4 text-red-600" />
                   </button>
                   
-                  <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-indigo-100 transition-colors duration-200">
-                    <FiChevronRight className="w-3 h-3 text-slate-400 group-hover:text-indigo-600" />
+                  <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-red-100 transition-colors duration-200">
+                    <FiChevronRight className="w-3 h-3 text-slate-400 group-hover:text-red-600" />
                   </div>
                 </div>
               </div>
@@ -359,7 +359,7 @@ const CustomersList: FC<CustomersListProps> = ({
                 <div className="mt-5 pt-5 border-t border-slate-200">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-sm font-semibold text-slate-700 flex items-center">
-                      <FiCalendar className="w-4 h-4 mr-2 text-indigo-500" />
+                      <FiCalendar className="w-4 h-4 mr-2 text-red-500" />
                       Randevular
                     </h4>
                     <button
@@ -375,7 +375,7 @@ const CustomersList: FC<CustomersListProps> = ({
                   
                   {isLoadingAppointments ? (
                     <div className="flex items-center space-x-3 p-4 bg-slate-50 rounded-xl">
-                      <div className="w-4 h-4 border-2 border-slate-300 border-t-indigo-500 rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-slate-300 border-t-red-500 rounded-full animate-spin"></div>
                       <span className="text-sm text-slate-600">Randevular yükleniyor...</span>
                     </div>
                   ) : appointmentsError ? (

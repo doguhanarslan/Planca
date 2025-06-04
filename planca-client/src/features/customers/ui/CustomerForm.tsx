@@ -151,7 +151,7 @@ const CustomerForm: FC<CustomerFormProps> = ({
         <div className="flex flex-col items-center space-y-4">
           <div className="relative">
             <div className="w-8 h-8 rounded-full border-2 border-slate-200"></div>
-            <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
+            <div className="w-8 h-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
           </div>
           <p className="text-slate-600">Müşteri bilgileri yükleniyor...</p>
         </div>
@@ -187,7 +187,7 @@ const CustomerForm: FC<CustomerFormProps> = ({
                   value={formData.firstName}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-base ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all duration-200 text-base ${
                     validationErrors.firstName 
                       ? 'border-red-300 bg-red-50' 
                       : 'border-slate-300 bg-white hover:border-slate-400'
@@ -213,7 +213,7 @@ const CustomerForm: FC<CustomerFormProps> = ({
                   value={formData.lastName}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-base ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all duration-200 text-base ${
                     validationErrors.lastName 
                       ? 'border-red-300 bg-red-50' 
                       : 'border-slate-300 bg-white hover:border-slate-400'
@@ -239,7 +239,7 @@ const CustomerForm: FC<CustomerFormProps> = ({
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-base ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all duration-200 text-base ${
                     validationErrors.email 
                       ? 'border-red-300 bg-red-50' 
                       : 'border-slate-300 bg-white hover:border-slate-400'
@@ -266,7 +266,7 @@ const CustomerForm: FC<CustomerFormProps> = ({
                   onChange={handleChange}
                   onKeyDown={handlePhoneKeyDown}
                   maxLength={15}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-base ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all duration-200 text-base ${
                     validationErrors.phoneNumber 
                       ? 'border-red-300 bg-red-50' 
                       : 'border-slate-300 bg-white hover:border-slate-400'
@@ -291,7 +291,7 @@ const CustomerForm: FC<CustomerFormProps> = ({
                   rows={4}
                   value={formData.notes}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-base bg-white hover:border-slate-400"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all duration-200 text-base bg-white hover:border-slate-400"
                   placeholder="Müşteri hakkında notlar..."
                 />
               </div>
@@ -307,7 +307,7 @@ const CustomerForm: FC<CustomerFormProps> = ({
                 type="button"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className="inline-flex items-center px-6 py-3 border border-slate-300 text-slate-700 font-medium text-base rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-6 py-3 border border-slate-300 text-slate-700 font-medium text-base rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FiX className="w-4 h-4 mr-2" />
                 Vazgeç
@@ -315,7 +315,7 @@ const CustomerForm: FC<CustomerFormProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-base rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-600 text-white font-medium text-base rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isSubmitting ? (
                   <>

@@ -137,7 +137,7 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="relative">
             <div className="w-12 h-12 rounded-full border-4 border-slate-200"></div>
-            <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
+            <div className="w-12 h-12 rounded-full border-4 border-red-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
           </div>
           <p className="text-slate-600 font-medium">Müşteri bilgileri yükleniyor...</p>
         </div>
@@ -177,7 +177,7 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
         {/* Hero Section */}
         <div className="relative">
-          <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 px-8 py-8">
+          <div className="bg-gradient-to-br from-red-600 via-red-600 to-red-800 px-8 py-8">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22https%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3Cpattern%20id%3D%22grid%22%20width%3D%2210%22%20height%3D%2210%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Cpath%20d%3D%22M%2010%200%20L%200%200%200%2010%22%20fill%3D%22none%22%20stroke%3D%22rgba(255%2C255%2C255%2C0.1)%22%20stroke-width%3D%220.5%22%2F%3E%3C%2Fpattern%3E%3C%2Fdefs%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22url(%23grid)%22%2F%3E%3C%2Fsvg%3E')] opacity-50"></div>
             
             <div className="relative flex items-start justify-between">
@@ -197,7 +197,7 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
                   <h1 className="text-3xl font-bold text-white mb-2">
                     {formatCustomerName(selectedCustomer)}
                   </h1>
-                  <div className="flex items-center space-x-4 text-indigo-100">
+                  <div className="flex items-center space-x-4 text-red-100">
                     <div className="flex items-center">
                       <FiCalendar className="w-4 h-4 mr-2" />
                       <span className="text-sm">{appointments.length} randevu</span>
@@ -276,14 +276,14 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`relative inline-flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                     activeTab === tab.id
-                      ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/60'
+                      ? 'bg-white text-red-600 shadow-sm border border-slate-200/60'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                   }`}
                 >
                   <Icon className="w-4 h-4 mr-2" />
                   {tab.label}
                   {tab.badge && tab.badge > 0 && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
                       {tab.badge}
                     </span>
                   )}
@@ -300,8 +300,8 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
               {/* Contact Information */}
               <div className="space-y-6">
                 <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center mr-3">
-                    <FiUser className="w-4 h-4 text-indigo-600" />
+                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center mr-3">
+                    <FiUser className="w-4 h-4 text-red-600" />
                   </div>
                   İletişim Bilgileri
                 </h3>
@@ -309,8 +309,8 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
                 <div className="space-y-4">
                   <div className="group p-5 bg-gradient-to-r from-slate-50 to-white border border-slate-200/60 rounded-xl hover:shadow-md transition-all duration-200">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center mr-4">
-                        <FiUser className="w-5 h-5 text-indigo-600" />
+                      <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center mr-4">
+                        <FiUser className="w-5 h-5 text-red-600" />
                       </div>
                       <div className="flex-1">
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Ad Soyad</p>
@@ -354,16 +354,16 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
               {/* Additional Info & Stats */}
               <div className="space-y-6">
                 <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
-                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center mr-3">
-                    <FiActivity className="w-4 h-4 text-purple-600" />
+                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center mr-3">
+                    <FiActivity className="w-4 h-4 text-red-600" />
                   </div>
                   Müşteri İstatistikleri
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/60 rounded-xl">
-                    <div className="text-2xl font-bold text-indigo-600 mb-1">{appointments.length}</div>
-                    <div className="text-sm font-medium text-indigo-700">Toplam Randevu</div>
+                  <div className="p-5 bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200/60 rounded-xl">
+                    <div className="text-2xl font-bold text-red-600 mb-1">{appointments.length}</div>
+                    <div className="text-sm font-medium text-red-700">Toplam Randevu</div>
                   </div>
                   
                   <div className="p-5 bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200/60 rounded-xl">
@@ -380,9 +380,9 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
                     <div className="text-sm font-medium text-amber-700">Yaklaşan</div>
                   </div>
                   
-                  <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200/60 rounded-xl">
-                    <div className="text-2xl font-bold text-purple-600 mb-1">4.8</div>
-                    <div className="text-sm font-medium text-purple-700">Memnuniyet</div>
+                  <div className="p-5 bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200/60 rounded-xl">
+                    <div className="text-2xl font-bold text-red-600 mb-1">4.8</div>
+                    <div className="text-sm font-medium text-red-700">Memnuniyet</div>
                   </div>
                 </div>
 
@@ -406,12 +406,12 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-slate-900 flex items-center">
-                  <FiCalendar className="w-5 h-5 mr-3 text-indigo-600" />
+                  <FiCalendar className="w-5 h-5 mr-3 text-red-600" />
                   Randevular
                 </h3>
                 <button
                   onClick={() => onCreateAppointment(selectedCustomer.id)}
-                  className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-600 text-white font-medium text-sm rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                 >
                   <FiPlus className="w-4 h-4 mr-2" />
                   Yeni Randevu
@@ -422,7 +422,7 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
                 <div className="flex flex-col items-center justify-center py-16">
                   <div className="relative mb-6">
                     <div className="w-12 h-12 rounded-full border-4 border-slate-200"></div>
-                    <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
+                    <div className="w-12 h-12 rounded-full border-4 border-red-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
                   </div>
                   <p className="text-slate-600 font-medium">Randevular yükleniyor...</p>
                 </div>
@@ -449,7 +449,7 @@ const CustomerDetail: React.FC<CustomerDetailPropsWithId> = ({
                   <p className="text-slate-500 mb-6">Bu müşterinin henüz randevusu bulunmuyor.</p>
                   <button
                     onClick={() => onCreateAppointment(selectedCustomer.id)}
-                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                   >
                     <FiPlus className="w-4 h-4 mr-2" />
                     İlk Randevuyu Oluştur

@@ -7,6 +7,7 @@ import EmployeeBasicInfo from '@/features/employees/EmployeeBasicInfo';
 import EmployeeWorkingHours from '@/features/employees/EmployeeWorkingHours';
 import EmployeePermissions from '@/features/employees/EmployeePermissions';
 import EmployeeForm from '@/features/employees/EmployeeForm';
+import { EmployeeDto } from '@/shared/types';
 
 // RTK Query hooks
 import {
@@ -20,6 +21,7 @@ const Employees: React.FC = () => {
   
   // State for employee form modal
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<EmployeeDto | null>(null);
   
   // RTK Query for fetching employee details
   const {
@@ -42,11 +44,13 @@ const Employees: React.FC = () => {
   // Handle form close
   const handleFormClose = () => {
     setShowEmployeeForm(false);
+    setEmployeeToEdit(null);
   };
   
   // Handle form success
   const handleFormSuccess = () => {
     setShowEmployeeForm(false);
+    setEmployeeToEdit(null);
     // Refetch employee data if we're viewing a specific employee
     if (employeeId) {
       refetch();
@@ -60,6 +64,13 @@ const Employees: React.FC = () => {
 
   // Handle new employee click
   const handleNewEmployeeClick = () => {
+    setEmployeeToEdit(null);
+    setShowEmployeeForm(true);
+  };
+
+  // Handle edit employee from list - DÜZELTME: Modal açma
+  const handleEditEmployeeFromList = (employee: EmployeeDto) => {
+    setEmployeeToEdit(employee);
     setShowEmployeeForm(true);
   };
   
@@ -73,9 +84,10 @@ const Employees: React.FC = () => {
           İşletmenizin personellerini yönetin, personel bilgilerini güncelleyin ve çalışma saatlerini belirleyin.
         </p>
         
-        {/* Show employee form modal when showEmployeeForm is true */}
+        {/* Employee form modal */}
         {showEmployeeForm && (
           <EmployeeForm
+            selectedEmployee={employeeToEdit}
             onClose={handleFormClose}
             onSuccess={handleFormSuccess}
           />
@@ -118,8 +130,20 @@ const Employees: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Refresh Button */}
+                  {/* Action buttons */}
                   <div className="flex space-x-2">
+                    {/* Edit button for opening modal */}
+                    <button
+                      onClick={() => handleEditEmployeeFromList(selectedEmployee)}
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      <svg className="-ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Düzenle
+                    </button>
+                    
+                    {/* Refresh Button */}
                     <button
                       onClick={() => refetch()}
                       disabled={isLoading}
@@ -222,6 +246,7 @@ const Employees: React.FC = () => {
         ) : (
           <EmployeesList 
             onNewEmployeeClick={handleNewEmployeeClick}
+            onEditEmployee={handleEditEmployeeFromList}
           />
         )}
       </div>

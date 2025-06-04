@@ -12,9 +12,13 @@ import {
 
 interface EmployeesListProps {
   onNewEmployeeClick?: () => void;
+  onEditEmployee?: (employee: EmployeeDto) => void; // Yeni prop eklendi
 }
 
-const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => {
+const EmployeesList: React.FC<EmployeesListProps> = ({ 
+  onNewEmployeeClick, 
+  onEditEmployee 
+}) => {
   const navigate = useNavigate();
   // Local state for filters and UI
   const [filters, setFilters] = useState({
@@ -27,8 +31,6 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
   });
   const [showFilters, setShowFilters] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeDto | null>(null);
 
   // RTK Query hooks
   const {
@@ -142,23 +144,24 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
     }
   };
 
-  // Handle edit employee
+  // Handle edit employee - DÜZELTME: Modal açma veya detail sayfasına gitme seçeneği
   const handleEditClick = (employee: EmployeeDto) => {
-    setSelectedEmployee(employee);
-    navigate(`/employees/${employee.id}`);
+    if (onEditEmployee) {
+      // Modal açma yöntemi (parent'tan gelen callback kullan)
+      onEditEmployee(employee);
+    } else {
+      // Detail sayfasına gitme yöntemi (varsayılan)
+      navigate(`/employees/${employee.id}`);
+    }
   };
 
   // Handle new employee
   const handleNewEmployeeClick = () => {
     if (onNewEmployeeClick) {
       onNewEmployeeClick();
-    } else {
-      setSelectedEmployee(null);
-      setEditModalOpen(true);
     }
   };
   
-
   // Get working days count for an employee
   const getWorkingDaysCount = (employee: EmployeeDto): number => {
     if (!employee.workingHours || employee.workingHours.length === 0) {
@@ -397,6 +400,7 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
                         onClick={() => handleEditClick(employee)}
                         className="text-red-600 hover:text-red-900 mr-3"
                         disabled={isDeleting}
+                        title="Düzenle"
                       >
                         <FaEdit size={18} />
                       </button>
@@ -404,6 +408,7 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ onNewEmployeeClick }) => 
                         onClick={() => handleDeleteClick(employee.id)}
                         className="text-red-600 hover:text-red-900"
                         disabled={isDeleting}
+                        title="Sil"
                       >
                         <FaTrash size={18} />
                       </button>

@@ -413,11 +413,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 Bu tarihte personel müsait değil veya seçilen hizmet için zaman yok.
               </p>
             )}
-            {availableTimeSlots.length > 0 && (
-              <p className="text-sm text-gray-500 mt-1">
-                {availableTimeSlots.length} zaman dilimi mevcut
-              </p>
-            )}
+            
           </div>
           
           {/* Notes */}
@@ -445,7 +441,7 @@ const AppointmentForm = ({ selectedDate, onClose, onSuccess, appointmentToEdit }
                 <div className="flex items-center">
                   <FiMessageSquare className="mr-2 text-red-500" />
                   Müşteri Mesajı
-                  <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                  <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">
                     PRO
                   </span>
                 </div>
