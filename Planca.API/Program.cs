@@ -19,7 +19,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Serilog
+// Add Application Insights
+builder.Services.AddApplicationInsightsTelemetry();
+
+// Add Serilog with Application Insights
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -39,6 +42,8 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
 });
+
+// JWT Authentication configuration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -68,7 +73,7 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])),
-        TokenDecryptionKey = encryptionKey, // Şifrelenmiş token için decryption key
+        TokenDecryptionKey = encryptionKey,
         ValidateIssuer = true,
         ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
         ValidateAudience = true,
@@ -78,7 +83,6 @@ builder.Services.AddAuthentication(options =>
         RoleClaimType = ClaimTypes.Role
     };
 
-    // Detaylı hata loglaması
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
@@ -88,58 +92,42 @@ builder.Services.AddAuthentication(options =>
         },
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-            if (context.Exception.InnerException != null)
-            {
-                Console.WriteLine($"Inner exception: {context.Exception.InnerException.Message}");
-            }
+            Log.Warning("JWT Authentication failed: {Exception}", context.Exception.Message);
             return Task.CompletedTask;
         }
     };
 });
 
-
-static byte[] NormalizeKeyTo32Bytes(string keyString)
+// Add OpenAPI/Swagger support (only for development)
+if (builder.Environment.IsDevelopment())
 {
-    byte[] normalizedKey = new byte[32];
-    byte[] keyBytes = Encoding.UTF8.GetBytes(keyString);
-    int bytesToCopy = Math.Min(keyBytes.Length, 32);
-    Array.Copy(keyBytes, normalizedKey, bytesToCopy);
-    if (bytesToCopy < 32)
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(c =>
     {
-        for (int i = bytesToCopy; i < 32; i++)
-        {
-            normalizedKey[i] = (byte)(i & 0xFF);
-        }
-    }
-    return normalizedKey;
+        c.SwaggerDoc("v1", new() { Title = "Planca API", Version = "v1" });
+    });
 }
-
-
-// Add OpenAPI/Swagger support
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new() { Title = "Planca API", Version = "v1" });
-});
 
 // Add HTTP Context Accessor
 builder.Services.AddHttpContextAccessor();
-// Add CORS
 
+// Add CORS - Azure'da çalışacak şekilde güncellenmiş
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", builder =>
+    options.AddPolicy("AllowFrontend", corsBuilder =>
     {
-        builder
-            .WithOrigins("http://localhost:5173") // Your Vite frontend
+        var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "*" };
+
+        corsBuilder
+            .WithOrigins(corsOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
-            .AllowCredentials(); // This is crucial for cookies
+            .AllowCredentials();
     });
 });
 
 var app = builder.Build();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -149,10 +137,10 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // The default HSTS value is 30 days
+    // Production error handling
+    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-
 
 app.UseCors("AllowFrontend");
 
@@ -164,64 +152,48 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 
 app.UseHttpsRedirection();
 
-// Enable CORS
-// Add authentication & authorization
+// Enable authentication & authorization
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
 });
-// Map controllers
-app.MapControllers();
-app.Run();
-//try
-//{
-//    // MİGRASYON VE SEED İŞLEMLERİ KISMI
-//    using (var scope = app.Services.CreateScope())
-//    {
-//        var services = scope.ServiceProvider;
-//        var logger = services.GetRequiredService<ILogger<Program>>();
 
-//        try
-//        {
-//            // 1. Veritabanı bağlantısını ve connection string'i loglama
-//            var context = services.GetRequiredService<ApplicationDbContext>();
-//            var connectionString = context.Database.GetConnectionString();
-//            logger.LogInformation("Database connection string (masked): {ConnectionString}",
-//                connectionString?.Replace("Password=", "Password=***"));
+// Health check endpoint
+app.MapGet("/health", () => "Healthy");
 
-//            // 2. Veritabanı var mı kontrol et
-//            logger.LogInformation("Migrating database...");
-//            await context.Database.MigrateAsync(); // Bu satır migrations'ları uygular
-//            logger.LogInformation("Database migrated successfully");
+// Database migration for production
+if (app.Environment.IsProduction())
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-//            // 3. Tablo listesini loglama (varsa)
-//            try
-//            {
-//                var tables = await context.Database.SqlQuery<string>($"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").ToListAsync();
-//                logger.LogInformation("Current tables in database: {Tables}", string.Join(", ", tables));
-//            }
-//            catch (Exception ex)
-//            {
-//                logger.LogWarning(ex, "Could not query table names");
-//            }
+        Log.Information("Starting database migration...");
+        await context.Database.MigrateAsync();
+        Log.Information("Database migration completed successfully");
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "Database migration failed");
+        throw;
+    }
+}
 
-//            // Seed işlemleri kaldırıldı
-//        }
-//        catch (Exception ex)
-//        {
-//            logger.LogError(ex, "An error occurred while migrating the database.");
-//        }
-//    }
-//    app.Run();
-//}
-//catch (Exception ex)
-//{
-//    Log.Fatal(ex, "API terminated unexpectedly");
-//}
-//finally
-//{
-//    Log.CloseAndFlush();
-//}
+try
+{
+    Log.Information("Starting Planca API application");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
