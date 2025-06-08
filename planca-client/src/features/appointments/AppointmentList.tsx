@@ -106,13 +106,14 @@ const AppointmentList = ({
           endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
           break;
         case 'week':
-        default:
+        default: {
           // Get first day of week (Sunday)
           const dayOfWeek = today.getDay();
           startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOfWeek);
           endDate = new Date(startDate);
           endDate.setDate(startDate.getDate() + 6);
           endDate.setHours(23, 59, 59);
+        }
       }
       
       console.log('Filtering appointments for date range:', {

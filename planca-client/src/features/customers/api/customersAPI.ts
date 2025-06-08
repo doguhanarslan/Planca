@@ -84,7 +84,7 @@ export const customersApi = baseApi.injectEndpoints({
     // Get paginated customers list
     getCustomers: builder.query<PaginatedList<CustomerDto>, GetCustomersParams>({
       query: (params = {}) => {
-        const queryParams: Record<string, any> = {
+        const queryParams: Record<string, string | number | boolean> = {
           PageNumber: params.pageNumber || 1,
           PageSize: params.pageSize || 10,
           SortBy: transformSortBy(params.sortBy),
@@ -119,7 +119,7 @@ export const customersApi = baseApi.injectEndpoints({
           items: response.items.map(normalizeCustomerData).filter(Boolean)
         };
       },
-      providesTags: (result, error, arg) => [
+      providesTags: (result) => [
         { type: 'Customer', id: 'LIST' },
         ...(result?.items || []).map(customer => ({ type: 'Customer' as const, id: customer.id }))
       ],
