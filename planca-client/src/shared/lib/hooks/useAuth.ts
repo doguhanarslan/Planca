@@ -43,7 +43,7 @@ const useAuth = () => {
     async (credentials: LoginCredentials) => {
       const result = await dispatch(loginUser(credentials)).unwrap();
       // After login is successful, fetch the current user to get updated data
-      if (result?.succeeded) {
+      if ((result as any)?.succeeded) {
         await dispatch(fetchCurrentUser()).unwrap();
       }
       return result;
@@ -56,7 +56,7 @@ const useAuth = () => {
     async (userData: RegisterUserData) => {
       const result = await dispatch(registerUser(userData)).unwrap();
       // After registration is successful, fetch the current user
-      if (result?.succeeded) {
+      if ((result as any)?.succeeded) {
         await dispatch(fetchCurrentUser()).unwrap();
       }
       return result;
@@ -69,7 +69,7 @@ const useAuth = () => {
     async (businessData: BusinessData) => {
       const result = await dispatch(createBusinessForUser(businessData)).unwrap();
       // After business creation, refresh user data
-      if (result?.succeeded) {
+      if ((result as any)?.succeeded) {
         await dispatch(fetchCurrentUser()).unwrap();
       }
       return result;

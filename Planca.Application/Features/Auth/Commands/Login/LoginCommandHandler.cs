@@ -69,6 +69,13 @@ namespace Planca.Application.Features.Auth.Commands.Login
                     roles,
                     userDataResult.Data.TenantId?.ToString());
 
+                // Token oluşturma başarısız olmuşsa hata döndür
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogError("Failed to create JWT token for user {Email}", request.Email);
+                    return Result<AuthResponse>.Failure("Failed to create authentication token");
+                }
+
                 // Generate refresh token
                 var refreshToken = Guid.NewGuid().ToString();
                 var refreshTokenExpiryDays = _appSettings.RefreshTokenExpiryDays;

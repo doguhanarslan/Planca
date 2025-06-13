@@ -1,23 +1,31 @@
-﻿
-services:
+﻿services:
   api:
     build:
       context: .
       dockerfile: Planca.API/Dockerfile
     container_name: planca_api
     ports:
-      - "5288:80"
-      - "7288:443"
+      - "8080:8080"
+      - "8081:8081"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
       - ConnectionStrings__DefaultConnection=Host=db;Database=planca;Username=postgres;Password=postgres
+      - CacheSettings__ConnectionString=redis:6379,abortConnect=false,ssl=false
+      - CacheSettings__EnableDistributedCache=true
       - JwtSettings__Key=your-secure-jwt-secret-key-must-be-at-least-32-characters-long
       - JwtSettings__Issuer=planca-api
       - JwtSettings__Audience=planca-clients
-      - JwtSettings__DurationInMinutes=60
+      - JwtSettings__DurationInMinutes=0.5
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - planca-network
+    restart: unless-stopped
 
   db:
     image: postgres:15
@@ -32,6 +40,24 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - planca-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d planca"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: planca_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - planca-network
+    restart: unless-stopped
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis_data:/data
 
 networks:
   planca-network:
@@ -39,3 +65,4 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:

@@ -9,8 +9,8 @@ namespace Planca.Domain.Specifications
     {
         public Guid? ServiceIdFilter { get; private set; }
 
-        public EmployeesFilterSpecification(string? searchString = null, bool? isActive = null, Guid? serviceId = null)
-            : base(CreateSearchCriteria(searchString, isActive))
+        public EmployeesFilterSpecification(string? searchString = null, bool? isActive = null, Guid? serviceId = null, Guid? tenantId = null)
+            : base(CreateSearchCriteria(searchString, isActive, tenantId))
         {
             // ServiceId filtresini ayrı tutuyoruz çünkü bunu SQL sorgusu içinde kullanamayız
             // Repository tarafında manual işlenecek
@@ -19,10 +19,17 @@ namespace Planca.Domain.Specifications
             // Diğer filtreler normal şekilde ekleniyor
         }
 
-        private static Expression<Func<Employee, bool>>? CreateSearchCriteria(string? searchString, bool? isActive)
+        private static Expression<Func<Employee, bool>>? CreateSearchCriteria(string? searchString, bool? isActive, Guid? tenantId)
         {
             // Başlangıçta kriterimiz yok, bütün filtreleri AND işlemi ile birleştireceğiz
             Expression<Func<Employee, bool>>? criteria = null;
+
+            // Tenant filtresi (en önemli - her zaman uygulanmalı)
+            if (tenantId.HasValue && tenantId.Value != Guid.Empty)
+            {
+                Expression<Func<Employee, bool>> tenantFilter = e => e.TenantId == tenantId.Value;
+                criteria = tenantFilter;
+            }
 
             // Arama kriteri
             if (!string.IsNullOrEmpty(searchString))
@@ -35,7 +42,7 @@ namespace Planca.Domain.Specifications
                     (e.PhoneNumber != null && e.PhoneNumber.ToLower().Contains(searchString)) ||
                     (e.Title != null && e.Title.ToLower().Contains(searchString));
 
-                criteria = searchFilter;
+                criteria = criteria == null ? searchFilter : CombineWithAnd(criteria, searchFilter);
             }
 
             // Aktif/Pasif filtresi

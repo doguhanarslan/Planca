@@ -342,13 +342,13 @@ const authSlice = createSlice({
           state.tenant = formatTenantData(userData);
           state.isAuthenticated = true;
           // İşletme kaydını doğru şekilde kontrol et
-          state.isBusinessRegistered = !!(userData.tenantId || userData.tenant?.id);
-          console.log('Login success, business registered:', state.isBusinessRegistered, 'tenantId:', userData.tenant?.id);
+          state.isBusinessRegistered = !!((userData as any).tenantId || (userData as any).tenant?.id);
+          console.log('Login success, business registered:', state.isBusinessRegistered, 'tenantId:', (userData as any).tenant?.id);
           // RefreshTokenExpiryTime değerini kaydet - mevcut değeri koruyoruz
-          if (userData.refreshTokenExpiryTime && !state.refreshTokenExpiry) {
-            state.refreshTokenExpiry = new Date(userData.refreshTokenExpiryTime);
+          if ((userData as any).refreshTokenExpiryTime && !state.refreshTokenExpiry) {
+            state.refreshTokenExpiry = new Date((userData as any).refreshTokenExpiryTime);
             console.log('Redux store refreshTokenExpiry kaydedildi:', state.refreshTokenExpiry);
-          } else if (userData.refreshTokenExpiryTime) {
+                      } else if ((userData as any).refreshTokenExpiryTime) {
             console.log('Mevcut RefreshTokenExpiry korunuyor:', state.refreshTokenExpiry);
           }
         }

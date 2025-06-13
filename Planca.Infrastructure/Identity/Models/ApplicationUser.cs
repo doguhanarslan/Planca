@@ -9,8 +9,9 @@ namespace Planca.Infrastructure.Identity.Models
         public string LastName { get; set; }
         public Guid? TenantId { get; set; }
 
-        // Refresh Token özellikleri
-        public string RefreshToken { get; set; }
+        // Refresh Token özellikleri - Updated to match database schema
+        public string RefreshTokenId { get; set; }
+        public string HashedRefreshToken { get; set; }
         public DateTime RefreshTokenExpiryTime { get; set; }
 
         // Eklenen yeni özellikler

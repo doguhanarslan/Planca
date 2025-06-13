@@ -49,7 +49,6 @@ const transformParams = (params: {
     PageSize: params.pageSize || 10,
     SortBy: getSortBy(params.sortBy),
     SortAscending: params.sortAscending ?? true,
-    _t: Date.now(), // Cache busting
   };
 
   if (params.searchString?.trim()) {
@@ -126,6 +125,7 @@ export const employeesApi = baseApi.injectEndpoints({
       },
       providesTags: (result, error, arg) => [
         'Employee',
+        { type: 'Employee', id: 'LIST' }, // Add list-specific tag
         // Add individual tags for each employee for more granular invalidation
         ...(result?.items?.map(({ id }) => ({ type: 'Employee' as const, id })) || []),
       ],
@@ -161,9 +161,13 @@ export const employeesApi = baseApi.injectEndpoints({
           throw new Error('Invalid response format');
         }
       },
-      invalidatesTags: [
-        'Employee', // Invalidate all employees to refresh the list
-      ],
+      invalidatesTags: (result, error, arg) => {
+        console.log('🔄 Invalidating Employee cache after creation:', { result, error });
+        return [
+          'Employee', // Invalidate all employees to refresh the list
+          { type: 'Employee', id: 'LIST' }, // Invalidate list-specific cache
+        ];
+      },
     }),
 
     // Update existing employee
@@ -212,7 +216,6 @@ export const employeesApi = baseApi.injectEndpoints({
           PageSize: 100,
           SortBy: 'FirstName', // Use valid value directly
           SortAscending: true,
-          _t: Date.now(),
         },
       }),
       transformResponse: (response: any) => {

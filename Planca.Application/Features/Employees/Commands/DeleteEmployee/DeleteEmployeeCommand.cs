@@ -15,9 +15,6 @@ namespace Planca.Application.Features.Employees.Commands.DeleteEmployee
         public Guid TenantId { get; set; }
 
         public string CacheKeyToInvalidate => $"employee_detail_{Id}";
-        public string CacheKeyPatternToInvalidate =>
-            "employees_list|" +            // All employee lists
-            $"employee_appointments_{Id}|" + // This employee's appointments
-            "service_employees";            // All service-employee relationships
+        public string CacheKeyPatternToInvalidate => "employees_list";
     }
 }

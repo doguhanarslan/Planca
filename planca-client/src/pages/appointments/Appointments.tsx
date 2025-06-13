@@ -8,11 +8,14 @@ import { AppointmentDto } from '../../shared/types';
 
 // RTK Query hooks
 import { useGetAppointmentsQuery } from '@/features/appointments/api/appointmentsAPI';
+import { useDispatch } from 'react-redux';
+import { baseApi } from '@/shared/api/base/baseApi';
 
 type ViewMode = 'calendar' | 'list';
 type TimeFrame = 'day' | 'week' | 'month';
 
 const Appointments = () => {
+  const dispatch = useDispatch();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState<Date>(new Date());
   const [showForm, setShowForm] = useState<boolean>(false);
@@ -22,6 +25,7 @@ const Appointments = () => {
   const [filterDate, setFilterDate] = useState<Date | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   
   // Calculate date range for appointments query
   const { startDate, endDate } = useMemo(() => {
@@ -52,10 +56,12 @@ const Appointments = () => {
       sortDirection: 'asc',
     },
     {
-      // Refetch on mount if data is older than 2 minutes
-      refetchOnMountOrArgChange: 120,
+      // Refetch on mount if data is older than 30 seconds
+      refetchOnMountOrArgChange: 30,
       // Refetch on window focus
       refetchOnFocus: true,
+      // Refetch on reconnect
+      refetchOnReconnect: true,
     }
   );
   
@@ -87,8 +93,14 @@ const Appointments = () => {
   
   // Handle successful appointment creation or update
   const handleAppointmentSuccess = () => {
-    // Refetch appointments to get the latest data
+    // Force invalidate all appointment-related cache
+    dispatch(baseApi.util.invalidateTags(['Appointment']));
+    
+    // Also refetch current query as fallback
     refetch();
+    
+    // Trigger calendar refresh
+    setRefreshTrigger(prev => prev + 1);
     
     // Close the form
     handleFormClose();
@@ -318,6 +330,7 @@ const Appointments = () => {
                   onDateSelect={handleDateSelect} 
                   timeFrame={timeFrame}
                   onShowMore={handleShowMore}
+                  refreshTrigger={refreshTrigger}
                 />
               ) : (
                 <AppointmentList 

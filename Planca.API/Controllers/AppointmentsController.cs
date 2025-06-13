@@ -12,17 +12,84 @@ using Planca.Application.Features.Appointments.Queries.GetEmployeeAppointments;
 using Planca.Application.Features.Appointments.Queries.GetCustomerAppointments;
 using System;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Planca.Infrastructure.Persistence.Context;
+using Planca.Application.Common.Interfaces;
 
 namespace Planca.API.Controllers
 {
     [Authorize]
     public class AppointmentsController : BaseApiController
     {
+        private readonly ApplicationDbContext _context;
+        private readonly ICurrentTenantService _currentTenantService;
+
+        public AppointmentsController(ApplicationDbContext context, ICurrentTenantService currentTenantService)
+        {
+            _context = context;
+            _currentTenantService = currentTenantService;
+        }
+
         [HttpGet]
         public async Task<ActionResult> GetAppointments([FromQuery] GetAppointmentsListQuery query)
         {
             var result = await Mediator.Send(query);
             return HandlePagedResult(result);
+        }
+
+        [HttpGet("debug")]
+        [AllowAnonymous]
+        public async Task<ActionResult> GetAppointmentsDebug()
+        {
+            // Global query filter'ları bypass ederek tüm randevuları getir
+            var allAppointments = await _context.Appointments
+                .IgnoreQueryFilters()
+                .Take(10)
+                .Select(a => new {
+                    a.Id,
+                    a.CustomerId,
+                    a.EmployeeId,
+                    a.ServiceId,
+                    a.StartTime,
+                    a.EndTime,
+                    a.Status,
+                    a.TenantId,
+                    a.IsDeleted,
+                    a.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(new { 
+                Message = "Debug - Tüm randevular (filter olmadan)",
+                Count = allAppointments.Count,
+                Data = allAppointments 
+            });
+        }
+
+        [HttpGet("debug/tenant")]
+        [AllowAnonymous]
+        public async Task<ActionResult> GetTenantDebug()
+        {
+            // Mevcut tenant ID'yi al
+            var currentTenantId = _currentTenantService.GetTenantId();
+            
+            // Normal query ile randevuları getir (filter'lar ile)
+            var filteredAppointments = await _context.Appointments
+                .Take(10)
+                .Select(a => new {
+                    a.Id,
+                    a.TenantId,
+                    a.IsDeleted,
+                    a.StartTime
+                })
+                .ToListAsync();
+
+            return Ok(new { 
+                Message = "Debug - Tenant bilgisi ve filtrelenmiş randevular",
+                CurrentTenantId = currentTenantId,
+                FilteredAppointmentsCount = filteredAppointments.Count,
+                FilteredAppointments = filteredAppointments
+            });
         }
 
         [HttpGet("{id}")]

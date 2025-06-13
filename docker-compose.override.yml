@@ -1,20 +1,33 @@
 ﻿services:
   api:
     environment:
-      - ASPNETCORE_URLS=http://+:80
-      # ÖNEMLİ: API, veritabanına "db" host adı ile bağlanmalı (Docker servis adı)
-      - ConnectionStrings__DefaultConnection=Host=db;Database=planca;Username=postgres;Password=postgres
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
     ports:
-      - "7000:80"
+      - "8080:8080"
+      - "8081:8081"
     volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-    restart: on-failure
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
 
-  db:
+  # Frontend service for local development
+  frontend:
+    build:
+      context: ./planca-client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8080/api
+    container_name: planca_frontend
     ports:
-      - "5432:5432"
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - planca-network
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=planca_dev
-    restart: on-failure
+      - VITE_API_URL=http://localhost:8080/api
+
+networks:
+  planca-network:
+    driver: bridge

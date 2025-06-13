@@ -178,7 +178,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   disabled?: boolean;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   isLoading?: boolean;
   loadingText?: string;
   icon?: ReactNode;
@@ -187,6 +187,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export interface InputProps {
+  id?: string;
   label?: string;
   placeholder?: string;
   value?: string;
@@ -194,10 +195,13 @@ export interface InputProps {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
+  touched?: boolean;
   error?: string;
   className?: string;
   inputClassName?: string;
   labelClassName?: string;
+  containerClassName?: string;
   helpText?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;

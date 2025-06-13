@@ -17,7 +17,7 @@ namespace Planca.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "9.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -833,6 +833,11 @@ namespace Planca.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("firstname");
 
+                    b.Property<string>("HashedRefreshToken")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("hashedrefreshtoken");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("isactive");
@@ -873,15 +878,15 @@ namespace Planca.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("phonenumberconfirmed");
 
-                    b.Property<string>("RefreshToken")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("refreshtoken");
-
                     b.Property<DateTime>("RefreshTokenExpiryTime")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("refreshtokenexpirytime");
+
+                    b.Property<string>("RefreshTokenId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("refreshtokenid");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text")

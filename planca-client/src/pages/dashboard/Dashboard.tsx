@@ -314,13 +314,13 @@ const Dashboard: FC = () => {
   
   // Calculate dashboard stats
   const dashboardStats = useMemo(() => {
-    const totalAppointments = totalAppointmentsData?.totalCount || 0;
-    const upcomingAppointments = upcomingAppointmentsData?.totalCount || 0;
-    const customersCount = customersData?.totalCount || 0;
+    const totalAppointments = (totalAppointmentsData as any)?.totalCount || 0;
+    const upcomingAppointments = (upcomingAppointmentsData as any)?.totalCount || 0;
+    const customersCount = (customersData as any)?.totalCount || 0;
     
     // Calculate revenue from completed appointments
-    const completedAppointments = completedAppointmentsData?.items || [];
-    const revenueThisMonth = completedAppointments.reduce((total, appointment) => {
+    const completedAppointments = (completedAppointmentsData as any)?.items || [];
+    const revenueThisMonth = completedAppointments.reduce((total: number, appointment: any) => {
       const price = appointment.price || appointment.servicePrice || 150; // Default price
       return total + price;
     }, 0);
@@ -335,7 +335,7 @@ const Dashboard: FC = () => {
 
   // Get today's appointments list
   const todayAppointments = useMemo(() => {
-    return todayAppointmentsData?.items || [];
+    return (todayAppointmentsData as any)?.items || [];
   }, [todayAppointmentsData]);
 
   // Loading state

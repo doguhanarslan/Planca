@@ -34,7 +34,8 @@ namespace Planca.Application.Features.Employees.Queries.GetEmployeesList
                 request.SortBy,
                 request.SortAscending,
                 request.PageSize,
-                (request.PageNumber - 1) * request.PageSize
+                (request.PageNumber - 1) * request.PageSize,
+                request.TenantId
             );
 
             // Spesifikasyona göre çalışanları getir
@@ -44,7 +45,8 @@ namespace Planca.Application.Features.Employees.Queries.GetEmployeesList
             var countSpecification = new EmployeesFilterSpecification(
                 request.SearchString,
                 request.IsActive,
-                request.ServiceId);
+                request.ServiceId,
+                request.TenantId);
             var totalEmployees = await _employeeRepository.CountAsync(countSpecification);
 
             // DTO'lara dönüştür

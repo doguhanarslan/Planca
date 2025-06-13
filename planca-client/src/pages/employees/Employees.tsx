@@ -1,18 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import * as React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
-import EmployeesList from '@/features/employees/EmployeesList';
-import EmployeeBasicInfo from '@/features/employees/EmployeeBasicInfo';
-import EmployeeWorkingHours from '@/features/employees/EmployeeWorkingHours';
-import EmployeePermissions from '@/features/employees/EmployeePermissions';
-import EmployeeForm from '@/features/employees/EmployeeForm';
+import { EmployeesList, EmployeeBasicInfo, EmployeeWorkingHours, EmployeePermissions, EmployeeForm } from '@/features/employees';
 import { EmployeeDto } from '@/shared/types';
 
 // RTK Query hooks
 import {
   useGetEmployeeByIdQuery,
-} from '@/features/employees/api/employeesAPI';
+  useGetEmployeesQuery,
+} from '@/features/employees';
 
 const Employees: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +19,9 @@ const Employees: React.FC = () => {
   // State for employee form modal
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<EmployeeDto | null>(null);
+  
+  // Ref to trigger EmployeesList refresh
+  const [refreshKey, setRefreshKey] = useState(0);
   
   // RTK Query for fetching employee details
   const {
@@ -34,6 +34,11 @@ const Employees: React.FC = () => {
     skip: !employeeId,
     // Refetch on mount if data is older than 2 minutes
     refetchOnMountOrArgChange: 120,
+  });
+
+  // RTK Query for employees list (to manually invalidate cache)
+  const { refetch: refetchEmployeesList } = useGetEmployeesQuery({}, {
+    skip: !!employeeId, // Only fetch when we're in list view
   });
   
   // Handle tab changes - just change the state, don't navigate
@@ -48,12 +53,25 @@ const Employees: React.FC = () => {
   };
   
   // Handle form success
-  const handleFormSuccess = () => {
+  const handleFormSuccess = async () => {
     setShowEmployeeForm(false);
     setEmployeeToEdit(null);
-    // Refetch employee data if we're viewing a specific employee
-    if (employeeId) {
-      refetch();
+    
+    try {
+      // Refetch employee data if we're viewing a specific employee
+      if (employeeId) {
+        await refetch();
+      }
+      
+      // Manually refetch employees list to ensure fresh data
+      await refetchEmployeesList();
+      
+      // Force EmployeesList to refresh by changing key
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      // Even if refetch fails, still update the key to force component refresh
+      setRefreshKey(prev => prev + 1);
     }
   };
 
@@ -69,8 +87,14 @@ const Employees: React.FC = () => {
   };
 
   // Handle edit employee from list - DÜZELTME: Modal açma
-  const handleEditEmployeeFromList = (employee: EmployeeDto) => {
-    setEmployeeToEdit(employee);
+  const handleEditEmployeeFromList = (employeeId: string) => {
+    // If editing the currently selected employee, use that data
+    if (selectedEmployee && selectedEmployee.id === employeeId) {
+      setEmployeeToEdit(selectedEmployee);
+    } else {
+      // For other employees, we'll need to fetch or pass null for now
+      setEmployeeToEdit(null);
+    }
     setShowEmployeeForm(true);
   };
   
@@ -134,7 +158,7 @@ const Employees: React.FC = () => {
                   <div className="flex space-x-2">
                     {/* Edit button for opening modal */}
                     <button
-                      onClick={() => handleEditEmployeeFromList(selectedEmployee)}
+                      onClick={() => handleEditEmployeeFromList(selectedEmployee.id)}
                       className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
                       <svg className="-ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -245,7 +269,8 @@ const Employees: React.FC = () => {
           </div>
         ) : (
           <EmployeesList 
-            onNewEmployeeClick={handleNewEmployeeClick}
+            key={refreshKey}
+            onAddEmployee={handleNewEmployeeClick}
             onEditEmployee={handleEditEmployeeFromList}
           />
         )}

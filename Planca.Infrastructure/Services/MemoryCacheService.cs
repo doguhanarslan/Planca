@@ -87,6 +87,8 @@ namespace Planca.Infrastructure.Services
 
             _memoryCache.Set(cacheKey, value, options);
             _cacheKeys.TryAdd(cacheKey, cacheKey);
+            
+            _logger.LogInformation("💾 Added to memory cache: {CacheKey}", cacheKey);
 
             return Task.CompletedTask;
         }
@@ -106,14 +108,19 @@ namespace Planca.Infrastructure.Services
             var patternKey = _tenantCacheKeyService.BuildPatternKey(pattern);
             patternKey = patternKey.TrimEnd('*');
 
+            _logger.LogInformation("🔄 Attempting to remove cache keys matching pattern: {Pattern}, built key: {PatternKey}", pattern, patternKey);
+
             var keys = _cacheKeys.Keys
                 .Where(k => k.StartsWith(patternKey))
                 .ToList();
+
+            _logger.LogInformation("🔍 Found {Count} cache keys to remove: {Keys}", keys.Count, string.Join(", ", keys));
 
             foreach (var key in keys)
             {
                 _memoryCache.Remove(key);
                 _cacheKeys.TryRemove(key, out _);
+                _logger.LogInformation("🗑️ Removed cache key: {Key}", key);
             }
 
             return Task.CompletedTask;

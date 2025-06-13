@@ -86,7 +86,7 @@ namespace Planca.Infrastructure.Identity.Services
                 }
 
                 // Inject IIdentityService in the constructor to get access to this method
-                var refreshTokenResult = GetUserManager().FindByIdAsync(userId).Result.RefreshToken;
+                var refreshTokenResult = GetUserManager().FindByIdAsync(userId).Result.RefreshTokenId;
                
 
                 var refreshToken = refreshTokenResult;
@@ -154,6 +154,10 @@ namespace Planca.Infrastructure.Identity.Services
         {
             try
             {
+                Console.WriteLine($"CreateToken called for user: {email}, userId: {userId}");
+                Console.WriteLine($"Roles: {string.Join(", ", roles ?? new List<string>())}");
+                Console.WriteLine($"TenantId: {tenantId ?? "null"}");
+
                 var claims = new List<Claim>
                 {
                     new Claim(JwtRegisteredClaimNames.Sub, userId),
@@ -173,12 +177,6 @@ namespace Planca.Infrastructure.Identity.Services
                 {
                     claims.Add(new Claim("TenantId", tenantId));
                 }
-
-                var refreshTokenClaims = new List<Claim>
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, userId),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                };
 
                 // İmzalama anahtarı (signing key)
                 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
@@ -204,15 +202,10 @@ namespace Planca.Infrastructure.Identity.Services
                 };
 
                 var token = tokenHandler.CreateJwtSecurityToken(tokenDescriptor);
-                var refreshTokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(refreshTokenClaims),
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256Signature)
-                };
-                var refreshToken = tokenHandler.CreateJwtSecurityToken(refreshTokenDescriptor);
-                var jwtRefreshToken = tokenHandler.WriteToken(refreshToken);
-                return tokenHandler.WriteToken(token);
+                var tokenString = tokenHandler.WriteToken(token);
+                
+                Console.WriteLine($"JWT token created successfully, length: {tokenString.Length}");
+                return tokenString;
             }
             catch (Exception ex)
             {
@@ -222,7 +215,10 @@ namespace Planca.Infrastructure.Identity.Services
                 {
                     Console.WriteLine($"İç hata: {ex.InnerException.Message}");
                 }
-                return ex.Message;
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                
+                // Hata durumunda null döneriz, hata mesajını token olarak döndürmeyiz
+                return null;
             }
         }
 

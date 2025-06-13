@@ -1,0 +1,42 @@
+apiVersion: 2022-03-01
+location: West Europe
+name: planca-app-env
+properties:
+  environmentType: Managed
+---
+apiVersion: 2022-03-01
+location: West Europe
+name: planca-api
+properties:
+  environmentId: /subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.App/managedEnvironments/planca-app-env
+  configuration:
+    ingress:
+      external: true
+      targetPort: 80
+      allowInsecure: false
+    secrets:
+      - name: connection-string
+        value: "Host={postgres-server}.postgres.database.azure.com;Database=planca;Username={username};Password={password};SSL Mode=Require;"
+      - name: jwt-key
+        value: "your-secure-jwt-secret-key-must-be-at-least-32-characters-long"
+  template:
+    containers:
+      - name: planca-api
+        image: {your-registry}/planca-api:latest
+        env:
+          - name: ConnectionStrings__DefaultConnection
+            secretRef: connection-string
+          - name: JwtSettings__Key
+            secretRef: jwt-key
+          - name: JwtSettings__Issuer
+            value: "planca-api"
+          - name: JwtSettings__Audience
+            value: "planca-clients"
+          - name: JwtSettings__DurationInMinutes
+            value: "60"
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+    scale:
+      minReplicas: 1
+      maxReplicas: 3 

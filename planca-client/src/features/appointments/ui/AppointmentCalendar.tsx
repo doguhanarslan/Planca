@@ -24,6 +24,7 @@ interface AppointmentCalendarProps {
   onDateSelect: (date: Date) => void;
   timeFrame?: 'day' | 'week' | 'month'; // Added timeFrame prop
   onShowMore?: (date: Date) => void; // Add handler for "show more" events
+  refreshTrigger?: number; // Add refresh trigger prop
 }
 
 // Define event colors based on status
@@ -60,10 +61,18 @@ const AppointmentCalendar = ({
   onMonthChange,
   onDateSelect, 
   timeFrame = 'month', 
-  onShowMore 
+  onShowMore,
+  refreshTrigger
 }: AppointmentCalendarProps) => {
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
-  const [currentDate, setCurrentDate] = useState<Date>(selectedDate || new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(currentCalendarMonth || new Date());
+  
+  // Sync currentDate with parent's currentCalendarMonth
+  useEffect(() => {
+    if (currentCalendarMonth) {
+      setCurrentDate(currentCalendarMonth);
+    }
+  }, [currentCalendarMonth]);
   
   // Map timeFrame to react-big-calendar view
   const calendarView = useMemo(() => {
@@ -120,12 +129,21 @@ const AppointmentCalendar = ({
       sortDirection: 'asc',
     },
     {
-      // Refetch on mount if data is older than 5 minutes
-      refetchOnMountOrArgChange: 300,
+      // Refetch on mount if data is older than 30 seconds
+      refetchOnMountOrArgChange: 30,
       // Refetch on window focus
       refetchOnFocus: true,
+      // Refetch on reconnect
+      refetchOnReconnect: true,
     }
   );
+  
+  // Refetch when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger && refetch) {
+      refetch();
+    }
+  }, [refreshTrigger, refetch]);
   
   // Process appointments data
   const appointments = useMemo(() => {

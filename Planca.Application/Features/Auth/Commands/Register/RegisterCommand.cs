@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Planca.Application.Common.Models;
+using Planca.Domain.Common.Enums;
 
 public class RegisterCommand : IRequest<Result<AuthResponse>>
 {
@@ -11,7 +12,7 @@ public class RegisterCommand : IRequest<Result<AuthResponse>>
     public string PhoneNumber { get; set; }
 
     // Default olarak Customer rolü
-    public string Role { get; set; } = "Admin";
+    public string Role { get; set; } = UserRoles.Admin;
 
     // Opsiyonel TenantId - işletme kurma adımında doldurulacak
     public Guid? TenantId { get; set; }

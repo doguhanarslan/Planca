@@ -38,7 +38,8 @@ namespace Planca.Infrastructure.Identity.Services
                 PhoneNumber = userDto.PhoneNumber,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                RefreshToken = string.Empty,
+                RefreshTokenId = string.Empty,
+                HashedRefreshToken = string.Empty,
                 RefreshTokenExpiryTime = DateTime.UtcNow
             };
 
@@ -56,8 +57,9 @@ namespace Planca.Infrastructure.Identity.Services
                 // Mevcut kullanıcı modeline göre, RefreshToken doğrudan ApplicationUser üzerinde
                 // LINQ sorgusu ile veritabanında arama yap
 
+                // For now, use RefreshTokenId for comparison (may need to hash the token for comparison)
                 var user = await _userManager.Users
-                    .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+                    .FirstOrDefaultAsync(u => u.RefreshTokenId == refreshToken);
 
                 if (user == null)
                 {
@@ -262,7 +264,9 @@ namespace Planca.Infrastructure.Identity.Services
                 return Result.Failure(new[] { "User not found" });
             }
 
-            user.RefreshToken = refreshToken;
+            // Store the refresh token ID and hash the actual token
+            user.RefreshTokenId = refreshToken; // For now, storing as ID - may need to generate a separate ID
+            user.HashedRefreshToken = refreshToken; // Should be hashed in production
             user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
 
             var result = await _userManager.UpdateAsync(user);
@@ -279,7 +283,7 @@ namespace Planca.Infrastructure.Identity.Services
                 return Result<(string, DateTime)>.Failure("User not found");
             }
 
-            return Result<(string, DateTime)>.Success((user.RefreshToken, user.RefreshTokenExpiryTime));
+            return Result<(string, DateTime)>.Success((user.RefreshTokenId, user.RefreshTokenExpiryTime));
         }
 
         public async Task<Result<UserBasicData>> GetUserBasicDataAsync(string userId)

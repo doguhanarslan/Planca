@@ -58,40 +58,13 @@ namespace Planca.Infrastructure
 
 
 
-            //Redis conf
-
+            // Cache Configuration
             services.Configure<CacheSettings>(configuration.GetSection("CacheSettings"));
 
-
-            //Cache servisleri
-            var cacheSettings = configuration.GetSection("CacheSettings").Get<CacheSettings>();
-            if (cacheSettings.EnableDistributedCache)
-            {
-                // Redis connection
-                services.AddSingleton<IConnectionMultiplexer>(sp =>
-                {
-                    var connectionString = cacheSettings.ConnectionString;
-                    return ConnectionMultiplexer.Connect(connectionString);
-                });
-
-                // Redis distributed cache
-                services.AddStackExchangeRedisCache(options =>
-                {
-                    options.Configuration = cacheSettings.ConnectionString;
-                    options.InstanceName = cacheSettings.InstanceName;
-                });
-
-                // Cache services
-                services.AddScoped<ITenantCacheKeyService, TenantCacheKeyService>();
-                services.AddScoped<ICacheService, RedisCacheService>();
-            }
-            else
-            {
-                // Fallback to memory cache if Redis is disabled
-                services.AddMemoryCache();
-                services.AddScoped<ITenantCacheKeyService, TenantCacheKeyService>();
-                services.AddScoped<ICacheService, MemoryCacheService>();
-            }
+            // Cache servisleri - Memory Cache kullan
+            services.AddMemoryCache();
+            services.AddScoped<ITenantCacheKeyService, TenantCacheKeyService>();
+            services.AddScoped<ICacheService, MemoryCacheService>();
 
             // Data Retention Configuration
             services.Configure<DataRetentionOptions>(configuration.GetSection(DataRetentionOptions.SectionName));

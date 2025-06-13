@@ -114,7 +114,7 @@ namespace Planca.Infrastructure.Persistence.Context
             {
                 entity.Property(e => e.FirstName).HasMaxLength(100);
                 entity.Property(e => e.LastName).HasMaxLength(100);
-                entity.Property(e => e.RefreshToken).HasMaxLength(256);
+                entity.Property(e => e.RefreshTokenId).HasMaxLength(256);
             });
         }
 

@@ -28,6 +28,16 @@ namespace Planca.API.Controllers
         }
 
         /// <summary>
+        /// CORS test endpoint
+        /// </summary>
+        [HttpGet("test-cors")]
+        [AllowAnonymous]
+        public ActionResult TestCors()
+        {
+            return Ok(new { message = "CORS is working!", timestamp = DateTime.UtcNow });
+        }
+
+        /// <summary>
         /// Authenticates a user and returns a JWT token
         /// </summary>
         [HttpPost("login")]
@@ -366,12 +376,15 @@ namespace Planca.API.Controllers
         // Helper method to set HTTP-only cookies with the JWT token and refresh token
         private void SetTokenCookie(string token, string refreshToken = null, DateTime? refreshTokenExpiry = null)
         {
+            // Geliştirme ortamında HTTP kullanırken Secure = false olmalı
+            var isSecure = Request.IsHttps;
+            
             var jwtTokenCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Expires = DateTime.UtcNow.AddSeconds(30), // Cookie duration
-                Secure = true, // Send only over HTTPS
-                SameSite = SameSiteMode.None, // CSRF protection
+                Expires = DateTime.UtcNow.AddMinutes(60), // JWT token süresine uygun (60 dakika)
+                Secure = isSecure, // HTTPS varsa true, yoksa false
+                SameSite = isSecure ? SameSiteMode.None : SameSiteMode.Lax, // HTTPS yoksa Lax kullan
                 IsEssential = true,
                 Path = "/"
             };
@@ -394,15 +407,15 @@ namespace Planca.API.Controllers
                 }
                 
                 var refreshTokenCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
+                {
+                    HttpOnly = true,
                     // Güvenlik için doğrulanmış süreci kullan
                     Expires = refreshTokenExpiry.Value,
-                Path = "/api/Auth", // Sadece refresh endpoint'inde kullanılabilir
-                Secure = true, // Send only over HTTPS
-                SameSite = SameSiteMode.None, // CSRF protection
-                IsEssential = true
-            };
+                    Path = "/api/Auth", // Sadece refresh endpoint'inde kullanılabilir
+                    Secure = isSecure, // HTTPS varsa true, yoksa false
+                    SameSite = isSecure ? SameSiteMode.None : SameSiteMode.Lax, // HTTPS yoksa Lax kullan
+                    IsEssential = true
+                };
 
                 Response.Cookies.Append("refreshToken", refreshToken, refreshTokenCookieOptions);
                 Console.WriteLine($"Refresh token added to cookies, length: {refreshToken.Length}, expires: {refreshTokenCookieOptions.Expires}");

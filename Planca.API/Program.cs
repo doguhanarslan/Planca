@@ -87,12 +87,45 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
-            context.Token = context.Request.Cookies["jwt"];
+            // Cookie'den token almaya çalış
+            if (context.Request.Cookies.ContainsKey("jwt"))
+            {
+                context.Token = context.Request.Cookies["jwt"];
+                Console.WriteLine($"JWT token found in cookie, length: {context.Token?.Length ?? 0}");
+            }
+            else
+            {
+                Console.WriteLine("JWT token not found in cookies");
+                // Authorization header'dan da kontrol et
+                var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+                {
+                    context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                    Console.WriteLine($"JWT token found in Authorization header, length: {context.Token?.Length ?? 0}");
+                }
+            }
             return Task.CompletedTask;
         },
         OnAuthenticationFailed = context =>
         {
             Log.Warning("JWT Authentication failed: {Exception}", context.Exception.Message);
+            
+            // Geliştirme ortamında daha detaylı hata bilgisi
+            if (context.HttpContext.RequestServices.GetService<IWebHostEnvironment>()?.IsDevelopment() == true)
+            {
+                Console.WriteLine($"Authentication failed details: {context.Exception}");
+            }
+            
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine("Token validation successful");
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            Console.WriteLine($"JWT Challenge: {context.Error}, {context.ErrorDescription}");
             return Task.CompletedTask;
         }
     };
@@ -111,18 +144,30 @@ if (builder.Environment.IsDevelopment())
 // Add HTTP Context Accessor
 builder.Services.AddHttpContextAccessor();
 
-// Add CORS - Azure'da çalışacak şekilde güncellenmiş
+// Add CORS - Development ve Production için
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", corsBuilder =>
     {
-        var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "*" };
-
-        corsBuilder
-            .WithOrigins(corsOrigins)
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+        if (builder.Environment.IsDevelopment())
+        {
+            // Development için localhost'ları açıkça izin ver
+            corsBuilder
+                .WithOrigins("http://localhost:3000", "http://localhost:5173", "https://localhost:3000", "https://localhost:5173")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        }
+        else
+        {
+            // Production için configuration'dan oku
+            var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "*" };
+            corsBuilder
+                .WithOrigins(corsOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        }
     });
 });
 
@@ -165,23 +210,29 @@ app.UseEndpoints(endpoints =>
 // Health check endpoint
 app.MapGet("/health", () => "Healthy");
 
-// Database migration for production
-if (app.Environment.IsProduction())
+// Database migration - Run in all environments
+try
 {
-    try
-    {
-        using var scope = app.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        Log.Information("Starting database migration...");
-        await context.Database.MigrateAsync();
-        Log.Information("Database migration completed successfully");
-    }
-    catch (Exception ex)
-    {
-        Log.Fatal(ex, "Database migration failed");
-        throw;
-    }
+    Log.Information("Starting database migration...");
+    await context.Database.MigrateAsync();
+    Log.Information("Database migration completed successfully");
+
+    // Seed default data after migration
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApplicationDbContext>>();
+
+    Log.Information("Starting database seeding...");
+    await ApplicationDbContextSeed.SeedDefaultDataAsync(context, userManager, roleManager, logger);
+    Log.Information("Database seeding completed successfully");
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Database migration or seeding failed");
+    throw;
 }
 
 try

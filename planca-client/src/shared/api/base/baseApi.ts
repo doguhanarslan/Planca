@@ -1,10 +1,9 @@
 // src/shared/api/baseApi.ts
 import { createApi, fetchBaseQuery, BaseQueryApi, FetchArgs } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '@/app/store';
-
-// Base query with authentication
+// Base query with authentication - Environment variable support
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'https://localhost:7100/api',
+  baseUrl: (window as any).ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || '/api',
   credentials: 'include', // Cookie-based auth
   prepareHeaders: (headers, { getState }) => {
     const state = getState() as RootState;
@@ -59,8 +58,11 @@ export const baseApi = createApi({
     'Employee', 
     'Appointment',
     'Auth',
-    'Business'
+    'Business',
+    'Dashboard'
   ],
+  // Keep unused data for only 30 seconds to ensure fresh data
+  keepUnusedDataFor: 30,
   endpoints: () => ({}),
 });
 

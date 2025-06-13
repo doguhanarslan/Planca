@@ -10,6 +10,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Planca.Application.Features.Auth.Commands.Register
 {
@@ -74,18 +75,21 @@ namespace Planca.Application.Features.Auth.Commands.Register
 
                 try
                 {
+                    // Normalize role name (handle case insensitive input)
+                    var normalizedRole = NormalizeRoleName(request.Role);
+                    
                     // Add user to role
-                    var roleResult = await _identityService.AddToRoleAsync(userId, request.Role);
+                    var roleResult = await _identityService.AddToRoleAsync(userId, normalizedRole);
                     if (!roleResult.Succeeded)
                     {
-                        _logger.LogWarning("Role assignment failed for {Email}: {Errors}",
-                            request.Email, string.Join(", ", roleResult.Errors));
+                        _logger.LogWarning("Role assignment failed for {Email} with role {Role}: {Errors}",
+                            request.Email, normalizedRole, string.Join(", ", roleResult.Errors));
                         await _identityService.DeleteUserAsync(userId);
-                        return Result<AuthResponse>.Failure("Failed to assign role");
+                        return Result<AuthResponse>.Failure($"Registration failed: Role {normalizedRole} does not exist.");
                     }
 
                     // Create domain entity based on role
-                    if (request.Role == UserRoles.Employee)
+                    if (normalizedRole == UserRoles.Employee)
                     {
                         await CreateEmployeeEntity(userId, request);
                     }
@@ -134,7 +138,7 @@ namespace Planca.Application.Features.Auth.Commands.Register
                         RefreshTokenExpiryTime = refreshTokenExpiryTime
                     };
 
-                    _logger.LogInformation("User {Email} registered successfully with role {Role}", request.Email, request.Role);
+                    _logger.LogInformation("User {Email} registered successfully with role {Role}", request.Email, normalizedRole);
                     return Result<AuthResponse>.Success(response);
                 }
                 catch (Exception ex)
@@ -201,6 +205,20 @@ namespace Planca.Application.Features.Auth.Commands.Register
             };
 
             await _employeeRepository.AddAsync(employee);
+        }
+
+        private string NormalizeRoleName(string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(roleName))
+                return UserRoles.Customer; // Default role
+
+            return roleName.ToUpper() switch
+            {
+                "ADMIN" => UserRoles.Admin,
+                "EMPLOYEE" => UserRoles.Employee,
+                "CUSTOMER" => UserRoles.Customer,
+                _ => roleName // Return as-is if it matches exactly
+            };
         }
     }
 }

@@ -7,8 +7,8 @@ import { Store } from "@reduxjs/toolkit";
 import { refreshUserToken, logoutUser, updateRefreshTokenExpiry } from "@/features/auth/authSlice";
 import { AppDispatch } from "@/app/store";
 
-// API URL
-const API_URL = "https://localhost:7100/api";
+// API URL - Environment variable support for Azure deployment
+const API_URL = (window as any).ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || "/api";
 
 // Create axios instance
 const instance: AxiosInstance = axios.create({
