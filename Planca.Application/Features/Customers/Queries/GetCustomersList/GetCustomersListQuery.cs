@@ -20,7 +20,7 @@ namespace Planca.Application.Features.Customers.Queries.GetCustomersList
         // Tenant ID, TenantBehavior tarafından doldurulacak
         public Guid TenantId { get; set; }
         public string CacheKey => $"customers_list_p{PageNumber}_s{PageSize}_q{SearchString}_sb{SortBy}_sa{SortAscending}";
-        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(15);
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(30);
         public bool BypassCache { get; set; } = false;
     }
 }

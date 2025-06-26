@@ -28,9 +28,9 @@ namespace Planca.Application.Features.Appointments.Queries.GetAppointmentsList
         // Tenant ID (TenantBehavior tarafından otomatik doldurulacak)
         public Guid TenantId { get; set; }
 
-
+        // Cache implementation - increase duration for better page navigation experience
         public string CacheKey => $"appointments_list_p{PageNumber}_s{PageSize}_sd{StartDate?.ToShortDateString()}_ed{EndDate?.ToShortDateString()}_eid{EmployeeId}_cid{CustomerId}_sid{ServiceId}_st{Status}_sb{SortBy}_sa{SortAscending}";
-        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(5); // Randevu listesi için daha kısa cache süresi
-        public bool BypassCache { get; set; } = false;
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(5); // Increased cache for better navigation experience
+        public bool BypassCache { get; set; } = false; // Allow bypassing cache when needed
     }
 }

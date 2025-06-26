@@ -6,8 +6,11 @@ import { CustomerDto, CustomerStats } from '@/features/customers/model';
 import { useGetCustomersQuery } from '@/features/customers/api';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
 import { FiUsers, FiPlus, FiArrowLeft, FiTrendingUp, FiCalendar, FiStar, FiEdit } from 'react-icons/fi';
+import { useDispatch } from 'react-redux';
+import { baseApi } from '@/shared/api/base/baseApi';
 
 const Customers: React.FC = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { customerId } = useParams<{ customerId?: string }>();
   
@@ -20,14 +23,18 @@ const Customers: React.FC = () => {
   const isDetailView = Boolean(customerId);
   
   // RTK Query for basic stats (using the first page with minimal params)
-  const { data: customersData } = useGetCustomersQuery({ 
+  const { data: customersData, refetch: refetchCustomers } = useGetCustomersQuery({ 
     pageNumber: 1, 
     pageSize: 1 
   }, {
     selectFromResult: ({ data, ...otherProps }) => ({
       data: data ? { totalCount: data.totalCount } : undefined,
       ...otherProps
-    })
+    }),
+    // Add better cache configuration
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
   });
   
   // Handle customer selection
@@ -50,10 +57,24 @@ const Customers: React.FC = () => {
     setShowAddCustomerModal(true);
   };
   
-  // Handle customer added
-  const handleCustomerAdded = (customer: CustomerDto) => {
-    setShowAddCustomerModal(false);
-    navigate(`/customers/${customer.id}`, { replace: true });
+  // Handle customer added - with cache invalidation
+  const handleCustomerAdded = async (customer: CustomerDto) => {
+    try {
+      // Force invalidate customer cache
+      dispatch(baseApi.util.invalidateTags(['Customer']));
+      
+      // Wait for cache invalidation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Refetch current data
+      await refetchCustomers();
+      
+      setShowAddCustomerModal(false);
+      navigate(`/customers/${customer.id}`, { replace: true });
+    } catch (error) {
+      console.error('Error during customer added cache refresh:', error);
+      setShowAddCustomerModal(false);
+    }
   };
   
   // Handle cancel add customer
@@ -67,19 +88,47 @@ const Customers: React.FC = () => {
     setShowEditCustomerModal(true);
   };
 
-  // Handle delete customer
-  const handleDeleteCustomer = (customerId: string) => {
-    // Navigate back to customers list if the deleted customer was selected
-    if (customerId === customerId) {
-      navigate('/customers', { replace: true });
+  // Handle delete customer - with cache invalidation
+  const handleDeleteCustomer = async (deletedCustomerId: string) => {
+    try {
+      // Force invalidate customer cache
+      dispatch(baseApi.util.invalidateTags(['Customer']));
+      
+      // Wait for cache invalidation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Refetch current data
+      await refetchCustomers();
+      
+      // Navigate back to customers list if the deleted customer was selected
+      if (deletedCustomerId === customerId) {
+        navigate('/customers', { replace: true });
+      }
+    } catch (error) {
+      console.error('Error during customer deleted cache refresh:', error);
     }
   };
 
-  // Handle customer edited
-  const handleCustomerEdited = () => {
-    setShowEditCustomerModal(false);
-    setCustomerToEdit(null);
-    // Stay on current customer view
+  // Handle customer edited - with cache invalidation
+  const handleCustomerEdited = async () => {
+    try {
+      // Force invalidate customer cache
+      dispatch(baseApi.util.invalidateTags(['Customer']));
+      
+      // Wait for cache invalidation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Refetch current data
+      await refetchCustomers();
+      
+      setShowEditCustomerModal(false);
+      setCustomerToEdit(null);
+      // Stay on current customer view
+    } catch (error) {
+      console.error('Error during customer edited cache refresh:', error);
+      setShowEditCustomerModal(false);
+      setCustomerToEdit(null);
+    }
   };
 
   // Handle cancel edit customer

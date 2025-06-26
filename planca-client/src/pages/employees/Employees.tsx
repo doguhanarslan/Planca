@@ -4,6 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
 import { EmployeesList, EmployeeBasicInfo, EmployeeWorkingHours, EmployeePermissions, EmployeeForm } from '@/features/employees';
 import { EmployeeDto } from '@/shared/types';
+import { useDispatch } from 'react-redux';
+import { baseApi } from '@/shared/api/base/baseApi';
 
 // RTK Query hooks
 import {
@@ -12,6 +14,7 @@ import {
 } from '@/features/employees';
 
 const Employees: React.FC = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { employeeId } = useParams<{ employeeId: string }>();
   const [activeTab, setActiveTab] = useState('basicInfo');
@@ -34,11 +37,17 @@ const Employees: React.FC = () => {
     skip: !employeeId,
     // Refetch on mount if data is older than 2 minutes
     refetchOnMountOrArgChange: 120,
+    // Add better cache configuration
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
   });
 
   // RTK Query for employees list (to manually invalidate cache)
   const { refetch: refetchEmployeesList } = useGetEmployeesQuery({}, {
     skip: !!employeeId, // Only fetch when we're in list view
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
   });
   
   // Handle tab changes - just change the state, don't navigate
@@ -52,12 +61,18 @@ const Employees: React.FC = () => {
     setEmployeeToEdit(null);
   };
   
-  // Handle form success
+  // Handle form success - improved cache invalidation
   const handleFormSuccess = async () => {
     setShowEmployeeForm(false);
     setEmployeeToEdit(null);
     
     try {
+      // Force invalidate all employee-related cache
+      dispatch(baseApi.util.invalidateTags(['Employee', 'Dashboard']));
+      
+      // Wait for cache invalidation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Refetch employee data if we're viewing a specific employee
       if (employeeId) {
         await refetch();
@@ -68,8 +83,10 @@ const Employees: React.FC = () => {
       
       // Force EmployeesList to refresh by changing key
       setRefreshKey(prev => prev + 1);
+      
+      console.log('Employee cache invalidation completed');
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('Error refreshing employee data:', error);
       // Even if refetch fails, still update the key to force component refresh
       setRefreshKey(prev => prev + 1);
     }

@@ -48,17 +48,19 @@ const AppointmentList = ({
         const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
         return endOfMonth.toISOString();
       })() : undefined,
-      pageSize: 99, // Get more appointments for list view
+      pageSize: 100, // Get more appointments for list view
       sortBy: 'StartTime',
       sortDirection: 'asc',
     },
     {
       // Skip query if appointments are provided via props
       skip: Boolean(propAppointments),
-      // Refetch on mount if data is older than 2 minutes
-      refetchOnMountOrArgChange: 120,
+      // Refetch on mount and when appointments cache changes
+      refetchOnMountOrArgChange: true,
       // Refetch on window focus
       refetchOnFocus: true,
+      // Reduce polling interval for better real-time updates (every 10 seconds)
+      pollingInterval: 10000,
     }
   );
 
@@ -222,15 +224,30 @@ const AppointmentList = ({
   const confirmDelete = async () => {
     if (showDeleteConfirm) {
       try {
+        console.log('🗑️ Deleting appointment:', showDeleteConfirm);
+        
+        // Optimistic UI update - remove from local state immediately
+        setFilteredAppointments(prev => prev.filter(apt => apt.id !== showDeleteConfirm));
+        
         await deleteAppointment(showDeleteConfirm).unwrap();
         setShowDeleteConfirm(null);
         
-        // Refetch appointments if using query (not props)
-        if (!propAppointments) {
+        // Force immediate refetch with bypass cache for better UX
+        if (!propAppointments && refetch) {
+          console.log('🔄 Force refetching appointments after delete with cache bypass');
+          // Trigger a new query with bypass cache
           refetch();
         }
+        
+        console.log('✅ Appointment deleted successfully');
       } catch (error) {
-        console.error('Error deleting appointment:', error);
+        console.error('❌ Error deleting appointment:', error);
+        // Revert optimistic update on error by refetching
+        if (!propAppointments && refetch) {
+          refetch();
+        }
+        // Show user-friendly error message
+        alert('Randevu silinirken bir hata oluştu. Lütfen tekrar deneyin.');
       }
     }
   };

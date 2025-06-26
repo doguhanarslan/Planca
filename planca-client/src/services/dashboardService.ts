@@ -28,55 +28,50 @@ export class DashboardService {
       // Paralel API istekleri ile performansı artırıyoruz
       const [totalAppointmentsResponse, upcomingAppointmentsResponse, customersResponse, completedAppointmentsResponse] = 
         await Promise.all([
-          // Toplam randevu sayısı
+          // Toplam randevu sayısı - TenantId header olarak gönderilecek
           axios.get<ApiResponse<PaginatedList<AppointmentDto>>>('/Appointments', {
             params: {
               PageNumber: 1,
-              PageSize: 1,
-              TenantId: tenantId
+              PageSize: 1
             },
             withCredentials: true
           }),
           
-          // Yaklaşan randevu sayısı
+          // Yaklaşan randevu sayısı - TenantId header olarak gönderilecek
           axios.get<ApiResponse<PaginatedList<AppointmentDto>>>('/Appointments', {
             params: {
               PageNumber: 1,
               PageSize: 1,
-              StartDate: today.toISOString(),
-              TenantId: tenantId
+              StartDate: today.toISOString()
             },
             withCredentials: true
           }),
           
-          // Toplam müşteri sayısı
+          // Toplam müşteri sayısı - TenantId header olarak gönderilecek
           axios.get<ApiResponse<PaginatedList<CustomerDto>>>('/Customers', {
             params: {
               PageNumber: 1,
-              PageSize: 1,
-              TenantId: tenantId
+              PageSize: 1
             },
             withCredentials: true
           }).catch((error) => {
             console.error('Error fetching customers:', error);
             return {
               data: {
-                data: {
                 totalCount: 0,
                 items: []
               }
             }
-          }}),
+          }),
           
-          // Tamamlanmış randevular (aylık gelir hesabı için)
+          // Tamamlanmış randevular (aylık gelir hesabı için) - TenantId header olarak gönderilecek
           axios.get<ApiResponse<PaginatedList<AppointmentDto>>>('/Appointments', {
             params: {
               PageNumber: 1,
               PageSize: 100,
               StartDate: startOfMonth.toISOString(),
               EndDate: endOfMonth.toISOString(),
-              Status: 'Completed',
-              TenantId: tenantId
+              Status: 'Completed'
             },
             withCredentials: true
           })
@@ -84,18 +79,29 @@ export class DashboardService {
       
       // totalCount değerlerini almanın güvenli yolu
       const getCount = (response: any): number => {
-        if (response?.data?.data?.totalCount !== undefined) {
-          return response.data.data.totalCount;
-        }
-        // PaginatedList doğrudan dönülmüşse
+        console.log('Dashboard response for count:', response);
+        
+        // Backend BaseApiController.HandlePagedResult formatı
         if (response?.data?.totalCount !== undefined) {
           return response.data.totalCount;
         }
-        // İçerik tipine göre adapte et
+        
+        // Direkt PaginatedList formatı
+        if (response?.totalCount !== undefined) {
+          return response.totalCount;
+        }
+        
+        // ApiResponse wrapper içindeyse
+        if (response?.data?.data?.totalCount !== undefined) {
+          return response.data.data.totalCount;
+        }
+        
+        // Array formatında geliyorsa
         if (Array.isArray(response?.data)) {
           return response.data.length;
         }
-        // Bulunamadı
+        
+        console.warn('Could not extract count from response:', response);
         return 0;
       };
       
@@ -155,7 +161,7 @@ export class DashboardService {
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()); 
       const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
       
-      // API isteği ile bugünün randevularını getir
+      // API isteği ile bugünün randevularını getir - TenantId header olarak gönderilecek
       const response = await axios.get<ApiResponse<PaginatedList<AppointmentDto>>>('/Appointments', {
         params: {
           PageNumber: 1,
@@ -163,8 +169,7 @@ export class DashboardService {
           StartDate: startOfDay.toISOString(),
           EndDate: endOfDay.toISOString(),
           SortBy: 'StartTime',
-          SortAscending: true,
-          TenantId: tenantId
+          SortAscending: true
         },
         withCredentials: true
       });
@@ -172,15 +177,23 @@ export class DashboardService {
       // API yanıt tipine göre hangi verileri alacağımızı belirle
       let appointments: AppointmentDto[] = [];
       
+      console.log('Today appointments raw response:', response);
+      
+      // ApiResponse<PaginatedList<T>> formatı - response.data.data.items
       if (response.data?.data?.items && Array.isArray(response.data.data.items)) {
-        // Standart ApiResponse<PaginatedList<T>> formatı
         appointments = response.data.data.items;
-      } else if (response.data?.data && Array.isArray(response.data.data)) {
-        // PaginatedList<T> formatı
-        appointments = response.data.data;
-      } else if (Array.isArray(response.data)) {
-        // Doğrudan T[] formatı
-        appointments = response.data;
+      } 
+      // Backend direkt PaginatedList döndürüyorsa - response.data.items  
+      else if ((response.data as any)?.items && Array.isArray((response.data as any).items)) {
+        appointments = (response.data as any).items;
+      } 
+      // Direkt array formatında geliyorsa
+      else if (Array.isArray(response.data)) {
+        appointments = response.data as any;
+      }
+      else {
+        console.warn('Unexpected today appointments response format:', response);
+        appointments = [];
       }
       
       // Uygun şekilde veri dönüşümü yaparak istenen formatta döndür

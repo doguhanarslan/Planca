@@ -40,6 +40,8 @@ const ServicesList: React.FC = () => {
     refetchOnMountOrArgChange: 300,
     // Refetch on window focus
     refetchOnFocus: true,
+    // Refetch on reconnect
+    refetchOnReconnect: true,
   });
 
   const [deleteService, { 

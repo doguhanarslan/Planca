@@ -20,7 +20,7 @@ namespace Planca.Application.Features.Auth.Queries.GetUsersList
         public Guid TenantId { get; set; }
 
         public string CacheKey => $"users_list_p{PageNumber}_s{PageSize}_q{SearchString}_r{Role}_sb{SortBy}_sa{SortAscending}";
-        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(10);
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(30);
         public bool BypassCache { get; set; } = false;
     }
 }

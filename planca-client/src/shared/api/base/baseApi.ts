@@ -61,8 +61,11 @@ export const baseApi = createApi({
     'Business',
     'Dashboard'
   ],
-  // Keep unused data for only 30 seconds to ensure fresh data
-  keepUnusedDataFor: 30,
+  // Increase cache time to 5 minutes for better page navigation experience
+  keepUnusedDataFor: 300,
+  // Enable refetch on focus and reconnect for better UX
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
   endpoints: () => ({}),
 });
 

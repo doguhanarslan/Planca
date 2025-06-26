@@ -25,7 +25,6 @@ namespace Planca.Application.Features.Appointments.Commands.DeleteAppointment
             _cacheService = cacheService;
         }
 
-        // Update Planca.Application/Features/Appointments/Commands/DeleteAppointment/DeleteAppointmentCommandHandler.cs
         public async Task<Result> Handle(DeleteAppointmentCommand request, CancellationToken cancellationToken)
         {
             // 1. Get the appointment with related entities
@@ -47,9 +46,11 @@ namespace Planca.Application.Features.Appointments.Commands.DeleteAppointment
                 return Result.Failure("Cannot delete a completed appointment");
             }
 
-            // Store IDs for cache invalidation
+            // Store IDs for cache invalidation BEFORE deletion
             var employeeId = appointment.EmployeeId;
             var customerId = appointment.CustomerId;
+            var appointmentId = appointment.Id;
+            var tenantId = appointment.TenantId;
 
             // 4. Delete the appointment
             await _appointmentRepository.DeleteAsync(appointment);
@@ -57,9 +58,45 @@ namespace Planca.Application.Features.Appointments.Commands.DeleteAppointment
             // 5. Save changes
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 6. Manually invalidate specific caches that couldn't be captured in the command
-            await _cacheService.RemoveByPatternAsync($"employee_appointments_{employeeId}");
-            await _cacheService.RemoveByPatternAsync($"customer_appointments_{customerId}");
+            // 6. IMMEDIATE CACHE CLEARING with optimized patterns
+            try 
+            {
+                // Clear specific cache entries first for immediate effect
+                var specificPatterns = new[]
+                {
+                    $"appointment_detail_{appointmentId}",
+                    $"appointments_list",
+                    $"employee_appointments_{employeeId}",
+                    $"customer_appointments_{customerId}",
+                    "dashboard",
+                    "employees_list"
+                };
+
+                // Clear specific entries immediately
+                foreach (var pattern in specificPatterns)
+                {
+                    await _cacheService.RemoveByPatternAsync(pattern);
+                }
+
+                // Clear broader patterns for consistency
+                var broadPatterns = new[]
+                {
+                    "appointments", "employee_appointments", "customer_appointments",
+                    "services_list", "employees", "customers"
+                };
+
+                foreach (var pattern in broadPatterns)
+                {
+                    await _cacheService.RemoveByPatternAsync(pattern);
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"🔄 Optimized cache invalidation completed for appointment {appointmentId}");
+            }
+            catch (Exception ex)
+            {
+                // Don't fail the operation if cache invalidation fails, just log it
+                System.Diagnostics.Debug.WriteLine($"❌ Cache invalidation failed: {ex.Message}");
+            }
 
             return Result.Success();
         }

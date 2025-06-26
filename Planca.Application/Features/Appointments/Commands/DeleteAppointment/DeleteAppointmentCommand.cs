@@ -15,6 +15,6 @@ namespace Planca.Application.Features.Appointments.Commands.DeleteAppointment
         public Guid TenantId { get; set; }
 
         public string CacheKeyToInvalidate => $"appointment_detail_{Id}";
-        public string CacheKeyPatternToInvalidate => "appointments_list|employee_appointments|customer_appointments|employees_list";
+        public string CacheKeyPatternToInvalidate => "appointments_list|employee_appointments|customer_appointments|employees_list|dashboard";
     }
 }

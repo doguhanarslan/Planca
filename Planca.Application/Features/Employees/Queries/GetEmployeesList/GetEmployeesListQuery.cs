@@ -24,6 +24,6 @@ namespace Planca.Application.Features.Employees.Queries.GetEmployeesList
         public Guid TenantId { get; set; }
 
         public string CacheKey => $"employees_list_p{PageNumber}_s{PageSize}_q{SearchString}_ia{IsActive}_sid{ServiceId}_sb{SortBy}_sa{SortAscending}";
-        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(10);
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(30);
     }
 }

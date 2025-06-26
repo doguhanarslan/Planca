@@ -18,7 +18,8 @@ const transformParams = (params: {
     PageSize: params.pageSize || 50,
     SortBy: params.sortBy || 'StartTime',
     SortDirection: params.sortDirection || 'asc',
-    _t: Date.now(), // Cache busting
+    bypassCache: true, // Always bypass backend cache for real-time updates
+    _t: Date.now(), // Cache busting for HTTP caching
   };
 
   if (params.startDate) {
@@ -59,63 +60,68 @@ const transformAppointmentForApi = (appointment: Omit<AppointmentDto, 'id'> | Ap
 
 export const appointmentsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Get paginated appointments list
-    getAppointments: builder.query<
-      PaginatedList<AppointmentDto> | AppointmentDto[], 
-      {
-        startDate?: string;
-        endDate?: string;
-        employeeId?: string;
-        customerId?: string;
-        status?: string;
-        pageNumber?: number;
-        pageSize?: number;
-        sortBy?: string;
-        sortDirection?: 'asc' | 'desc';
-      }
-    >({
-      query: (params = {}) => ({
-        url: '/Appointments',
-        params: transformParams(params),
-      }),
-      transformResponse: (response: any) => {
-        console.log('RTK Query Appointments Response:', response);
+    // Get appointments with pagination and filtering
+    getAppointments: builder.query<PaginatedList<AppointmentDto> | AppointmentDto[], {
+      startDate?: string;
+      endDate?: string;
+      employeeId?: string;
+      customerId?: string;
+      status?: string;
+      pageNumber?: number;
+      pageSize?: number;
+      sortBy?: string;
+      sortDirection?: 'asc' | 'desc';
+      bypassCache?: boolean; // Add bypass cache support
+    }>({
+      query: (params) => {
+        const transformedParams = transformParams(params);
+        const searchParams = new URLSearchParams();
         
-        // Handle different response formats
-        if (response?.data?.items) {
-          // ApiResponse<PaginatedList> format
+        // Add regular query parameters
+        Object.entries(transformedParams).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            searchParams.append(key, value.toString());
+          }
+        });
+        
+        // Add bypass cache parameter if specified
+        if (params.bypassCache) {
+          searchParams.append('bypassCache', 'true');
+        }
+        
+        return {
+          url: `/Appointments?${searchParams.toString()}`,
+          headers: params.bypassCache ? {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          } : undefined
+        };
+      },
+      transformResponse: (response: any) => {
+        console.log('Get Appointments Response:', response);
+        
+        if (response?.data) {
           return response.data;
-        } else if (response?.items) {
-          // Direct PaginatedList format
-          return response;
-        } else if (Array.isArray(response?.data)) {
-          // Direct array format
-          return response.data;
-        } else if (Array.isArray(response)) {
-          // Direct array format
+        } else if (response && ('items' in response || Array.isArray(response))) {
           return response;
         } else {
-          // Fallback
-          return {
-            items: [],
-            pageNumber: 1,
-            totalPages: 0,
-            totalCount: 0,
-            hasNextPage: false,
-            hasPreviousPage: false,
-          };
+          return [];
         }
       },
-      providesTags: (result, error, arg) => [
-        'Appointment',
-        // Add individual tags for each appointment for more granular invalidation
-        ...(Array.isArray(result) 
-          ? result.map(({ id }) => ({ type: 'Appointment' as const, id }))
-          : (result && 'items' in result)
-            ? result.items?.map(({ id }) => ({ type: 'Appointment' as const, id })) || []
-            : []
-        ),
-      ],
+      providesTags: (result) => {
+        const tags = [{ type: 'Appointment' as const, id: 'LIST' }];
+        
+        if (result) {
+          const appointments = Array.isArray(result) ? result : result.items || [];
+          appointments.forEach(appointment => {
+            tags.push({ type: 'Appointment' as const, id: appointment.id });
+          });
+        }
+        
+        return tags;
+      },
+      // Increase cache time for better page navigation experience  
+      keepUnusedDataFor: 300,
     }),
 
     // Get single appointment by ID
@@ -237,8 +243,10 @@ export const appointmentsApi = baseApi.injectEndpoints({
           throw new Error('Invalid response format');
         }
       },
-      invalidatesTags: [
-        'Appointment', // Invalidate all appointments to refresh lists
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Appointment', id: 'LIST' }, // Invalidate list cache
+        'Appointment', // Invalidate all appointment queries
+        'Dashboard', // Also invalidate dashboard stats
       ],
     }),
 
@@ -249,6 +257,55 @@ export const appointmentsApi = baseApi.injectEndpoints({
         method: 'PUT',
         body: transformAppointmentForApi(appointmentData),
       }),
+      // Add optimistic update
+      onQueryStarted: async (appointmentData, { dispatch, queryFulfilled }) => {
+        // Optimistically update all relevant queries
+        const patchResults: any[] = [];
+        
+        try {
+          // Update the main appointments list
+          const listPatchResult = dispatch(
+            appointmentsApi.util.updateQueryData('getAppointments', {}, (draft) => {
+              if (Array.isArray(draft)) {
+                const index = draft.findIndex(apt => apt.id === appointmentData.id);
+                if (index !== -1) {
+                  draft[index] = appointmentData;
+                }
+              } else if ('items' in draft) {
+                const index = draft.items.findIndex(apt => apt.id === appointmentData.id);
+                if (index !== -1) {
+                  draft.items[index] = appointmentData;
+                }
+              }
+            })
+          );
+          patchResults.push(listPatchResult);
+
+          // Update employee-specific appointments
+          const employeePatchResult = dispatch(
+            appointmentsApi.util.updateQueryData(
+              'getEmployeeAppointments',
+              { 
+                employeeId: appointmentData.employeeId,
+                startDate: new Date(appointmentData.startTime).toISOString().split('T')[0],
+                endDate: new Date(appointmentData.startTime).toISOString().split('T')[0]
+              },
+              (draft) => {
+                const index = draft.findIndex(apt => apt.id === appointmentData.id);
+                if (index !== -1) {
+                  draft[index] = appointmentData;
+                }
+              }
+            )
+          );
+          patchResults.push(employeePatchResult);
+
+          await queryFulfilled;
+        } catch {
+          // Revert optimistic updates on error
+          patchResults.forEach(patchResult => patchResult.undo());
+        }
+      },
       transformResponse: (response: any) => {
         console.log('Update Appointment Response:', response);
         
@@ -262,8 +319,13 @@ export const appointmentsApi = baseApi.injectEndpoints({
         }
       },
       invalidatesTags: (result, error, { id }) => [
-        'Appointment', // Invalidate all appointments
+        { type: 'Appointment', id: 'LIST' }, // Invalidate list cache
         { type: 'Appointment', id }, // Invalidate specific appointment
+        'Appointment', // Invalidate all appointment queries to be safe
+        'Dashboard', // Also invalidate dashboard stats
+        // Add employee and customer specific invalidations
+        { type: 'Employee', id: result?.employeeId },
+        { type: 'Customer', id: result?.customerId },
       ],
     }),
 
@@ -284,8 +346,10 @@ export const appointmentsApi = baseApi.injectEndpoints({
         }
       },
       invalidatesTags: (result, error, { id }) => [
-        'Appointment',
+        { type: 'Appointment', id: 'LIST' },
         { type: 'Appointment', id },
+        'Appointment',
+        'Dashboard',
       ],
     }),
 
@@ -306,8 +370,10 @@ export const appointmentsApi = baseApi.injectEndpoints({
         }
       },
       invalidatesTags: (result, error, id) => [
-        'Appointment',
+        { type: 'Appointment', id: 'LIST' },
         { type: 'Appointment', id },
+        'Appointment',
+        'Dashboard',
       ],
     }),
 
@@ -317,9 +383,104 @@ export const appointmentsApi = baseApi.injectEndpoints({
         url: `/Appointments/${id}`,
         method: 'DELETE',
       }),
+      // Enhanced optimistic update for immediate UI feedback
+      onQueryStarted: async (id, { dispatch, queryFulfilled, getState }) => {
+        console.log('🗑️ Starting enhanced optimistic delete for appointment:', id);
+        
+        // Store patch results for potential rollback
+        const patchResults: any[] = [];
+        
+        try {
+          // 1. Get all current query cache entries to update them optimistically
+          const state = getState() as any;
+          const apiState = state.api;
+          
+          // 2. Optimistically remove from ALL appointments list queries
+          Object.keys(apiState.queries).forEach(queryKey => {
+            if (queryKey.startsWith('getAppointments(')) {
+              try {
+                const patchResult = dispatch(
+                  appointmentsApi.util.updateQueryData('getAppointments', 
+                    apiState.queries[queryKey]?.originalArgs || {}, 
+                    (draft) => {
+                      if (Array.isArray(draft)) {
+                        const index = draft.findIndex(apt => apt.id === id);
+                        if (index !== -1) {
+                          console.log('📝 Removing from array cache:', queryKey);
+                          draft.splice(index, 1);
+                        }
+                      } else if (draft && 'items' in draft) {
+                        const index = draft.items.findIndex(apt => apt.id === id);
+                        if (index !== -1) {
+                          console.log('📝 Removing from paginated cache:', queryKey);
+                          draft.items.splice(index, 1);
+                          draft.totalCount = Math.max(0, draft.totalCount - 1);
+                        }
+                      }
+                    }
+                  )
+                );
+                patchResults.push(patchResult);
+              } catch (e) {
+                console.warn('Could not update cache for query:', queryKey, e);
+              }
+            }
+            
+            // Also update employee and customer appointment queries
+            if (queryKey.startsWith('getEmployeeAppointments(') || queryKey.startsWith('getCustomerAppointments(')) {
+              try {
+                const originalArgs = apiState.queries[queryKey]?.originalArgs;
+                if (originalArgs) {
+                  const patchResult = dispatch(
+                    appointmentsApi.util.updateQueryData(
+                      queryKey.startsWith('getEmployeeAppointments(') ? 'getEmployeeAppointments' : 'getCustomerAppointments',
+                      originalArgs,
+                      (draft) => {
+                        const index = draft.findIndex(apt => apt.id === id);
+                        if (index !== -1) {
+                          console.log('📝 Removing from specific cache:', queryKey);
+                          draft.splice(index, 1);
+                        }
+                      }
+                    )
+                  );
+                  patchResults.push(patchResult);
+                }
+              } catch (e) {
+                console.warn('Could not update specific cache for query:', queryKey, e);
+              }
+            }
+          });
+
+          // 3. Wait for the actual API call
+          await queryFulfilled;
+          
+          console.log('✅ Delete operation successful:', id);
+          
+          // 4. Force immediate cache invalidation (no nuclear option needed now)
+          dispatch(appointmentsApi.util.invalidateTags([
+            { type: 'Appointment', id: 'LIST' },
+            { type: 'Appointment', id },
+            'Appointment',
+            'Dashboard',
+            'Employee',
+            'Customer'
+          ]));
+          
+        } catch (error) {
+          console.error('❌ Delete operation failed, reverting optimistic updates:', error);
+          // Revert all optimistic updates
+          patchResults.forEach(patchResult => patchResult.undo());
+          throw error;
+        }
+      },
       invalidatesTags: (result, error, id) => [
-        'Appointment', // Invalidate all appointments
-        { type: 'Appointment', id }, // Invalidate specific appointment
+        { type: 'Appointment', id: 'LIST' },
+        { type: 'Appointment', id },
+        'Appointment',
+        'Dashboard',
+        'Employee',
+        'Customer',
       ],
     }),
   }),

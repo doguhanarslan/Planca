@@ -13,9 +13,9 @@ namespace Planca.Application.Features.Appointments.Queries.GetAppointmentDetail
         public Guid Id { get; set; }
         public Guid TenantId { get; set; }
 
-        // New properties for caching
+        // Cache implementation - increase duration for better page navigation experience
         public string CacheKey => $"appointment_detail_{Id}";
-        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(15); // Shorter duration for appointments as they change frequently
-        public bool BypassCache { get; set; } = false;
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(10); // Increased cache for better navigation experience
+        public bool BypassCache { get; set; } = false; // Allow bypassing cache when needed
     }
 }

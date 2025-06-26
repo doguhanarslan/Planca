@@ -42,13 +42,22 @@ namespace Planca.Application.Common.Behaviours
 
             if (request.CacheKey != null)
             {
+                // Check if request has a bypass cache property
+                var bypassCache = false;
+                var bypassProperty = request.GetType().GetProperty("BypassCache");
+                if (bypassProperty != null && bypassProperty.PropertyType == typeof(bool))
+                {
+                    bypassCache = (bool)bypassProperty.GetValue(request);
+                }
+
                 return await _cacheService.GetOrCreateAsync(
                     request.CacheKey,
                     () => next(),
-                    request.CacheDuration);
+                    request.CacheDuration,
+                    bypassCache);
             }
 
-            // Cache key yok veya bypass aktif - direkt olarak handler'ı çalıştır
+            // Cache key yok - direkt olarak handler'ı çalıştır
             return await next();
         }
     }

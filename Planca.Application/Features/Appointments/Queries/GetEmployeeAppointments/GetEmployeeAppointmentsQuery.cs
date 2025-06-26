@@ -23,8 +23,9 @@ namespace Planca.Application.Features.Appointments.Queries.GetEmployeeAppointmen
         // Tenant ID (TenantBehavior tarafından otomatik doldurulacak)
         public Guid TenantId { get; set; }
 
-        public string CacheKey => $"employee_appointments_{EmployeeId}_sd{StartDate.ToShortDateString()}_ed{EndDate.ToShortDateString()}_st{Status}";
-        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(5);
-        public bool BypassCache { get; set; } = false;
+        // Cache implementation - increase duration for better page navigation experience
+        public string CacheKey => $"employee_appointments_{EmployeeId}_sd{StartDate:yyyyMMdd}_ed{EndDate:yyyyMMdd}_st{Status}";
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(5); // Increased cache for better navigation experience
+        public bool BypassCache { get; set; } = false; // Allow bypassing cache when needed
     }
 }

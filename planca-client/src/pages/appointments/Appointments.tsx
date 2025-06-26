@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { format, isSameDay } from 'date-fns';
-import { FiCalendar, FiPlus, FiList, FiGrid, FiClock, FiFilter, FiSearch } from 'react-icons/fi';
+import { FiCalendar, FiPlus, FiList, FiGrid, FiClock, FiFilter, FiSearch, FiX } from 'react-icons/fi';
 import AppointmentCalendar from '@/features/appointments/ui/AppointmentCalendar';
 import AppointmentList from '@/features/appointments/AppointmentList';
 import AppointmentForm from '@/features/appointments/ui/AppointmentForm';
@@ -10,6 +10,7 @@ import { AppointmentDto } from '../../shared/types';
 import { useGetAppointmentsQuery } from '@/features/appointments/api/appointmentsAPI';
 import { useDispatch } from 'react-redux';
 import { baseApi } from '@/shared/api/base/baseApi';
+import { invalidateAppointmentCache } from '@/shared/utils/cacheUtils';
 
 type ViewMode = 'calendar' | 'list';
 type TimeFrame = 'day' | 'week' | 'month';
@@ -47,26 +48,31 @@ const Appointments = () => {
     isLoading,
     error,
     refetch,
+    isFetching,
   } = useGetAppointmentsQuery(
     {
       startDate,
       endDate,
-      pageSize: 99, // Get more appointments
+      pageSize: 100, // Get more appointments
       sortBy: 'StartTime',
       sortDirection: 'asc',
     },
     {
-      // Refetch on mount if data is older than 30 seconds
-      refetchOnMountOrArgChange: 30,
-      // Refetch on window focus
+      // Always refetch when component mounts
+      refetchOnMountOrArgChange: true,
+      // Refetch on window focus to get latest data
       refetchOnFocus: true,
       // Refetch on reconnect
       refetchOnReconnect: true,
+      // Don't skip the query
+      skip: false,
     }
   );
   
   // Process appointments data
   const appointments = useMemo(() => {
+    console.log('Processing appointments data:', appointmentsData);
+    
     if (!appointmentsData) return [];
     
     // Handle different response formats
@@ -92,19 +98,34 @@ const Appointments = () => {
   };
   
   // Handle successful appointment creation or update
-  const handleAppointmentSuccess = () => {
-    // Force invalidate all appointment-related cache
-    dispatch(baseApi.util.invalidateTags(['Appointment']));
+  const handleAppointmentSuccess = useCallback(async () => {
+    console.log('🎉 Appointment operation successful, invalidating cache...');
     
-    // Also refetch current query as fallback
-    refetch();
-    
-    // Trigger calendar refresh
-    setRefreshTrigger(prev => prev + 1);
-    
-    // Close the form
-    handleFormClose();
-  };
+    try {
+      // Use enhanced cache invalidation utility
+      invalidateAppointmentCache(dispatch);
+      
+      // Force immediate calendar refresh
+      setRefreshTrigger(prev => prev + 1);
+      
+      // Additional explicit refetch for immediate consistency
+      await refetch();
+      
+      console.log('✅ Cache invalidation and refetch completed');
+      
+    } catch (error) {
+      console.error('❌ Error during cache invalidation:', error);
+      // Still try to refresh data even if cache invalidation fails
+      try {
+        await refetch();
+      } catch (refetchError) {
+        console.error('❌ Fallback refetch also failed:', refetchError);
+      }
+    } finally {
+      // Close the form
+      handleFormClose();
+    }
+  }, [dispatch, refetch]);
   
   // Handle appointment edit
   const handleEditAppointment = (appointment: AppointmentDto) => {
@@ -154,211 +175,179 @@ const Appointments = () => {
   }, [appointments, filterDate]);
 
   return (
-      <div className="flex flex-col h-full">
-        {/* Main Content Area with Enhanced Calendar Size */}
-        <div className="flex-1 bg-gray-50 overflow-auto">
-          <div className="max-w-screen-2xl w-full mx-auto px-2 py-4 sm:px-4 lg:px-6">
-            {/* View Mode and Time Frame Controls */}
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:justify-between mb-4">
-              {/* View Mode Controls */}
-              <div className="inline-flex bg-white rounded-full shadow-md p-1">
-                <button
-                  onClick={() => handleViewModeChange('calendar')}
-                  className={`flex items-center px-4 py-1.5 text-sm rounded-full ${
-                    viewMode === 'calendar'
-                      ? 'bg-gray-100 font-medium text-gray-800 shadow-inner'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  } transition-colors`}
-                >
-                  <FiGrid className="mr-1.5" size={16} />
-                  Takvim
-                </button>
-                <button
-                  onClick={() => handleViewModeChange('list')}
-                  className={`flex items-center px-4 py-1.5 text-sm rounded-full ${
-                    viewMode === 'list'
-                      ? 'bg-gray-100 font-medium text-gray-800 shadow-inner'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  } transition-colors`}
-                >
-                  <FiList className="mr-1.5" size={16} />
-                  Liste
-                </button>
+    <div className="h-full flex flex-col bg-gray-50">
+      {/* Modern Page Header */}
+      <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 border-b border-slate-200/60">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between mb-8">
+            {/* Header Content */}
+            <div className="flex items-center space-x-6">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
+                <FiCalendar className="w-6 h-6 text-white" />
               </div>
-
-              {/* Time Frame Controls */}
-              <div className="inline-flex bg-white rounded-full shadow-md p-1">
-                <button
-                  onClick={() => handleTimeFrameChange('day')}
-                  className={`flex items-center px-4 py-1.5 text-sm rounded-full ${
-                    timeFrame === 'day'
-                      ? 'bg-red-50 font-medium text-red-600 shadow-inner'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  } transition-colors`}
-                >
-                  <FiClock className="mr-1.5" size={15} />
-                  Gün
-                </button>
-                <button
-                  onClick={() => handleTimeFrameChange('week')}
-                  className={`flex items-center px-4 py-1.5 text-sm rounded-full ${
-                    timeFrame === 'week'
-                      ? 'bg-red-50 font-medium text-red-600 shadow-inner'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  } transition-colors`}
-                >
-                  Hafta
-                </button>
-                <button
-                  onClick={() => handleTimeFrameChange('month')}
-                  className={`flex items-center px-4 py-1.5 text-sm rounded-full ${
-                    timeFrame === 'month'
-                      ? 'bg-red-50 font-medium text-red-600 shadow-inner'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  } transition-colors`}
-                >
-                  Ay
-                </button>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Randevular</h1>
+                <p className="text-slate-600 text-lg">
+                  {appointments.length} randevu {filterDate ? format(filterDate, 'dd MMMM yyyy') : 'bu ay'}
+                </p>
               </div>
-              
-              {/* Action Buttons */}
-              <div className="flex space-x-2 items-center">
-                {viewMode === 'list' && (
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Ara..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-gray-50 rounded-full pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all w-32 focus:w-40 shadow-sm"
-                    />
-                    <FiSearch className="absolute left-3 top-2 text-gray-400" size={15} />
-                  </div>
-                )}
-                
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <FiFilter size={18} />
-                </button>
-                
-                <button
-                  className="flex items-center px-3.5 py-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition duration-300 font-bold text-sm shadow-md"
-                  onClick={() => {
-                    setSelectedDate(new Date());
-                    setShowForm(true);
-                    setAppointmentToEdit(null);
-                  }}
-                >
-                  <FiPlus className="mr-1.5" size={20} />
-                  <span className="hidden xs:inline">Yeni Randevu</span>
-                  <span className="inline xs:hidden">Yeni</span>
-                </button>
-              </div>
-            </div>
-            
-            {/* Filter Controls */}
-            <div className={`mb-4 transition-all duration-200 ease-in-out overflow-hidden ${showFilters ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'}`}>
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-1 bg-white p-3 rounded-lg shadow-sm">
-                <div className="font-medium text-sm text-gray-500">
-                  Filtreler
-                </div>
-                
-                <button 
-                  className="text-sm text-gray-500 hover:text-red-600"
-                  onClick={() => {
-                    setShowFilters(false);
-                    setSearchQuery('');
-                    clearDateFilter();
-                  }}
-                >
-                  Filtreleri temizle
-                </button>
-              </div>
-            </div>
-
-            {/* Date Filter Indicator */}
-            {filterDate && viewMode === 'list' && (
-              <div className="mb-4 flex items-center justify-between bg-blue-50 px-4 py-2 rounded-lg shadow-sm">
-                <div className="flex items-center text-blue-700">
-                  <FiCalendar className="mr-2" size={16} />
-                  <span className="text-sm font-medium">{format(filterDate, 'dd MMMM yyyy')} tarihindeki randevular gösteriliyor</span>
-                </div>
-                <button
-                  onClick={clearDateFilter}
-                  className="text-blue-700 hover:text-blue-800 text-sm font-medium"
-                >
-                  Temizle
-                </button>
-              </div>
-            )}
-            
-            {/* Loading indicator */}
-            {isLoading && (
-              <div className="mb-4 flex items-center justify-center bg-blue-50 px-4 py-2 rounded-lg shadow-sm">
-                <div className="flex items-center text-blue-700">
-                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+              {(isLoading || isFetching) && (
+                <div className="flex items-center space-x-3 bg-blue-50 text-blue-700 px-4 py-2.5 rounded-full">
+                  <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
                   <span className="text-sm font-medium">Randevular yükleniyor...</span>
                 </div>
-              </div>
-            )}
-            
-            {/* Error indicator */}
-            {error && !isLoading && (
-              <div className="mb-4 flex items-center justify-between bg-red-50 px-4 py-2 rounded-lg shadow-sm">
-                <div className="flex items-center text-red-700">
-                  <span className="text-sm font-medium">Randevuları yüklerken bir hata oluştu</span>
-                </div>
-                <button
-                  onClick={() => refetch()}
-                  className="text-red-700 hover:text-red-800 text-sm font-medium"
-                >
-                  Tekrar Dene
-                </button>
-              </div>
-            )}
-
-            {/* Calendar or List View with Enhanced Size */}
-            <div className={`bg-white rounded-lg shadow-lg w-full ${viewMode === 'calendar' ? 'h-[75vh]' : ''}`}>
-              {viewMode === 'calendar' ? (
-                <AppointmentCalendar
-                  selectedDate={selectedDate}
-                  currentCalendarMonth={currentCalendarMonth}
-                  onMonthChange={handleMonthChange}
-                  disabled={isLoading}
-                  onDateSelect={handleDateSelect} 
-                  timeFrame={timeFrame}
-                  onShowMore={handleShowMore}
-                  refreshTrigger={refreshTrigger}
-                />
-              ) : (
-                <AppointmentList 
-                  viewMode={timeFrame}
-                  selectedDate={filterDate || selectedDate}
-                  onEditAppointment={handleEditAppointment}
-                  appointments={filteredAppointments}
-                  searchQuery={searchQuery}
-                />
               )}
             </div>
-          </div>
-        </div>
-        
-        {/* Appointment Form Modal */}
-        {showForm && (
-          <div className="fixed inset-0 backdrop-blur-sm bg-gray-700/30 flex items-center justify-center z-50 p-4">
-            <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <AppointmentForm 
-                selectedDate={selectedDate} 
-                onClose={handleFormClose} 
-                onSuccess={handleAppointmentSuccess}
-                appointmentToEdit={appointmentToEdit}
-              />
+            
+            {/* Actions */}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              >
+                <FiPlus className="w-5 h-5 mr-2" />
+                Yeni Randevu
+              </button>
             </div>
           </div>
-        )}
+          
+          {/* View Mode and Time Frame Controls */}
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:justify-between">
+            {/* View Mode Controls */}
+            <div className="inline-flex bg-white rounded-full shadow-md p-1">
+              <button
+                onClick={() => handleViewModeChange('calendar')}
+                className={`flex items-center px-4 py-2.5 text-sm rounded-full font-medium ${
+                  viewMode === 'calendar'
+                    ? 'bg-red-100 text-red-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                } transition-colors`}
+              >
+                <FiGrid className="mr-2" size={16} />
+                Takvim
+              </button>
+              <button
+                onClick={() => handleViewModeChange('list')}
+                className={`flex items-center px-4 py-2.5 text-sm rounded-full font-medium ${
+                  viewMode === 'list'
+                    ? 'bg-red-100 text-red-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                } transition-colors`}
+              >
+                <FiList className="mr-2" size={16} />
+                Liste
+              </button>
+            </div>
+
+            {/* Time Frame Controls */}
+            <div className="inline-flex bg-white rounded-full shadow-md p-1">
+              <button
+                onClick={() => handleTimeFrameChange('day')}
+                className={`flex items-center px-4 py-2.5 text-sm rounded-full font-medium ${
+                  timeFrame === 'day'
+                    ? 'bg-red-100 text-red-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                } transition-colors`}
+              >
+                <FiClock className="mr-2" size={15} />
+                Gün
+              </button>
+              <button
+                onClick={() => handleTimeFrameChange('week')}
+                className={`flex items-center px-4 py-2.5 text-sm rounded-full font-medium ${
+                  timeFrame === 'week'
+                    ? 'bg-red-100 text-red-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                } transition-colors`}
+              >
+                <FiCalendar className="mr-2" size={15} />
+                Hafta
+              </button>
+              <button
+                onClick={() => handleTimeFrameChange('month')}
+                className={`flex items-center px-4 py-2.5 text-sm rounded-full font-medium ${
+                  timeFrame === 'month'
+                    ? 'bg-red-100 text-red-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                } transition-colors`}
+              >
+                <FiCalendar className="mr-2" size={15} />
+                Ay
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Badge */}
+          {filterDate && (
+            <div className="mt-4 flex items-center space-x-3">
+              <div className="inline-flex items-center bg-red-100 text-red-700 px-4 py-2 rounded-full">
+                <FiFilter className="w-4 h-4 mr-2" />
+                <span className="text-sm font-medium">
+                  Filtrelendi: {format(filterDate, 'dd MMMM yyyy')}
+                </span>
+                <button
+                  onClick={clearDateFilter}
+                  className="ml-2 p-1 rounded-full hover:bg-red-200 transition-colors"
+                >
+                  <FiX className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-auto p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Error State */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-center space-x-2 text-red-700">
+                <FiFilter className="w-4 h-4" />
+                <span className="text-sm font-medium">Randevular yüklenirken bir hata oluştu. Lütfen tekrar deneyin.</span>
+              </div>
+            </div>
+          )}
+
+          {/* Content based on view mode */}
+          {viewMode === 'calendar' ? (
+            <AppointmentCalendar
+              selectedDate={selectedDate}
+              currentCalendarMonth={currentCalendarMonth}
+              onMonthChange={handleMonthChange}
+              onDateSelect={handleDateSelect}
+              timeFrame={timeFrame}
+              onShowMore={handleShowMore}
+              refreshTrigger={refreshTrigger}
+              disabled={isLoading}
+            />
+          ) : (
+            <AppointmentList
+              viewMode={timeFrame}
+              selectedDate={selectedDate}
+              onEditAppointment={handleEditAppointment}
+              appointments={filteredAppointments}
+              searchQuery={searchQuery}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Appointment Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-700/30 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <AppointmentForm 
+              selectedDate={selectedDate} 
+              onClose={handleFormClose} 
+              onSuccess={handleAppointmentSuccess}
+              appointmentToEdit={appointmentToEdit}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -14,7 +14,7 @@ namespace Planca.Application.Features.Auth.Queries.GetCurrentUser
         // Properties for caching
         // This is a placeholder - the actual cache key will be created in the handler
         public string CacheKey => $"current_user_{_userId ?? "unknown"}";
-        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(5);
+        public TimeSpan? CacheDuration => TimeSpan.FromMinutes(15);
 
         // Method to set the userId for cache key generation
         public void SetUserId(string userId)

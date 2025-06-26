@@ -7,7 +7,7 @@
 echo "🔧 Environment variables injection başlatılıyor..."
 
 # Default API URL if not provided
-API_URL=${VITE_API_URL:-"https://planca-api.azurecontainerapps.io/api"}
+API_URL=${VITE_API_URL:-"https://planca-api.graymeadow-92ecb79d.northeurope.azurecontainerapps.io/api"}
 
 echo "🌐 API URL: $API_URL"
 

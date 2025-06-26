@@ -25,15 +25,25 @@ namespace Planca.Application.Common.Behaviours
             // Önce command'i çalıştır
             var response = await next();
 
-            // Command başarılı ise cache invalidation işlemleri yapılır
-            if (request.CacheKeyToInvalidate != null)
+            // Command başarılı ise aggressive cache invalidation işlemleri yapılır
+            try
             {
-                await _cacheService.RemoveAsync(request.CacheKeyToInvalidate);
-            }
+                if (request.CacheKeyToInvalidate != null)
+                {
+                    await _cacheService.RemoveAsync(request.CacheKeyToInvalidate);
+                    System.Diagnostics.Debug.WriteLine($"🔄 Removed specific cache key: {request.CacheKeyToInvalidate}");
+                }
 
-            if (request.CacheKeyPatternToInvalidate != null)
+                if (request.CacheKeyPatternToInvalidate != null)
+                {
+                    await _cacheService.RemoveByPatternAsync(request.CacheKeyPatternToInvalidate);
+                    System.Diagnostics.Debug.WriteLine($"🔄 Removed cache pattern: {request.CacheKeyPatternToInvalidate}");
+                }
+            }
+            catch (Exception ex)
             {
-                await _cacheService.RemoveByPatternAsync(request.CacheKeyPatternToInvalidate);
+                // Log but don't fail the operation
+                System.Diagnostics.Debug.WriteLine($"❌ Cache invalidation failed in behavior: {ex.Message}");
             }
 
             return response;

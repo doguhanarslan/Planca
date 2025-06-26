@@ -239,6 +239,8 @@ const Dashboard: FC = () => {
     { 
       skip: !tenant?.id,
       refetchOnMountOrArgChange: 300,
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
     }
   );
 
@@ -260,6 +262,8 @@ const Dashboard: FC = () => {
     { 
       skip: !tenant?.id,
       refetchOnMountOrArgChange: 120,
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
     }
   );
 

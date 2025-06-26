@@ -110,13 +110,33 @@ namespace Planca.Infrastructure.Services
 
             _logger.LogInformation("🔄 Attempting to remove cache keys matching pattern: {Pattern}, built key: {PatternKey}", pattern, patternKey);
 
-            var keys = _cacheKeys.Keys
-                .Where(k => k.StartsWith(patternKey))
-                .ToList();
+            // Get all keys that match the pattern
+            var keysToRemove = new List<string>();
+            
+            // Split pattern by | to handle multiple patterns
+            var patterns = pattern.Split('|', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var singlePattern in patterns)
+            {
+                var singlePatternKey = _tenantCacheKeyService.BuildPatternKey(singlePattern.Trim());
+                singlePatternKey = singlePatternKey.TrimEnd('*');
+                
+                // Find keys that match this pattern
+                var matchingKeys = _cacheKeys.Keys
+                    .Where(k => k.StartsWith(singlePatternKey) || k.Contains(singlePattern.Trim()))
+                    .ToList();
+                    
+                keysToRemove.AddRange(matchingKeys);
+                
+                _logger.LogInformation("🔍 Pattern '{SinglePattern}' matched {Count} keys", singlePattern, matchingKeys.Count);
+            }
 
-            _logger.LogInformation("🔍 Found {Count} cache keys to remove: {Keys}", keys.Count, string.Join(", ", keys));
+            // Remove duplicates
+            keysToRemove = keysToRemove.Distinct().ToList();
 
-            foreach (var key in keys)
+            _logger.LogInformation("🔍 Total {Count} cache keys to remove: {Keys}", keysToRemove.Count, string.Join(", ", keysToRemove.Take(10)));
+
+            foreach (var key in keysToRemove)
             {
                 _memoryCache.Remove(key);
                 _cacheKeys.TryRemove(key, out _);
@@ -130,6 +150,30 @@ namespace Planca.Infrastructure.Services
         {
             var cacheKey = _tenantCacheKeyService.BuildCacheKey(key);
             return Task.FromResult(_memoryCache.TryGetValue(cacheKey, out _));
+        }
+
+        /// <summary>
+        /// Nuclear option: Clear entire memory cache for immediate updates after mutations
+        /// </summary>
+        public void ClearAll()
+        {
+            try
+            {
+                var allKeys = _cacheKeys.Keys.ToList();
+                _logger.LogInformation("💥 NUCLEAR: Clearing {Count} cache entries from memory cache", allKeys.Count);
+                
+                foreach (var key in allKeys)
+                {
+                    _memoryCache.Remove(key);
+                    _cacheKeys.TryRemove(key, out _);
+                }
+                
+                _logger.LogInformation("💥 Successfully cleared all {Count} cache entries", allKeys.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Failed to clear all cache entries");
+            }
         }
     }
 }

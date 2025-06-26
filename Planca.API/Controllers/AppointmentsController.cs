@@ -31,9 +31,25 @@ namespace Planca.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetAppointments([FromQuery] GetAppointmentsListQuery query)
+        public async Task<ActionResult> GetAppointments([FromQuery] GetAppointmentsListQuery query, [FromQuery] bool bypassCache = false)
         {
+            // Allow bypassing cache via query parameter for real-time updates
+            query.BypassCache = bypassCache;
+            
             var result = await Mediator.Send(query);
+            
+            // Add cache control headers for better performance
+            if (bypassCache)
+            {
+                Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+                Response.Headers.Add("Pragma", "no-cache");
+                Response.Headers.Add("Expires", "0");
+            }
+            else
+            {
+                Response.Headers.Add("Cache-Control", "public, max-age=10");
+            }
+            
             return HandlePagedResult(result);
         }
 
@@ -141,8 +157,38 @@ namespace Planca.API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteAppointment(Guid id)
         {
-            var result = await Mediator.Send(new DeleteAppointmentCommand { Id = id });
-            return HandleResult(result);
+            try
+            {
+                var result = await Mediator.Send(new DeleteAppointmentCommand { Id = id });
+                
+                if (result.Succeeded)
+                {
+                    // Add headers to prevent caching and signal immediate update
+                    Response.Headers.Add("X-Cache-Invalidated", "true");
+                    Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+                    
+                    return Ok(new { 
+                        success = true, 
+                        message = "Appointment deleted successfully",
+                        timestamp = DateTime.UtcNow 
+                    });
+                }
+                
+                return BadRequest(new { 
+                    success = false, 
+                    message = string.Join(", ", result.Errors),
+                    timestamp = DateTime.UtcNow 
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "An error occurred while deleting the appointment",
+                    error = ex.Message,
+                    timestamp = DateTime.UtcNow 
+                });
+            }
         }
 
         [HttpPost("{id}/cancel")]

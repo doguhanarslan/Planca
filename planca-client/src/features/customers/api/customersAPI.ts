@@ -103,20 +103,37 @@ export const customersApi = baseApi.injectEndpoints({
         };
       },
       transformResponse: (response: any): PaginatedList<CustomerDto> => {
-        if (!response || !response.items) {
+        console.log('Customers API Raw Response:', response);
+        
+        // Backend'den gelen response format kontrolü
+        let actualData = response;
+        
+        // Eğer response ApiResponse<T> formatındaysa
+        if (response?.data && typeof response.data === 'object') {
+          actualData = response.data;
+        }
+        
+        // Backend BaseApiController.HandlePagedResult plain object döndürüyor
+        if (actualData && actualData.items && Array.isArray(actualData.items)) {
           return {
-            items: [],
-            pageNumber: 1,
-            totalPages: 0,
-            totalCount: 0,
-            hasNextPage: false,
-            hasPreviousPage: false
+            items: actualData.items.map(normalizeCustomerData).filter(Boolean),
+            pageNumber: actualData.pageNumber || 1,
+            totalPages: actualData.totalPages || 0,
+            totalCount: actualData.totalCount || 0,
+            hasNextPage: actualData.hasNextPage || false,
+            hasPreviousPage: actualData.hasPreviousPage || false
           };
         }
-
+        
+        // Fallback için boş liste döndür
+        console.warn('Unexpected customers response format:', response);
         return {
-          ...response,
-          items: response.items.map(normalizeCustomerData).filter(Boolean)
+          items: [],
+          pageNumber: 1,
+          totalPages: 0,
+          totalCount: 0,
+          hasNextPage: false,
+          hasPreviousPage: false
         };
       },
       providesTags: (result) => [
