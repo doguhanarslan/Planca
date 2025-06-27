@@ -5,23 +5,28 @@ import { FaSort, FaSortUp, FaSortDown, FaPlus, FaEdit, FaTrash, FaFilter, FaUndo
 import Alert from '@/shared/ui/components/Alert';
 import ServiceForm from './ServiceForm';
 
-// RTK Query hooks
+// Feature imports
+import { useServicesFilters, formatServicePrice, formatServiceDuration, getServiceStatusText, getServiceStatusColor } from '../model';
 import {
   useGetServicesQuery,
   useDeleteServiceMutation
-} from './api/servicesAPI';
+} from '../api';
 
 const ServicesList: React.FC = () => {
-  // Local state for filters and UI
-  const [filters, setFilters] = useState({
-    pageNumber: 1,
-    pageSize: 10,
-    searchString: '',
-    isActive: undefined as boolean | undefined,
-    maxPrice: undefined as number | undefined,
-    sortBy: 'name',
-    sortAscending: true,
-  });
+  // Use custom filters hook
+  const {
+    filters,
+    queryParams,
+    handleSortChange,
+    setSearchString,
+    setIsActive,
+    setMaxPrice,
+    clearFilters,
+    setPage,
+    hasFilters,
+    hasSearch,
+    isFirstPage
+  } = useServicesFilters();
   
   const [showFilters, setShowFilters] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -35,7 +40,7 @@ const ServicesList: React.FC = () => {
     isLoading,
     isFetching,
     refetch,
-  } = useGetServicesQuery(filters, {
+  } = useGetServicesQuery(queryParams, {
     // Refetch on mount if data is older than 5 minutes
     refetchOnMountOrArgChange: 300,
     // Refetch on window focus
@@ -65,19 +70,9 @@ const ServicesList: React.FC = () => {
       totalCount: servicesData.totalCount || 0,
       pageNumber: servicesData.pageNumber || 1,
       totalPages: servicesData.totalPages || 1,
-      isFiltered: !!(filters.searchString || filters.isActive !== undefined || filters.maxPrice),
+      isFiltered: hasFilters,
     };
   }, [servicesData, filters]);
-
-  // Handle sorting
-  const handleSort = (field: string) => {
-    setFilters(prev => ({
-      ...prev,
-      sortBy: field,
-      sortAscending: prev.sortBy === field ? !prev.sortAscending : true,
-      pageNumber: 1, // Reset to first page when sorting
-    }));
-  };
 
   // Render sort icon
   const renderSortIcon = (field: string) => {
@@ -92,47 +87,27 @@ const ServicesList: React.FC = () => {
   // Handle page change
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      setFilters(prev => ({ ...prev, pageNumber: newPage }));
+      setPage(newPage);
     }
   };
 
   // Handle filter changes
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters(prev => ({
-      ...prev,
-      searchString: e.target.value,
-      pageNumber: 1, // Reset to first page when searching
-    }));
+    setSearchString(e.target.value);
   };
 
   const handleActiveFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setFilters(prev => ({
-      ...prev,
-      isActive: value === 'all' ? undefined : value === 'true',
-      pageNumber: 1,
-    }));
+    setIsActive(value === 'all' ? undefined : value === 'true');
   };
 
   const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value ? parseFloat(e.target.value) : undefined;
-    setFilters(prev => ({
-      ...prev,
-      maxPrice: value,
-      pageNumber: 1,
-    }));
+    setMaxPrice(value);
   };
 
   const handleResetFilters = () => {
-    setFilters({
-      pageNumber: 1,
-      pageSize: 10,
-      searchString: '',
-      isActive: undefined,
-      maxPrice: undefined,
-      sortBy: 'name',
-      sortAscending: true,
-    });
+    clearFilters();
   };
 
   // Handle delete service
@@ -314,7 +289,7 @@ const ServicesList: React.FC = () => {
                   <th 
                     scope="col" 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('name')}
+                    onClick={() => handleSortChange('name')}
                   >
                     <div className="flex items-center">
                       İsim
@@ -330,7 +305,7 @@ const ServicesList: React.FC = () => {
                   <th 
                     scope="col" 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('price')}
+                    onClick={() => handleSortChange('price')}
                   >
                     <div className="flex items-center">
                       Fiyat
@@ -340,7 +315,7 @@ const ServicesList: React.FC = () => {
                   <th 
                     scope="col" 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('durationMinutes')}
+                    onClick={() => handleSortChange('durationMinutes')}
                   >
                     <div className="flex items-center">
                       Süre

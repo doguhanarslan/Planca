@@ -14,7 +14,6 @@ namespace Planca.Domain.Common.Interfaces
         Task<T> AddAsync(T entity);
         Task UpdateAsync(T entity);
         Task DeleteAsync(T entity);
-        Task HardDeleteAsync(T entity);
         Task<int> CountAsync(ISpecification<T> spec);
         Task<T> FirstOrDefaultAsync(ISpecification<T> spec);
         
@@ -23,10 +22,5 @@ namespace Planca.Domain.Common.Interfaces
         
         // Performans optimizasyonu için IQueryable<T> döndüren metot
         IQueryable<T> GetQuery(ISpecification<T> spec);
-        
-        // Soft delete related methods
-        Task<T> GetByIdIncludeDeletedAsync(Guid id);
-        Task<IReadOnlyList<T>> ListAllIncludeDeletedAsync();
-        Task RestoreAsync(T entity);
     }
 }

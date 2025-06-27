@@ -11,7 +11,7 @@ import { ChromePicker } from 'react-color';
 import {
   useCreateServiceMutation,
   useUpdateServiceMutation
-} from './api/servicesAPI';
+} from '../api/servicesAPI';
 
 interface ServiceFormProps {
   selectedService?: ServiceDto | null;

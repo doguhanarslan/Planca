@@ -120,7 +120,7 @@ namespace Planca.Infrastructure.Persistence.Context
 
         private void ApplyGlobalFilters(ModelBuilder modelBuilder)
         {
-            // Add global query filter for multi-tenancy and soft delete
+            // Add global query filter for multi-tenancy
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 // Check if the entity type is implementing ITenantEntity
@@ -143,22 +143,10 @@ namespace Planca.Infrastructure.Persistence.Context
                     // 3. Tenant filter: Property == Method()
                     var tenantFilter = Expression.Equal(tenantIdProperty, callExpression);
                     
-                    Expression combinedFilter = tenantFilter;
-                    
-                    // 4. Check if entity inherits from BaseEntity for soft delete
-                    if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
-                    {
-                        var isDeletedProperty = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
-                        var softDeleteFilter = Expression.Equal(isDeletedProperty, Expression.Constant(false));
-                        
-                        // Combine tenant filter and soft delete filter with AND
-                        combinedFilter = Expression.AndAlso(tenantFilter, softDeleteFilter);
-                    }
-                    
-                    // 5. Create lambda expression
-                    var filter = Expression.Lambda(combinedFilter, parameter);
+                    // 4. Create lambda expression
+                    var filter = Expression.Lambda(tenantFilter, parameter);
 
-                    // 6. Entity tipi için query filter'ı uygula
+                    // 5. Entity tipi için query filter'ı uygula
                     modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
                 }
             }

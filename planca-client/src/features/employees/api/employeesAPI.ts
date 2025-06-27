@@ -204,7 +204,27 @@ export const employeesApi = baseApi.injectEndpoints({
       invalidatesTags: (result, error, id) => [
         'Employee', // Invalidate all employees
         { type: 'Employee', id }, // Invalidate specific employee
+        { type: 'Employee', id: 'LIST' }, // Invalidate list cache
       ],
+      // Optimistic update for immediate UI feedback
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        // Optimistically remove the employee from cache
+        const patchResult = dispatch(
+          employeesApi.util.updateQueryData('getEmployees', {}, (draft) => {
+            if (draft.items) {
+              draft.items = draft.items.filter(item => item.id !== id);
+              draft.totalCount = Math.max(0, (draft.totalCount || 0) - 1);
+            }
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          // Revert the optimistic update on error
+          patchResult.undo();
+        }
+      },
     }),
 
     // Get active employees for dropdown/select (simplified, active only)

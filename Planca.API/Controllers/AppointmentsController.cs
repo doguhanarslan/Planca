@@ -70,7 +70,6 @@ namespace Planca.API.Controllers
                     a.EndTime,
                     a.Status,
                     a.TenantId,
-                    a.IsDeleted,
                     a.CreatedAt
                 })
                 .ToListAsync();
@@ -95,7 +94,6 @@ namespace Planca.API.Controllers
                 .Select(a => new {
                     a.Id,
                     a.TenantId,
-                    a.IsDeleted,
                     a.StartTime
                 })
                 .ToListAsync();

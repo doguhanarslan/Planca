@@ -90,6 +90,7 @@ export const servicesApi = baseApi.injectEndpoints({
       },
       providesTags: (result, error, arg) => [
         'Service',
+        { type: 'Service', id: 'LIST' },
         // Add individual tags for each service for more granular invalidation
         ...(result?.items?.map(({ id }) => ({ type: 'Service' as const, id })) || []),
       ],
@@ -126,8 +127,27 @@ export const servicesApi = baseApi.injectEndpoints({
         }
       },
       invalidatesTags: [
-        'Service', // Invalidate all services to refresh the list
+        'Service',
+        { type: 'Service', id: 'LIST' },
       ],
+      // Optimistic update for immediate UI feedback
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: newService } = await queryFulfilled;
+          
+          // Update the services list cache with the new service
+          dispatch(
+            servicesApi.util.updateQueryData('getServices', {}, (draft) => {
+              if (draft.items) {
+                draft.items.unshift(newService);
+                draft.totalCount = (draft.totalCount || 0) + 1;
+              }
+            })
+          );
+        } catch {
+          // If the request fails, RTK Query will automatically revert optimistic updates
+        }
+      },
     }),
 
     // Update existing service
@@ -150,9 +170,36 @@ export const servicesApi = baseApi.injectEndpoints({
         }
       },
       invalidatesTags: (result, error, { id }) => [
-        'Service', // Invalidate all services
-        { type: 'Service', id }, // Invalidate specific service
+        'Service',
+        { type: 'Service', id: 'LIST' },
+        { type: 'Service', id },
       ],
+      // Optimistic update
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        // Optimistically update the service in all relevant caches
+        const patchResult = dispatch(
+          servicesApi.util.updateQueryData('getServices', {}, (draft) => {
+            const service = draft.items?.find(item => item.id === arg.id);
+            if (service) {
+              Object.assign(service, arg);
+            }
+          })
+        );
+
+        const patchSingleResult = dispatch(
+          servicesApi.util.updateQueryData('getServiceById', arg.id, (draft) => {
+            Object.assign(draft, arg);
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          // Revert optimistic updates on error
+          patchResult.undo();
+          patchSingleResult.undo();
+        }
+      },
     }),
 
     // Delete service
@@ -162,9 +209,29 @@ export const servicesApi = baseApi.injectEndpoints({
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [
-        'Service', // Invalidate all services
-        { type: 'Service', id }, // Invalidate specific service
+        'Service',
+        { type: 'Service', id: 'LIST' },
+        { type: 'Service', id },
       ],
+      // Optimistic update for immediate UI feedback
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        // Optimistically remove the service from all caches
+        const patchResult = dispatch(
+          servicesApi.util.updateQueryData('getServices', {}, (draft) => {
+            if (draft.items) {
+              draft.items = draft.items.filter(item => item.id !== id);
+              draft.totalCount = Math.max(0, (draft.totalCount || 0) - 1);
+            }
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          // Revert the optimistic update on error
+          patchResult.undo();
+        }
+      },
     }),
 
     // Get services for dropdown/select (simplified, active only)
@@ -187,7 +254,7 @@ export const servicesApi = baseApi.injectEndpoints({
           return [];
         }
       },
-      providesTags: ['Service'],
+      providesTags: ['Service', { type: 'Service', id: 'ACTIVE_LIST' }],
     }),
   }),
 });

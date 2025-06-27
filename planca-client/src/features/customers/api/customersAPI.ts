@@ -192,6 +192,25 @@ export const customersApi = baseApi.injectEndpoints({
         { type: 'Customer', id },
         { type: 'Customer', id: 'LIST' }
       ],
+      // Optimistic update for immediate UI feedback
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        // Optimistically remove the customer from cache
+        const patchResult = dispatch(
+          customersApi.util.updateQueryData('getCustomers', {}, (draft) => {
+            if (draft.items) {
+              draft.items = draft.items.filter(item => item.id !== id);
+              draft.totalCount = Math.max(0, (draft.totalCount || 0) - 1);
+            }
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          // Revert the optimistic update on error
+          patchResult.undo();
+        }
+      },
     }),
   }),
 });

@@ -61,12 +61,33 @@ export const baseApi = createApi({
     'Business',
     'Dashboard'
   ],
-  // Increase cache time to 5 minutes for better page navigation experience
+  // Keep cache for 5 minutes but enable automatic refetching
   keepUnusedDataFor: 300,
   // Enable refetch on focus and reconnect for better UX
   refetchOnFocus: true,
   refetchOnReconnect: true,
+  // Configure for immediate updates
+  refetchOnMountOrArgChange: 30, // Refetch if data is older than 30 seconds
   endpoints: () => ({}),
 });
+
+// Helper function to invalidate related caches
+export const invalidateRelatedTags = (entityType: 'Service' | 'Customer' | 'Employee' | 'Appointment' | 'Auth' | 'Business' | 'Dashboard', entityId?: string) => {
+  const tagsToInvalidate: Array<string | { type: string; id: string }> = [
+    entityType,
+    { type: entityType, id: 'LIST' },
+  ];
+  
+  if (entityId) {
+    tagsToInvalidate.push({ type: entityType, id: entityId });
+  }
+  
+  // For appointments, also invalidate related entities
+  if (entityType === 'Appointment') {
+    tagsToInvalidate.push('Customer', 'Employee', 'Service');
+  }
+  
+  return tagsToInvalidate;
+};
 
 export default baseApi;

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Planca.Application.Common.Interfaces;
-using Planca.Application.Common.Services;
+
 using Planca.Domain.Common.Interfaces;
 using Planca.Infrastructure.Configuration;
 using Planca.Infrastructure.Identity.Models;
@@ -66,8 +66,7 @@ namespace Planca.Infrastructure
             services.AddScoped<ITenantCacheKeyService, TenantCacheKeyService>();
             services.AddScoped<ICacheService, MemoryCacheService>();
 
-            // Data Retention Configuration
-            services.Configure<DataRetentionOptions>(configuration.GetSection(DataRetentionOptions.SectionName));
+
 
             // Infrastructure servisleri ekleme
             services.AddHttpContextAccessor();
@@ -83,9 +82,7 @@ namespace Planca.Infrastructure
             services.AddScoped<IIdentityService, IdentityService>();
             services.AddScoped<IUserService, UserService>();
 
-            // Data Retention Services
-            services.AddScoped<IDataRetentionService, DataRetentionService>();
-            services.AddHostedService<DataRetentionBackgroundService>();
+
 
             // Repository'ler
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));

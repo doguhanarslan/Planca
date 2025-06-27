@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import * as React from 'react';
 import AppLayout from '@/shared/ui/layouts/AppLayout';
-import ServicesList from '@/features/services/ServicesList';
-import ServiceForm from '@/features/services/ServiceForm';
+import { ServicesList, ServiceForm } from '@/features/services';
 
 const Services: React.FC = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
