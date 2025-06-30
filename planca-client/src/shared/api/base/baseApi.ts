@@ -59,7 +59,11 @@ export const baseApi = createApi({
     'Appointment',
     'Auth',
     'Business',
-    'Dashboard'
+    'Dashboard',
+    'Settings',
+    'BusinessSettings',
+    'BookingSettings',
+    'NotificationSettings'
   ],
   // Keep cache for 5 minutes but enable automatic refetching
   keepUnusedDataFor: 300,

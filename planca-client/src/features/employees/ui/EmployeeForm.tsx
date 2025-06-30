@@ -80,6 +80,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ selectedEmployee, onClose, 
   // Load selected employee data when editing
   useEffect(() => {
     if (selectedEmployee) {
+      console.log('Loading employee data for editing:', selectedEmployee);
       setFormData({
         id: selectedEmployee.id,
         userId: selectedEmployee.userId,
@@ -101,16 +102,40 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ selectedEmployee, onClose, 
             })),
         tenantId: selectedEmployee.tenantId || tenant?.id || ''
       });
+    } else {
+      // Reset form for new employee
+      console.log('Resetting form for new employee');
+      setFormData({
+        userId: '',
+        firstName: '',
+        lastName: '',
+        fullName: '',
+        email: '',
+        phoneNumber: '',
+        title: '',
+        isActive: true,
+        serviceIds: [],
+        workingHours: DAYS_OF_WEEK.map(day => ({
+          dayOfWeek: day.value,
+          startTime: '09:00',
+          endTime: '17:00',
+          isWorkingDay: day.value >= 1 && day.value <= 5,
+        })),
+        tenantId: tenant?.id || ''
+      });
     }
   }, [selectedEmployee, tenant]);
   
   // Update fullName when firstName or lastName changes
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      fullName: `${prev.firstName} ${prev.lastName}`.trim()
-    }));
-  }, [formData.firstName, formData.lastName]);
+    const newFullName = `${formData.firstName} ${formData.lastName}`.trim();
+    if (formData.fullName !== newFullName) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: newFullName
+      }));
+    }
+  }, [formData.firstName, formData.lastName, formData.fullName]);
   
   // Handle form field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

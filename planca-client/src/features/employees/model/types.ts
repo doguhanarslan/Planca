@@ -24,7 +24,7 @@ export interface EmployeeFormData {
 export interface EmployeesListProps {
   onSelectEmployee?: (employeeId: string) => void;
   onAddEmployee: () => void;
-  onEditEmployee?: (employeeId: string) => void;
+  onEditEmployee?: (employeeId: string, employeeData?: EmployeeDto) => void;
   onDeleteEmployee?: (employeeId: string) => void;
   isDetailViewActive?: boolean;
   selectedEmployeeId?: string | null;

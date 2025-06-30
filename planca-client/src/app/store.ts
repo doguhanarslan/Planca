@@ -12,6 +12,7 @@ import '@/features/appointments/api/appointmentsAPI';
 import '@/features/employees/api/employeesAPI';
 import '@/features/services/api/servicesAPI';
 import '@/features/dashboard/api/dashboardAPI'; // Add dashboard API import
+import '@/features/settings/api/settingsAPI'; // Add settings API import
 // Note: appointmentsSlice removed - now using RTK Query
 // Note: employeesReducer removed - now using RTK Query  
 // Note: servicesReducer removed - now using RTK Query

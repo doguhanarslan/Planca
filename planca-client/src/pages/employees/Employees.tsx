@@ -104,10 +104,13 @@ const Employees: React.FC = () => {
   };
 
   // Handle edit employee from list - DÜZELTME: Modal açma
-  const handleEditEmployeeFromList = (employeeId: string) => {
+  const handleEditEmployeeFromList = (employeeId: string, employeeData?: EmployeeDto) => {
     // If editing the currently selected employee, use that data
     if (selectedEmployee && selectedEmployee.id === employeeId) {
       setEmployeeToEdit(selectedEmployee);
+    } else if (employeeData) {
+      // Use the passed employee data
+      setEmployeeToEdit(employeeData);
     } else {
       // For other employees, we'll need to fetch or pass null for now
       setEmployeeToEdit(null);
@@ -175,7 +178,7 @@ const Employees: React.FC = () => {
                   <div className="flex space-x-2">
                     {/* Edit button for opening modal */}
                     <button
-                      onClick={() => handleEditEmployeeFromList(selectedEmployee.id)}
+                      onClick={() => handleEditEmployeeFromList(selectedEmployee.id, selectedEmployee)}
                       className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
                       <svg className="-ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

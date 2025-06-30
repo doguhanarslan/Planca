@@ -186,7 +186,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
-export interface InputProps {
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'className'> {
   id?: string;
   label?: string;
   placeholder?: string;
@@ -335,4 +335,70 @@ export interface WorkingHoursDto {
   startTime: string;
   endTime: string;
   isWorkingDay: boolean;
+}
+
+// Settings types
+export interface SettingDto {
+  id: string;
+  key: string;
+  value: string;
+  category: string;
+  description: string;
+  dataType: string;
+  isActive: boolean;
+  isSystemSetting: boolean;
+  displayOrder: number;
+  createdAt: string;
+  lastModifiedAt?: string;
+}
+
+export interface SettingItemDto {
+  key: string;
+  value: string;
+  category: string;
+  description: string;
+  dataType: string;
+  isActive: boolean;
+  displayOrder: number;
+}
+
+export interface SettingsCategoryDto {
+  category: string;
+  settings: SettingDto[];
+}
+
+export interface BusinessSettingsDto {
+  businessName: string;
+  businessDescription: string;
+  contactEmail: string;
+  contactPhone: string;
+  website: string;
+  address: string;
+  timeZone: string;
+  currency: string;
+  language: string;
+}
+
+export interface BookingSettingsDto {
+  maxAdvanceBookingDays: number;
+  minAdvanceBookingHours: number;
+  maxCancellationHours: number;
+  requireCustomerPhone: boolean;
+  requireCustomerEmail: boolean;
+  allowOnlineBooking: boolean;
+  autoConfirmBookings: boolean;
+  defaultAppointmentDuration: number;
+  allowBackToBackBookings: boolean;
+  bufferTimeBetweenAppointments: number;
+}
+
+export interface NotificationSettingsDto {
+  emailNotificationsEnabled: boolean;
+  smsNotificationsEnabled: boolean;
+  sendBookingConfirmation: boolean;
+  sendBookingReminder: boolean;
+  sendCancellationNotification: boolean;
+  reminderHoursBeforeAppointment: number;
+  notifyEmployeeOnNewBooking: boolean;
+  notifyAdminOnCancellation: boolean;
 }

@@ -37,6 +37,9 @@ import Employees from '@/pages/employees/Employees';
 // Import Appointments component
 import Appointments from '@/pages/appointments/Appointments';
 
+// Import Settings component
+import Settings from '@/pages/settings/Settings';
+
 // Loading component
 import LoadingScreen from '@/shared/ui/components/LoadingScreen';
 
@@ -97,14 +100,7 @@ const AppContent: FC = () => {
           path="/settings"
           element={
             <AppLayout>
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-black mb-4">
-                  Ayarlar
-                </h1>
-                <p className="text-black">
-                  Bu sayfa geliştirme aşamasındadır.
-                </p>
-              </div>
+              <Settings />
             </AppLayout>
           }
         />

@@ -347,7 +347,7 @@ const EmployeesList: FC<EmployeesListProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onEditEmployee(employee.id);
+                        onEditEmployee(employee.id, employee);
                       }}
                       className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all duration-200"
                     >
