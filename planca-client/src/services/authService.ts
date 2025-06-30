@@ -3,7 +3,7 @@
 import axios from 'axios';
 
 // Create an axios instance
-const API_URL = 'https://localhost:7100/api'; // Update to match your API URL
+const API_URL = (window as any).ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || 'https://localhost:7100/api';
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true // Important: This ensures cookies are sent with requests
@@ -57,7 +57,7 @@ api.interceptors.response.use(
     try {
       // Call refresh endpoint (your API already handles cookies)
       await axios.post(
-        `https://localhost:7100/api/Auth/refresh-token`, 
+        `${API_URL}/Auth/refresh-token`, 
         {}, 
         { withCredentials: true }
       );

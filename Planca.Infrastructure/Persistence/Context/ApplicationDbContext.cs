@@ -39,6 +39,7 @@ namespace Planca.Infrastructure.Persistence.Context
         public DbSet<Service> Services => Set<Service>();
         public DbSet<Appointment> Appointments => Set<Appointment>();
         public DbSet<TenantWorkingHours> TenantWorkingHours => Set<TenantWorkingHours>();
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -74,6 +75,9 @@ namespace Planca.Infrastructure.Persistence.Context
 
             // Configure Identity tables with PostgreSQL requirements
             ConfigureIdentityTables(builder);
+
+            // YENİ: Guest Appointment konfigürasyonu
+            ConfigureAppointmentEntity(builder);
 
             // Apply entity configurations
             builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
@@ -118,6 +122,104 @@ namespace Planca.Infrastructure.Persistence.Context
             });
         }
 
+        // YENİ: Appointment entity için özel konfigürasyon
+        private void ConfigureAppointmentEntity(ModelBuilder builder)
+        {
+            builder.Entity<Appointment>(entity =>
+            {
+                // Table ve Primary Key
+                entity.ToTable("appointments");
+                entity.HasKey(e => e.Id);
+
+                // Basic properties
+                entity.Property(e => e.StartTime)
+                    .IsRequired();
+
+                entity.Property(e => e.EndTime)
+                    .IsRequired();
+
+                entity.Property(e => e.Status)
+                    .HasConversion<int>()
+                    .IsRequired();
+
+                entity.Property(e => e.Notes)
+                    .HasMaxLength(500)
+                    .HasDefaultValue("");
+
+                // Foreign keys - CustomerId artık nullable
+                entity.Property(e => e.CustomerId)
+                    .IsRequired(false); // NULLABLE yapıldı
+
+                entity.Property(e => e.EmployeeId)
+                    .IsRequired();
+
+                entity.Property(e => e.ServiceId)
+                    .IsRequired();
+
+                entity.Property(e => e.TenantId)
+                    .IsRequired();
+
+                // YENİ: Guest customer properties
+                entity.Property(e => e.IsGuestAppointment)
+                    .HasDefaultValue(false)
+                    .IsRequired();
+
+                entity.Property(e => e.GuestFirstName)
+                    .HasMaxLength(100)
+                    .IsRequired(false);
+
+                entity.Property(e => e.GuestLastName)
+                    .HasMaxLength(100)
+                    .IsRequired(false);
+
+                entity.Property(e => e.GuestEmail)
+                    .HasMaxLength(255)
+                    .IsRequired(false);
+
+                entity.Property(e => e.GuestPhoneNumber)
+                    .HasMaxLength(20)
+                    .IsRequired(false);
+
+                entity.Property(e => e.CustomerMessage)
+                    .HasMaxLength(1000)
+                    .IsRequired(false);
+
+                // Relationships - Customer artık optional
+                entity.HasOne(d => d.Customer)
+                    .WithMany()
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.SetNull); // Customer silinirse appointment'ta null olsun
+
+                entity.HasOne(d => d.Employee)
+                    .WithMany()
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict); // Employee silinemez if has appointments
+
+                entity.HasOne(d => d.Service)
+                    .WithMany()
+                    .HasForeignKey(d => d.ServiceId)
+                    .OnDelete(DeleteBehavior.Restrict); // Service silinemez if has appointments
+
+                // Indexes for performance
+                entity.HasIndex(e => e.CustomerId);
+                entity.HasIndex(e => e.EmployeeId);
+                entity.HasIndex(e => e.ServiceId);
+                entity.HasIndex(e => e.StartTime);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.TenantId);
+
+                // YENİ: Guest appointment indexes
+                entity.HasIndex(e => e.IsGuestAppointment);
+                entity.HasIndex(e => e.GuestEmail);
+
+                // Composite indexes for common queries
+                entity.HasIndex(e => new { e.CustomerId, e.StartTime });
+                entity.HasIndex(e => new { e.EmployeeId, e.StartTime });
+                entity.HasIndex(e => new { e.TenantId, e.Status, e.StartTime });
+                entity.HasIndex(e => new { e.TenantId, e.IsGuestAppointment, e.Status });
+            });
+        }
+
         private void ApplyGlobalFilters(ModelBuilder modelBuilder)
         {
             // Add global query filter for multi-tenancy
@@ -129,20 +231,20 @@ namespace Planca.Infrastructure.Persistence.Context
                 {
                     var parameter = Expression.Parameter(entityType.ClrType, "e");
                     var tenantIdProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
-                    
+
                     // 1. DbContext instance'ını referans alan bir metot tanımla
                     var getTenantIdMethod = typeof(ApplicationDbContext).GetMethod(
-                        nameof(GetCurrentTenantId), 
+                        nameof(GetCurrentTenantId),
                         BindingFlags.NonPublic | BindingFlags.Instance);
-                    
+
                     // 2. Expression.Constant yerine, Expression.Call kullanarak runtime'da metot çağrımı yap
                     var callExpression = Expression.Call(
                         Expression.Constant(this),  // "this" (DbContext) instance'ı
                         getTenantIdMethod);         // Çağrılacak metot 
-                    
+
                     // 3. Tenant filter: Property == Method()
                     var tenantFilter = Expression.Equal(tenantIdProperty, callExpression);
-                    
+
                     // 4. Create lambda expression
                     var filter = Expression.Lambda(tenantFilter, parameter);
 

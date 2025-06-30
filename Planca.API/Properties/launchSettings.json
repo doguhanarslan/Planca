@@ -20,6 +20,18 @@
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7100;http://localhost:5100"
     },
+    "Development (Chrome)": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:7100/swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7100;http://localhost:5100",
+      "executablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "commandLineArgs": "--new-window"
+    },
     "Docker": {
       "commandName": "DockerCompose",
       "launchBrowser": true,

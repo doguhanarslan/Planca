@@ -73,13 +73,18 @@ namespace Planca.Application.Features.Appointments.Queries.GetAppointmentsList
             if (appointmentDtos.Count > 0)
             {
                 // 1. Benzersiz ID'leri çıkar
-                var customerIds = appointmentDtos.Select(a => a.CustomerId).Distinct().ToList();
+                var customerIds = appointmentDtos
+                    .Where(a => a.CustomerId.HasValue)  // Null olanları filtrele
+                    .Select(a => a.CustomerId.Value)    // Nullable'dan Value'ya çevir
+                    .Distinct()
+                    .ToList();
                 var employeeIds = appointmentDtos.Select(a => a.EmployeeId).Distinct().ToList();
                 var serviceIds = appointmentDtos.Select(a => a.ServiceId).Distinct().ToList();
 
                 // 2. Gerekli verileri tek seferde getir
-                var customers = (await _customerRepository.GetByIdsAsync(customerIds))
-                    .ToDictionary(c => c.Id);
+                var customers = customerIds.Count > 0
+                    ? (await _customerRepository.GetByIdsAsync(customerIds)).ToDictionary(c => c.Id)
+                    : new Dictionary<Guid, Customer>();
                 var employees = (await _employeeRepository.GetByIdsAsync(employeeIds))
                     .ToDictionary(e => e.Id);
                 var services = (await _serviceRepository.GetByIdsAsync(serviceIds))
@@ -88,19 +93,41 @@ namespace Planca.Application.Features.Appointments.Queries.GetAppointmentsList
                 // 3. DTO'ları doldur
                 foreach (var dto in appointmentDtos)
                 {
-                    if (customers.TryGetValue(dto.CustomerId, out var customer))
+                    // Customer bilgilerini doldur - Guest ve Registered customer ayrımı
+                    if (dto.IsGuestAppointment)
                     {
-                        dto.CustomerName = $"{customer.FirstName} {customer.LastName}";
+                        // Guest appointment için bilgiler zaten DTO'da mevcut olmalı
+                        dto.CustomerName = $"{dto.GuestFirstName} {dto.GuestLastName}";
+                        dto.CustomerEmail = dto.GuestEmail;
+                        dto.CustomerPhone = dto.GuestPhoneNumber;
                     }
-                    
+                    else if (dto.CustomerId.HasValue && customers.TryGetValue(dto.CustomerId.Value, out var customer))
+                    {
+                        // Registered customer için bilgileri doldur
+                        dto.CustomerName = $"{customer.FirstName} {customer.LastName}";
+                        dto.CustomerEmail = customer.Email;
+                        dto.CustomerPhone = customer.PhoneNumber;
+                    }
+                    else
+                    {
+                        // Fallback - customer bulunamadıysa
+                        dto.CustomerName = "Bilinmeyen Müşteri";
+                        dto.CustomerEmail = "";
+                        dto.CustomerPhone = "";
+                    }
+
+                    // Employee bilgilerini doldur
                     if (employees.TryGetValue(dto.EmployeeId, out var employee))
                     {
                         dto.EmployeeName = $"{employee.FirstName} {employee.LastName}";
                     }
-                    
+
+                    // Service bilgilerini doldur
                     if (services.TryGetValue(dto.ServiceId, out var service))
                     {
                         dto.ServiceName = service.Name;
+                        dto.ServicePrice = service.Price;
+                        dto.ServiceDuration = service.DurationMinutes;
                     }
                 }
             }

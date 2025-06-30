@@ -53,31 +53,66 @@ namespace Planca.Application.Features.Appointments.Queries.GetAppointmentDetail
             var appointmentDto = _mapper.Map<AppointmentDto>(appointment);
 
             // İlişkili verileri paralel olarak getir
-            var customerTask = _customerRepository.GetByIdAsync(appointment.CustomerId);
+            // DÜZELTME: CustomerId nullable olduğu için kontrol ekle
+            Task<Customer> customerTask = null;
+            if (!appointment.IsGuestAppointment && appointment.CustomerId.HasValue)
+            {
+                customerTask = _customerRepository.GetByIdAsync(appointment.CustomerId.Value);
+            }
+
             var employeeTask = _employeeRepository.GetByIdAsync(appointment.EmployeeId);
             var serviceTask = _serviceRepository.GetByIdAsync(appointment.ServiceId);
 
-            // Tüm görevlerin tamamlanmasını bekle
-            await Task.WhenAll(customerTask, employeeTask, serviceTask);
+            // Null olmayan task'leri bekle
+            if (customerTask != null)
+            {
+                await Task.WhenAll(customerTask, employeeTask, serviceTask);
+            }
+            else
+            {
+                await Task.WhenAll(employeeTask, serviceTask);
+            }
 
             // Sonuçları DTO'ya aktar
-            var customer = customerTask.Result;
+            var customer = customerTask?.Result;
             var employee = employeeTask.Result;
             var service = serviceTask.Result;
 
-            if (customer != null)
+            // Customer bilgilerini doldur - Guest ve Registered customer ayrımı
+            if (appointment.IsGuestAppointment)
             {
+                // Guest appointment için bilgiler appointment entity'sinden gelir
+                appointmentDto.CustomerName = $"{appointment.GuestFirstName} {appointment.GuestLastName}";
+                appointmentDto.CustomerEmail = appointment.GuestEmail;
+                appointmentDto.CustomerPhone = appointment.GuestPhoneNumber;
+            }
+            else if (customer != null)
+            {
+                // Registered customer için bilgileri doldur
                 appointmentDto.CustomerName = $"{customer.FirstName} {customer.LastName}";
+                appointmentDto.CustomerEmail = customer.Email;
+                appointmentDto.CustomerPhone = customer.PhoneNumber;
+            }
+            else
+            {
+                // Fallback - customer bulunamadıysa
+                appointmentDto.CustomerName = "Bilinmeyen Müşteri";
+                appointmentDto.CustomerEmail = "";
+                appointmentDto.CustomerPhone = "";
             }
 
+            // Employee bilgilerini doldur
             if (employee != null)
             {
                 appointmentDto.EmployeeName = $"{employee.FirstName} {employee.LastName}";
             }
 
+            // Service bilgilerini doldur
             if (service != null)
             {
                 appointmentDto.ServiceName = service.Name;
+                appointmentDto.ServicePrice = service.Price;
+                appointmentDto.ServiceDuration = service.DurationMinutes;
             }
 
             // Sonucu başarılı olarak döndür

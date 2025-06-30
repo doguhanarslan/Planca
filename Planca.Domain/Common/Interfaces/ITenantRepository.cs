@@ -10,5 +10,9 @@ namespace Planca.Domain.Common.Interfaces
         Task<Tenant> GetTenantBySubdomainAsync(string subdomain);
         Task<bool> IsSubdomainUniqueAsync(string subdomain, Guid? excludeId = null);
         Task<bool> IsTenantActiveAsync(Guid tenantId);
+
+        // YENİ: Slug support için metodlar
+        Task<Tenant> GetBySlugAsync(string slug);
+        Task<bool> IsSlugUniqueAsync(string slug, Guid? excludeId = null);
     }
 }
