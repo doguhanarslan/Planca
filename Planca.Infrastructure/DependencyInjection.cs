@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Planca.Application.Common.Interfaces;
 
 using Planca.Domain.Common.Interfaces;
+using Planca.Infrastructure.BackgroundJobs;
 using Planca.Infrastructure.Configuration;
 using Planca.Infrastructure.Identity.Models;
 using Planca.Infrastructure.Identity.Services;
@@ -18,6 +19,7 @@ using Planca.Infrastructure.Persistence.Context;
 using Planca.Infrastructure.Persistence.Interceptors;
 using Planca.Infrastructure.Persistence.Repositories;
 using Planca.Infrastructure.Services;
+using Planca.Infrastructure.Services.Messaging;
 using StackExchange.Redis;
 
 namespace Planca.Infrastructure
@@ -102,6 +104,13 @@ namespace Planca.Infrastructure
             });
             
             services.AddScoped<ITenantRepository, TenantRepository>();
+
+            // WhatsApp Notification Service (Twilio)
+            services.Configure<TwilioSettings>(configuration.GetSection(TwilioSettings.SectionName));
+            services.AddScoped<IWhatsAppNotificationService, TwilioWhatsAppNotificationService>();
+
+            // Background Jobs
+            services.AddSingleton<AppointmentReminderJob>();
 
             return services;
         }

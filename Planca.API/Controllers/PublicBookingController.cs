@@ -43,7 +43,7 @@ namespace Planca.API.Controllers
         {
             try
             {
-                // Tenant'ı slug ile bul
+                // Tenantı slug ile bul
                 var tenant = await _tenantRepository.GetBySlugAsync(tenantSlug);
                 if (tenant == null)
                 {

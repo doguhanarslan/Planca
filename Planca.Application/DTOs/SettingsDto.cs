@@ -90,5 +90,12 @@ namespace Planca.Application.DTOs
         public int ReminderHoursBeforeAppointment { get; set; } = 24;
         public bool NotifyEmployeeOnNewBooking { get; set; } = true;
         public bool NotifyAdminOnCancellation { get; set; } = true;
+
+        // WhatsApp Bildirim Ayarları
+        public bool WhatsAppNotificationsEnabled { get; set; } = false;
+        public bool WhatsAppSendBookingConfirmation { get; set; } = true;
+        public bool WhatsAppSendBookingReminder { get; set; } = true;
+        public bool WhatsAppSendCancellationNotification { get; set; } = true;
+        public int WhatsAppReminderHoursBeforeAppointment { get; set; } = 24;
     }
 }

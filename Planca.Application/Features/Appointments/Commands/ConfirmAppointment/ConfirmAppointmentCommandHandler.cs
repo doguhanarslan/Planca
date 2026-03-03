@@ -1,8 +1,11 @@
-﻿using AutoMapper;
+// Planca.Application/Features/Appointments/Commands/ConfirmAppointment/ConfirmAppointmentCommandHandler.cs
+using AutoMapper;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Planca.Application.Common.Exceptions;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Features.Notifications.Events;
 using Planca.Domain.Common.Enums;
 using Planca.Domain.Common.Interfaces;
 using Planca.Domain.Entities;
@@ -15,17 +18,32 @@ namespace Planca.Application.Features.Appointments.Commands.ConfirmAppointment
     public class ConfirmAppointmentCommandHandler : IRequestHandler<ConfirmAppointmentCommand, Result<AppointmentDto>>
     {
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly ITenantRepository _tenantRepository;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
+        private readonly ILogger<ConfirmAppointmentCommandHandler> _logger;
 
         public ConfirmAppointmentCommandHandler(
             IAppointmentRepository appointmentRepository,
+            IServiceRepository serviceRepository,
+            IEmployeeRepository employeeRepository,
+            ITenantRepository tenantRepository,
             IMapper mapper,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IMediator mediator,
+            ILogger<ConfirmAppointmentCommandHandler> logger)
         {
             _appointmentRepository = appointmentRepository;
+            _serviceRepository = serviceRepository;
+            _employeeRepository = employeeRepository;
+            _tenantRepository = tenantRepository;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _mediator = mediator;
+            _logger = logger;
         }
 
         public async Task<Result<AppointmentDto>> Handle(ConfirmAppointmentCommand request, CancellationToken cancellationToken)
@@ -70,7 +88,37 @@ namespace Planca.Application.Features.Appointments.Commands.ConfirmAppointment
             // 8. Save changes
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 9. Return DTO
+            // 9. WhatsApp onay bildirimi gönder (fire-and-forget)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var service = await _serviceRepository.GetByIdAsync(appointment.ServiceId);
+                    var employee = await _employeeRepository.GetByIdAsync(appointment.EmployeeId);
+                    var tenant = await _tenantRepository.GetByIdAsync(appointment.TenantId);
+
+                    await _mediator.Publish(new AppointmentConfirmedNotification
+                    {
+                        AppointmentId = appointment.Id,
+                        TenantId = appointment.TenantId,
+                        CustomerName = appointment.CustomerName,
+                        CustomerPhone = appointment.CustomerPhone,
+                        ServiceName = service?.Name ?? "Belirtilmemiş",
+                        EmployeeName = employee != null ? $"{employee.FirstName} {employee.LastName}" : "Belirtilmemiş",
+                        BusinessName = tenant?.Name ?? "İşletme",
+                        AppointmentDateTime = appointment.StartTime,
+                        AppointmentEndTime = appointment.EndTime,
+                        ServiceDurationMinutes = service?.DurationMinutes ?? 0,
+                        ServicePrice = service?.Price
+                    }, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Randevu {AppointmentId} onay bildirimi gönderilemedi", appointment.Id);
+                }
+            }, cancellationToken);
+
+            // 10. Return DTO
             return Result<AppointmentDto>.Success(_mapper.Map<AppointmentDto>(appointment));
         }
     }

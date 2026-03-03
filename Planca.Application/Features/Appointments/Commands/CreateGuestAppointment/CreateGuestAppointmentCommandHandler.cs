@@ -3,6 +3,7 @@ using MediatR;
 using Planca.Application.Common.Exceptions;
 using Planca.Application.Common.Models;
 using Planca.Application.DTOs;
+using Planca.Application.Features.Notifications.Events;
 using Planca.Domain.Common.Enums;
 using Planca.Domain.Common.Interfaces;
 using Planca.Domain.Entities;
@@ -21,6 +22,7 @@ namespace Planca.Application.Features.Appointments.Commands.CreateGuestAppointme
         private readonly ITenantRepository _tenantRepository;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
         private readonly ILogger<CreateGuestAppointmentCommandHandler> _logger;
 
         public CreateGuestAppointmentCommandHandler(
@@ -30,6 +32,7 @@ namespace Planca.Application.Features.Appointments.Commands.CreateGuestAppointme
             ITenantRepository tenantRepository,
             IMapper mapper,
             IUnitOfWork unitOfWork,
+            IMediator mediator,
             ILogger<CreateGuestAppointmentCommandHandler> logger)
         {
             _appointmentRepository = appointmentRepository;
@@ -38,6 +41,7 @@ namespace Planca.Application.Features.Appointments.Commands.CreateGuestAppointme
             _tenantRepository = tenantRepository;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _mediator = mediator;
             _logger = logger;
         }
 
@@ -119,27 +123,34 @@ namespace Planca.Application.Features.Appointments.Commands.CreateGuestAppointme
 
                 _logger.LogInformation("Guest appointment created successfully with ID {AppointmentId}", appointment.Id);
 
-                // 11. Email bildirimleri - Daha sonra eklenecek
-                // TODO: Email service implement edildiğinde aktif edilecek
-                /*
+                // 11. WhatsApp bildirim gönder (fire-and-forget, hata randevu oluşturmayı engellemez)
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        // Müşteriye onay emaili
-                        await _emailService.SendGuestAppointmentConfirmationEmailAsync(appointment);
-                        
-                        // İşletmeye bildirim emaili
-                        await _emailService.SendNewAppointmentRequestNotificationEmailAsync(appointment, tenant);
+                        await _mediator.Publish(new AppointmentCreatedNotification
+                        {
+                            AppointmentId = appointment.Id,
+                            TenantId = request.TenantId,
+                            CustomerName = $"{request.GuestFirstName} {request.GuestLastName}".Trim(),
+                            CustomerPhone = request.GuestPhoneNumber,
+                            ServiceName = service.Name,
+                            EmployeeName = $"{employee.FirstName} {employee.LastName}",
+                            BusinessName = tenant?.Name ?? "İşletme",
+                            AppointmentDateTime = appointment.StartTime,
+                            AppointmentEndTime = appointment.EndTime,
+                            ServiceDurationMinutes = service.DurationMinutes,
+                            ServicePrice = service.Price
+                        }, CancellationToken.None);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to send email notifications for appointment {AppointmentId}", appointment.Id);
+                        _logger.LogError(ex, "Randevu {AppointmentId} için WhatsApp bildirim gönderilemedi", appointment.Id);
                     }
                 }, cancellationToken);
-                */
 
-                _logger.LogInformation("Email notifications will be implemented later for appointment {AppointmentId}", appointment.Id);
+                // TODO: Email service implement edildiğinde aktif edilecek
+                _logger.LogInformation("Bildirimler gönderildi/planlandı - Randevu: {AppointmentId}", appointment.Id);
 
                 // 12. DTO'ya dönüştür ve döndür
                 var appointmentDto = _mapper.Map<AppointmentDto>(appointment);

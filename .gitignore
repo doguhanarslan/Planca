@@ -362,3 +362,24 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Claude Code
+.claude/
+
+# Windows null file
+nul
+
+# Logs
+Logs/
+
+# Frontend
+planca-client/node_modules/
+planca-client/dist/
+
+# Global tools
+global.json

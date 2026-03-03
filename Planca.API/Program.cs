@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Planca.API.Middleware;
 using Planca.Application;
 using Planca.Infrastructure;
+using Planca.Infrastructure.BackgroundJobs;
 using Planca.Infrastructure.Identity.Models;
 using Planca.Infrastructure.Persistence.Context;
 using Planca.Infrastructure.Persistence;
@@ -16,6 +17,8 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +36,18 @@ builder.Host.UseSerilog();
 // Add services to the container.
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// Hangfire - Background Job Scheduler (PostgreSQL storage)
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(options =>
+        options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
+builder.Services.AddHangfireServer(options =>
+{
+    options.WorkerCount = 2; // Bildirim gönderimi için 2 worker yeterli
+});
 
 // Add Controllers
 builder.Services.AddControllers();
@@ -209,6 +224,19 @@ app.UseEndpoints(endpoints =>
 
 // Health check endpoint
 app.MapGet("/health", () => "Healthy");
+
+// Hangfire Dashboard (sadece development ortamında erişilebilir)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire");
+}
+
+// Hangfire Recurring Jobs - Randevu hatırlatma job'ı (her 15 dakikada bir)
+var cronExpression = builder.Configuration["Hangfire:ReminderJobCronExpression"] ?? "*/15 * * * *";
+RecurringJob.AddOrUpdate<AppointmentReminderJob>(
+    "appointment-reminder-job",
+    job => job.ExecuteAsync(),
+    cronExpression);
 
 // Database migration - Run in all environments
 try
